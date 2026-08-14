@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Delivery Challan - {{ challan.challan_no }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Print-specific Tally format styles */
+    @import url('https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap');
+
+    .print-container {
+        font-family: Arial, Helvetica, sans-serif;
+        color: #000;
+        width: 100%;
+        max-width: 210mm; /* A4 size width */
+        margin: 0 auto;
+        background: #fff;
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    .print-container b, .print-container strong {
+        font-weight: 700;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .border-box {
+        border: 1px solid #000;
+    }
+
+    /* Cell borders */
+    .border-right { border-right: 1px solid #000; }
+    .border-bottom { border-bottom: 1px solid #000; }
+    .border-left { border-left: 1px solid #000; }
+    .border-top { border-top: 1px solid #000; }
+    
+    .border-top-0 { border-top: none; }
+
+    .pad-4 { padding: 4px; }
+    .valign-top { vertical-align: top; }
+    .valign-bottom { vertical-align: bottom; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+
+    /* Main items table layout */
+    .items-table th {
+        border: 1px solid #000;
+        padding: 4px;
+        text-align: center;
+        font-weight: normal;
+        font-size: 10px;
+    }
+    
+    .items-table td {
+        border-right: 1px solid #000;
+        border-left: 1px solid #000;
+        padding: 4px 6px;
+        vertical-align: top;
+    }
+    
+    /* Remove bottom borders inside items list to mimic Tally style */
+    .items-table tbody tr td {
+        border-bottom: none;
+        border-top: none;
+    }
+
+    /* Padding for the blank space row to push totals down */
+    .items-table .spacer-row td {
+        padding-bottom: 30px; 
+    }
+
+    .totals-row td {
+        border: 1px solid #000;
+        padding: 6px 4px;
+    }
+
+    @media print {
+        body { background: #fff; margin: 0; padding: 0; }
+        .no-print { display: none !important; }
+        .print-container { max-width: 100%; padding: 0; margin-top: 0; }
+        @page { margin: 10mm; }
+    }
+
+    /* UI Controls (Hidden on print) */
+    .print-btn {
+        position: fixed; top: 20px; right: 20px; padding: 10px 20px;
+        background: #3F2E97; color: #fff; border: none; border-radius: 4px; cursor: pointer;
+        font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000;
+    }
+    .print-btn:hover { background: #2c1f6f; }
+    
+    .back-btn {
+        position: fixed; top: 20px; right: 150px; padding: 10px 20px;
+        background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer; text-decoration: none;
+        font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000;
+    }
+    .back-btn:hover { background: #5a6268; }
+</style>
+
+<a href="javascript:history.back()" class="back-btn no-print">← Back</a>
+<button class="print-btn no-print" onclick="window.print()">🖨️ Print Challan</button>
+
+<div class="print-container">
+    <div class="text-right" style="font-size: 10px; font-style: italic; padding-bottom: 2px;">Printed on {% now "d-M-y \a\t H:i" %}</div>
+    <div class="text-center" style="font-size: 14px; font-weight: bold; padding-bottom: 4px;">Delivery Challan</div>
+
+    <table class="border-box">
+        <tr>
+            <td class="border-right border-bottom pad-4 valign-top" style="width: 50%;">
+                <b>{{ company_details.company_name }}</b><br>
+                {{ company_details.company_address_line1 }}<br>
+                {{ company_details.company_address_line2 }}<br>
+                {{ company_details.company_address_line3 }}<br>
+                GSTIN/UIN: {{ company_details.company_gstin }}<br>
+                State Name : {{ company_details.company_state_name }}, Code : {{ company_details.company_state_code }}<br>
+                E-Mail : {{ company_details.company_email }}
+            </td>
+            <td class="border-bottom valign-top" style="width: 50%; padding: 0;">
+                <table style="height: 100%;">
+                    <tr>
+                        <td class="border-right border-bottom pad-4 valign-top" style="width: 33%;">Challan No.<br><b>{{ challan.challan_no }}</b></td>
+                        <td class="border-right border-bottom pad-4 valign-top" style="width: 33%;">LR-RR No.<br><b>{{ challan.lr_rr_no|default:"-" }}</b></td>
+                        <td class="border-bottom pad-4 valign-top" style="width: 34%;">Dated<br><b>{{ challan.challan_date|date:"d-M-y" }}</b></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="border-right border-bottom pad-4 valign-top">Bill of Lading<br><b>{{ challan.lr_rr_no|default:"-" }}</b></td>
+                        <td class="border-bottom pad-4 valign-top">Motor Vehicle No.<br><b>{{ challan.vehicle_no }}</b></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" class="pad-4 valign-top" style="height: 50px;">remarks<br><b style="font-size: 16px;">{{ challan.requirement|default:"" }}</b></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td class="border-right border-bottom pad-4 valign-top">
+                Consignee (Ship to)<br>
+                <b>{{ challan.party_name }}</b><br>
+                {% if party_address and party_address != '-' %}{{ party_address }}<br>{% endif %}
+                {% if party_state and party_state != '-' %}State Name: {{ party_state }}<br>{% endif %}
+                {% if party_gst and party_gst != '-' %}GSTIN/UIN: {{ party_gst }}{% endif %}
+            </td>
+            <td class="border-bottom pad-4 valign-top">
+                Buyer (Bill to)<br>
+                <b>{{ challan.party_name }}</b><br>
+                {% if party_address and party_address != '-' %}{{ party_address }}<br>{% endif %}
+                {% if party_state and party_state != '-' %}State Name: {{ party_state }}<br>{% endif %}
+                {% if party_gst and party_gst != '-' %}GSTIN/UIN: {{ party_gst }}{% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <table class="items-table border-box border-top-0">
+        <thead>
+            <tr>
+                <th style="width: 3%;">Sl<br>No.</th>
+                <th style="width: 38%; text-align: left;">Description of Goods</th>
+                <th style="width: 8%;">HSN/SAC</th>
+                <th style="width: 9%;">Quantity</th>
+                <th style="width: 9%;">Rate<br>(Incl. of Tax)</th>
+                <th style="width: 9%;">Rate</th>
+                <th style="width: 5%;">per</th>
+                <th style="width: 19%;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td class="text-center">{{ forloop.counter }}</td>
+                <td><b>{{ item.name }}</b></td>
+                <td class="text-center">39211200</td>
+                <td class="text-right"><b>{{ item.qty }} No.</b></td>
+                <td class="text-right">{{ item.rateWithGst }}</td>
+                <td class="text-right">{{ item.ratePerPiece }}</td>
+                <td class="text-center">No.</td>
+                <td class="text-right"><b>{{ item.totalWithoutGst }}</b></td>
+            </tr>
+            {% endfor %}
+            
+            <tr class="spacer-row">
+                <td></td>
+                <td class="text-right" style="padding-top: 20px;">
+                    <i style="font-weight: bold;">IGST OUTPUT</i><br>
+                    <i style="font-weight: bold;">Round Off</i>
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class="text-right" style="padding-top: 20px;">{{ gst_rate|floatformat:0 }} %<br><br></td>
+                <td></td>
+                <td class="text-right" style="padding-top: 20px;">
+                    <b>{{ total_gst_amount|floatformat:2 }}</b><br>
+                    <b>0.00</b> 
+                </td>
+            </tr>
+            
+            <tr class="totals-row">
+                <td colspan="2" class="text-right"><b>Total</b></td>
+                <td></td>
+                <td class="text-right"><b>{{ total_qty }} No.</b></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class="text-right"><b>Rs. {{ total_amount_with_gst|floatformat:2 }}</b></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="border-box border-top-0" style="width: 100%;">
+        <tr>
+            <td class="pad-4 border-bottom">
+                Amount Chargeable (in words)<br>
+                <b>Indian Rupees {{ amount_in_words }}</b>
+            </td>
+            <td class="pad-4 text-right valign-top border-bottom" style="width: 120px;">
+                <i>E. & O.E</i>
+            </td>
+        </tr>
+        <tr>
+            <td class="border-right pad-4 valign-top" style="height: 80px;">
+                Declaration:<br>
+                We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
+            </td>
+            <td class="pad-4 text-right valign-bottom" style="width: 250px;">
+                <b>{{ company_details.company_signature_label }}</b><br><br><br><br>
+                Authorised Signatory
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    // Auto-trigger print dialog (optional)
+    // window.onload = function() { window.print(); };
+</script>
+{% endblock %}

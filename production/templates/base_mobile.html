@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Maica Groups{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #0D9488;
+            --primary-dark: #0F766E;
+            --secondary: #F59E0B;
+            --success: #10B981;
+            --warning: #F97316;
+            --critical: #EF4444;
+            --info: #2196F3;
+            --bg: #F9FAFB;
+            --surface: #FFFFFF;
+            --text-primary: #111827;
+            --text-secondary: #64748B;
+            --border: #E5E7EB;
+            --shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            max-width: 428px;
+            margin: 0 auto;
+            padding-bottom: 80px;
+            min-height: 100vh;
+        }
+
+        /* Mobile Detection Script */
+        .no-mobile-warning {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--surface);
+            z-index: 9999;
+            padding: 24px;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (min-width: 768px) {
+            .no-mobile-warning {
+                display: flex;
+            }
+            body {
+                max-width: 428px;
+                box-shadow: 0 0 40px rgba(0,0,0,0.1);
+            }
+        }
+
+        .warning-content {
+            max-width: 320px;
+        }
+
+        .warning-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .warning-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .warning-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .warning-btn {
+            min-height: 48px;
+            padding: 0 24px;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Warning Screen -->
+    <div class="no-mobile-warning">
+        <div class="warning-content">
+            <div class="warning-icon">📱</div>
+            <div class="warning-title">Mobile View Required</div>
+            <div class="warning-text">This interface is designed for mobile devices (375px-428px). Please view on a mobile screen or use DevTools device emulation.</div>
+            <button class="warning-btn" onclick="this.parentElement.style.display='none'">Continue Anyway</button>
+        </div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

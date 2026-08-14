@@ -1,0 +1,1941 @@
+{% extends 'base.html' %}
+
+{% block title %}Production 2.0 - Door{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-dark: #2c1f6f;
+    --primary-light: rgba(63, 46, 151, 0.05);
+    --accent: #E1251B;
+    --accent-dark: #b91c1c;
+    --text-main: #2d3748;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --white: #ffffff;
+}
+
+.planning-page {
+    max-width: 1800px;
+    margin: 40px auto;
+    padding: 0 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-main);
+}
+
+.planning-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+
+.planning-header h1 {
+    color: var(--primary);
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.planning-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(63, 46, 151, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    padding: 20px;
+}
+
+.group-block {
+    margin-bottom: 35px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.group-title-bar {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.group-badges { display: flex; gap: 8px; align-items: center; }
+.group-badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.group-badge.qty { background: #e0f2fe; color: #0369a1; }
+.group-badge.bal { background: #fef3c7; color: #b45309; }
+
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--white);
+    border-radius: 0 0 12px 12px;
+}
+
+/* Custom horizontal scrollbar for mobile */
+.table-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+.table-wrapper::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* Grid-style Planning Table */
+.planning-table {
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+    text-align: center;
+    border: 1px solid #cbd5e1;
+}
+
+.planning-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #e2e8f0;
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 10px;
+    border: 1px solid #cbd5e1;
+}
+
+.planning-table tbody td, .planning-table tfoot td {
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
+    color: var(--text-main);
+    vertical-align: middle;
+    text-align: center;
+}
+
+.planning-table tbody tr:nth-child(even) td {
+    background-color: #f8fafc;
+}
+
+.planning-table tbody tr:hover td {
+    background-color: var(--primary-light);
+}
+
+.sno-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #cbd5e1;
+    color: #334155;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.col-production {
+    background-color: #dcfce7 !important;
+    color: #166534 !important;
+    font-weight: 700;
+}
+
+.col-balance {
+    background-color: #fef3c7 !important;
+    color: #b45309 !important;
+    font-weight: 700;
+}
+
+.col-wtsheet {
+    background-color: #eff6ff !important;
+}
+
+.summary-row-table td {
+    background: #e2e8f0 !important;
+    font-weight: 700;
+    border-top: 2px solid #cbd5e1;
+}
+
+.badge-remark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    padding: 5px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.badge-remark.urgent { background: #fee2e2; color: #dc2626; }
+.badge-remark.order { background: #dbeafe; color: #2563eb; }
+.badge-remark.stock { background: #dcfce7; color: #15803d; }
+
+.hidden-column {
+    display: none !important;
+}
+
+.add-production-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 116px;
+    min-height: 34px;
+    padding: 8px 14px;
+    border: 1px solid rgba(63, 46, 151, 0.18);
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), #5b4bc4);
+    color: var(--white);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(63, 46, 151, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.add-production-btn:hover {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    box-shadow: 0 10px 22px rgba(63, 46, 151, 0.24);
+    transform: translateY(-1px);
+}
+
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* Modal Styles */
+.modal {
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.85);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal.active { display: flex !important; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    width:98%;
+    max-width:1400px; /* Reduced since no scrolling needed */
+    max-height:90vh;
+    overflow-y:auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position:relative;
+    z-index:1001;
+}
+
+.modal-content h3 {
+    margin:0 0 20px 0;
+    color:var(--primary);
+    font-size:24px;
+    border-bottom:3px solid var(--primary);
+    padding-bottom:10px;
+}
+
+.form-grid { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 12px 20px; 
+    background:#f7f7f7; 
+    padding:15px; 
+    border-radius:8px; 
+    margin-bottom:15px; 
+}
+
+.form-grid > label {
+    align-self: center;
+    font-weight: 600;
+    color:#333;
+}
+
+.form-grid > input, .form-grid > select {
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-grid > input:focus, .form-grid > select:focus {
+    outline:none;
+    border-color:var(--primary);
+    box-shadow:0 0 5px rgba(63, 46, 151, 0.2);
+}
+
+/* ================= CARD-BASED PRODUCTION ROWS ================= */
+.production-rows-header { display: none; }
+
+.production-rows-wrapper {
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+/* Read-only fields styling */
+.production-row .field-group.read-only-field {
+    opacity: 1;
+}
+
+.production-row .field-group.read-only-field select,
+.production-row .field-group.read-only-field input {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+    border-color: #cbd5e1;
+    color: #000000;
+}
+
+.production-row .field-group.read-only-field select:disabled,
+.production-row .field-group.read-only-field input:disabled {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+    color: #000000;
+    opacity: 1;
+}
+
+.production-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    min-width: 0; 
+}
+.production-row:last-child { margin-bottom: 0; }
+
+.row-inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.field-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.field-group input, .field-group select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.height-container, .width-container {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+.height-container select, .height-container input,
+.width-container select, .width-container input {
+    flex: 1;
+    min-width: 0;
+}
+
+.row-calculations-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+    background: #f8fafc;
+    border-radius: 0 0 8px 8px;
+    margin: 0 -16px -16px -16px;
+    padding: 12px 16px;
+}
+
+.calc-badges {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.calc-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.calc-item span.calc-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.calc-item div {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.row-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+.icon-btn:hover { transform: translateY(-1px); }
+.btn-blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.btn-blue:hover { background: #dbeafe; }
+.btn-red { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+.btn-red:hover { background: #fca5a5; }
+
+.summary-row {
+    display: grid; 
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 15px; 
+    padding:15px; 
+    background:#f7f7f7; 
+    border-radius:8px; 
+    margin-top:20px;
+}
+
+.summary-row > div {
+    font-weight: 600;
+    display:flex;
+    flex-direction:column;
+}
+
+.summary-row > div > label {
+    font-size:13px;
+    color:#666;
+    margin-bottom:6px;
+}
+
+.summary-row input, .summary-row select {
+    padding: 10px;
+    width: 100%;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+    background:#fff;
+}
+
+/* Modals */
+.add-new-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    justify-content: center; align-items: center;
+}
+
+.add-new-modal.active { display: flex; }
+
+.add-new-modal-content {
+    background: white; padding: 30px; border-radius: 12px;
+    max-width: 400px; width: 90%;
+}
+
+#weightSheetModal .modal-content {
+    width: min(600px, 95vw);
+    padding: 28px;
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.ws-summary-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 14px; 
+    margin-bottom: 20px; 
+}
+
+.ws-summary-card { 
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 100%); 
+    border: 2px solid var(--border-color); 
+    padding: 16px; 
+    border-radius: 14px; 
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ws-summary-card span {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.ws-summary-card strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.ws-rows-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    margin-bottom: 16px; 
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.ws-row { 
+    display: grid; 
+    grid-template-columns: 36px 1fr 100px auto; 
+    gap: 12px; 
+    align-items: center; 
+    padding: 14px; 
+    background: #fff;
+    border: 2px solid #e2e8f0; 
+    border-radius: 14px;
+}
+
+.ws-sno {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.ws-weight {
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    background: #f8fafc;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+}
+
+.ws-density {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    background: #f0f4ff;
+    border: 2px solid #d4d9f0;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    min-width: 60px;
+}
+
+.ws-row button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.selected-machine-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; background: var(--primary-light); border-bottom: 1px solid var(--border-color); }
+.selected-machine-bar strong { color: var(--primary); }
+.change-machine-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--primary); border-radius: 8px; text-decoration: none; color: var(--primary); font-weight: 600; }
+.change-machine-btn:hover { background: var(--primary); color: #fff; }
+
+.rearrange-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* ================= MOBILE OPTIMIZATIONS ================= */
+@media (max-width: 768px) {
+    .planning-page {
+        margin: 15px auto;
+        padding: 0 10px;
+    }
+    
+    .planning-header h1 {
+        font-size: 20px;
+    }
+
+    .planning-card {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .group-title-bar {
+        padding: 10px 12px;
+        font-size: 13px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .group-badges {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .group-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
+
+    .add-production-btn {
+        min-width: 90px;
+        min-height: 32px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    .form-grid, .summary-row, .row-inputs-grid { 
+        grid-template-columns: 1fr; 
+    }
+
+    .form-grid > label, .form-grid > input, .form-grid > select {
+        font-size: 14px;
+    }
+
+    .modal-content {
+        padding: 16px;
+        width: 96%;
+        max-height: 90vh;
+        border-radius: 14px;
+    }
+
+    .ws-summary-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .ws-summary-card {
+        padding: 10px;
+    }
+
+    .ws-summary-card strong {
+        font-size: 18px;
+    }
+
+    .ws-row {
+        grid-template-columns: 28px 1fr 70px auto;
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .selected-machine-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .selected-machine-bar > div {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .change-machine-btn, .rearrange-btn {
+        flex: 1;
+        justify-content: center;
+        text-align: center;
+    }
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="planning-page">
+    <div class="planning-header">
+        <h1>Production - Door</h1>
+    </div>
+
+    <div class="planning-card">
+        {% if not selected_machine %}
+        <div class="machine-picker-card" style="padding: 40px 24px;">
+            <h2 class="machine-picker-title" style="text-align:center; color:var(--primary);">Select Your Machine</h2>
+            <p style="text-align:center; color:var(--text-muted); margin-bottom:32px;">Choose a machine to view planning data and add production</p>
+            <div class="machine-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:16px; max-width:900px; margin:0 auto;">
+                {% for m in machines %}
+                <a href="?machine_id={{ m.id }}" class="machine-card" style="display:flex; flex-direction:column; align-items:center; padding:24px 16px; border:2px solid var(--border-color); border-radius:12px; text-decoration:none; font-weight:700; color:var(--text-main);">
+                    <i class="fa-solid fa-industry" style="font-size:28px; margin-bottom:10px; color:var(--primary);"></i>
+                    <span>{{ m.name }}</span>
+                </a>
+                {% empty %}
+                <div class="empty-state">No active machines found.</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="selected-machine-bar">
+            <strong><i class="fa-solid fa-industry"></i> Machine: {{ selected_machine.name }}</strong>
+            <div style="gap: 8px;">
+                {% if user.role == "Admin" or user.role == "Manager" %}
+                <button id="rearrange-btn" class="rearrange-btn" onclick="toggleRearrangeMode()">
+                    <i class="fa-solid fa-arrows-up-down-left-right"></i> Rearrange
+                </button>
+                {% endif %}
+                <a href="{% url 'production_2_0_door' %}" class="change-machine-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Change Machine
+                </a>
+            </div>
+        </div>
+
+        {% if user.role == "Admin" or user.role == "Manager" %}
+        <div id="rearrange-bar" style="display: none; padding: 10px 20px; background: #fef3c7; border-bottom: 2px solid #f59e0b; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 600; color: #92400e;"><i class="fa-solid fa-arrows-up-down-left-right"></i> Drag groups to reorder</span>
+            <div>
+                <button id="save-order-btn" onclick="saveGroupOrder()" style="padding: 6px 14px; background: #10b981; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-right: 8px;"><i class="fa-solid fa-check"></i> Save Order</button>
+                <button onclick="cancelReorder()" style="padding: 6px 14px; background: #6b7280; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-times"></i> Cancel</button>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if user.role == "Admin" or user.role == "Manager" %}
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #f0fdf4; border-bottom: 2px solid #86efac; flex-wrap: wrap;">
+            <strong style="color: #166534;"><i class="fa-solid fa-file-excel"></i> Bulk Upload</strong>
+            <form action="{% url 'production_2_0_door_upload' %}" method="POST" enctype="multipart/form-data" style="display: inline-flex; align-items: center; gap: 8px; margin: 0; flex-wrap: wrap;">
+                {% csrf_token %}
+                <input type="hidden" name="machine_id" value="{{ selected_machine.id }}">
+                <input type="file" name="file" accept=".xlsx,.xls" required style="font-size: 13px;">
+                <button type="submit" class="add-production-btn" style="min-width: 90px;">
+                    <i class="fa-solid fa-upload"></i> Upload
+                </button>
+            </form>
+            <a href="{% url 'production_2_0_door_template' %}?machine_id={{ selected_machine.id }}" class="change-machine-btn" style="border-color: #16a34a; color: #16a34a;">
+                <i class="fa-solid fa-download"></i> Download Pre-filled Excel
+            </a>
+        </div>
+        {% endif %}
+
+        <div style="padding: 20px 0;">
+            {% if has_records %}
+                {% for group in grouped_formulations %}
+                <div class="group-block" data-group-key="{{ group.group_key|default:'' }}">
+                    <div class="group-title-bar">
+                        <span><i class="fa-solid fa-layer-group"></i> {{ group.title }}</span>
+                        <div class="group-badges">
+                            <span class="group-badge qty">Total Planned: {{ group.total_quantity }}</span>
+                            <span class="group-badge bal">Pending Balance: {{ group.total_balance }}</span>
+                            <button class="add-production-btn" tabindex="0" onclick="openModalFromGroup(this)" data-title="{{ group.title }}" data-nav-group="group-btns" data-nav-index="0">Group Add Production</button>
+                            <button class="add-production-btn" tabindex="0" onclick="openModalEmpty()" data-title="{{ group.title }}" data-nav-group="group-btns" data-nav-index="1">Add Production</button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="planning-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:50px;">S.No</th>
+                                    <th>Thick</th>
+                                    <th>Width</th>
+                                    <th>Height</th>
+                                    <th>Color</th>
+                                    <th>Density</th>
+                                    <th>Quantity</th>
+                                    <th>Production</th>
+                                    <th>Balance</th>
+                                    <th>Wt.Sheet/kg</th>
+                                    <th class="num-col">Total Wt.</th>
+                                    <th>Remark</th>
+                                    <th style="width: 120px;" class="hidden-column">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for form in group.formulations %}
+                                    {% if form.balance > 0 %}
+                                    <tr>
+                                        <td><span class="sno-badge">{{ forloop.counter }}</span></td>
+                                        <td>{{ form.planning.thickness.thickness|default:"-" }}</td>
+                                        <td>{{ form.planning.width.width|default:"-" }}</td>
+                                        <td>{{ form.planning.height.height|default:"-" }}</td>
+                                        <td>{{ form.planning.color|default:"-" }}</td>
+                                        <td>{{ form.planning.density.density|default:"-" }}</td>
+                                        <td>{{ form.planning.quantity|default:"-" }}</td>
+                                        <td class="col-production">{{ form.produced|floatformat:0|default:"0" }}</td>
+                                        <td class="col-balance">{{ form.balance|floatformat:0 }}</td>
+                                        <td class="col-wtsheet">{{ form.planning.weight|floatformat:4|default:"-" }}</td>
+                                        <td class="num-col col-twt-highlight">{{ form.total_weight|floatformat:4 }}</td>
+                                        <td>
+                                            {% if form.planning.remark %}
+                                                <span class="badge-remark {{ form.planning.remark|lower }}">{{ form.planning.remark }}</span>
+                                            {% else %}-{% endif %}
+                                        </td>
+                                        <td class="hidden-column">
+                                            <button class="add-production-btn hidden-column" tabindex="0"
+                                                data-date="{% if form.planning %}{{ form.planning.date|date:'Y-m-d' }}{% else %}{{ form.date|date:'Y-m-d' }}{% endif %}"
+                                                data-shift="{{ form.shift }}"
+                                                data-machine="{{ form.machine.name|default:'' }}"
+                                                data-category="{{ form.planning.category|default:'' }}"
+                                                data-thickness="{{ form.planning.thickness.thickness|default:'' }}"
+                                                data-height="{{ form.planning.height.height|default:'' }}"
+                                                data-width="{{ form.planning.width.width|default:'' }}"
+                                                data-color="{{ form.planning.color|default:'' }}"
+                                                data-density="{{ form.planning.density.density|default:'' }}"
+                                                data-stamp="{{ form.planning.stamp|default:'' }}"
+                                                data-quantity="{{ form.planning.quantity|default:'0' }}"
+                                                data-weight="{{ form.planning.weight|floatformat:4|default:'0' }}"
+                                                data-balance="{{ form.balance|floatformat:0 }}"
+                                                data-plan-id="{{ form.planning.id|default:'' }}"
+                                                data-nav-group="row-btns"
+                                                data-nav-index="{{ forloop.counter0 }}"
+                                                onclick='openModalFromButton(this)'>Add Production</button>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="summary-row-table">
+                                    <td colspan="6" style="text-align: right; padding-right: 15px;">TOTAL SUMMARY</td>
+                                    <td>{{ group.total_quantity }}</td>
+                                    <td class="col-production">-</td>
+                                    <td class="col-balance">{{ group.total_balance }}</td>
+                                    <td colspan="2"></td>
+                                    <td class="num-col" style="background: #CBD5E1; color: #000000;">{{ group.total_tweight|floatformat:4 }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">No pending formulations or active tracking balances found for this machine.</div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+<div class="modal" id="frameModal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="closeModal()" style="float:right; cursor:pointer; font-size:24px;">&times;</span>
+        <h3>Add Door Production</h3>
+        
+         <form id="frameForm" method="POST" action="" onsubmit="return handleFormSubmit(this)">
+         {% csrf_token %}
+         <input type="hidden" name="category" value="{{ current_category }}">
+         <input type="hidden" name="header_plan_id" id="plan_id" value="">
+         <input type="hidden" name="form_submitted" id="form_submitted" value="0">
+        
+        <div class="form-grid">
+            <label for="prod-date">Date:</label>
+            <input type="date" id="prod-date" name="date" required tabindex="1" data-nav-group="header-fields" data-nav-index="0">
+            
+            <label for="machine">Machine:</label>
+            <select name="machine" id="machine" onchange="setCategory(); filterOperators()" required tabindex="2" data-nav-group="header-fields" data-nav-index="1">
+                <option value="">Select Machine</option>
+                {% for m in machines %}
+                <option value="{{ m.id }}" data-category="{{ m.category }}">{{ m.name }}</option>
+                {% endfor %}
+            </select>
+            
+            <label for="shift">Shift:</label>
+            <select id="shift" name="shift" required tabindex="3" data-nav-group="header-fields" data-nav-index="2">
+                <option value="">Select Shift</option>
+                {% for sh in shifts %}
+                <option value="{{ sh }}">{{ sh }}</option>
+                {% endfor %}
+            </select>
+            
+            <label for="operator">Operator Name:</label>
+            {% if user.role == "Admin" or user.role == "Manager" or user.role == "operator_manager" or user.role == "Operator_incharge" %}
+                <select id="operator" name="operator" required tabindex="4" data-nav-group="header-fields" data-nav-index="3">
+                    <option value="">Select Operator</option>
+                    {% for op in operators %}
+                    <option value="{{ op.operator__id|default:op.id }}">{{ op.operator__username|default:op.full_name|default:op.username }}</option>
+                    {% endfor %}
+                </select>
+            {% else %}
+                <input type="text" value="{{ user.full_name }}" readonly tabindex="4" data-nav-group="header-fields" data-nav-index="3">
+                <input type="hidden" name="operator" value="{{ user.id }}">
+            {% endif %}
+            
+            <label for="category">Category:</label>
+            <select id="category" name="category" required tabindex="5" data-nav-group="header-fields" data-nav-index="4">
+                <option value="">Select Type</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+            </select>
+            
+            <label>Stamp:</label>
+            <select name="stamp" id="stamp_input" required tabindex="27" data-nav-group="summary-fields" data-nav-index="5">
+                <option value="">Select Stamp</option>                   <option value="Star">Star</option>
+                <option value="Royal">Royal</option>
+                <option value="Gold">Gold</option>
+                <option value="Diamonds">Diamonds</option>
+                <option value="Platinum">Platinum</option>
+                <option value="Premium">Premium</option>
+            </select>
+            
+        </div>
+        
+        <div class="production-rows-wrapper">
+            <div id="production-rows-container">
+                <div class="production-row">
+                    <!-- Top section: Editable inputs -->
+                    <div class="row-inputs-grid">
+                        <div class="field-group read-only-field">
+                            <label>Thickness</label>
+                            <select name="thickness" class="thickness-input" tabindex="6" data-nav-group="row-fields" data-nav-col="0" onchange="handleAddNewOption(this, 'thickness')">
+                                <option value="">Thickness</option>
+                                {% for t in thicknesses %}
+                                <option value="{{ t.id }}" data-value="{{ t.thickness }}">{{ t.thickness }}</option>
+                                {% endfor %}
+                                <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                            </select>
+                        </div>
+                        
+                        <div class="field-group read-only-field">
+                            <label>Width</label>
+                            <div class="width-container">
+                                <select name="width_unit" class="unit-select" tabindex="7" data-nav-group="row-fields" data-nav-col="1" onchange="toggleWidthField(this)">
+                                    <option value="inch">Inch</option>
+                                    <option value="mm">MM</option>
+                                </select>
+                                <select name="width" class="width-select" tabindex="8" data-nav-group="row-fields" data-nav-col="2" onchange="handleWidthChange(this); handleAddNewOption(this, 'width')">
+                                    <option value="">Width</option>
+                                    {% for w in widths %}
+                                    <option value="{{ w.id }}" data-width="{{ w.width }}" data-unit="{{ w.unit }}" data-original="{{ w.original_value }}">{{ w.width|floatformat:2 }}</option>
+                                    {% endfor %}
+                                    <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                </select>
+                                <input type="number" name="width_mm" step="0.01" class="width-mm-input" placeholder="Enter MM" style="display:none;">
+                            </div>
+                        </div>
+                        
+                        <div class="field-group read-only-field">
+                            <label>Height</label>
+                            <div class="height-container">
+                                <select name="height_unit" class="unit-select" tabindex="9" data-nav-group="row-fields" data-nav-col="3" onchange="toggleHeightField(this)">
+                                    <option value="inch">Inch</option>
+                                    <option value="mm">MM</option>
+                                </select>
+                                <select name="height" class="height-select" tabindex="10" data-nav-group="row-fields" data-nav-col="4" onchange="handleHeightChange(this); handleAddNewOption(this, 'height')">
+                                    <option value="">Height</option>
+                                    {% for h in heights %}
+                                    <option value="{{ h.id }}" data-height="{{ h.height }}" data-unit="{{ h.unit }}" data-original="{{ h.original_value }}">{{ h.height|floatformat:2 }}</option>
+                                    {% endfor %}
+                                    <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                </select>
+                                <input type="number" name="height_mm" step="0.01" class="height-mm-input" placeholder="Enter MM" style="display:none;">
+                            </div>
+                        </div>
+                        
+                        <div class="field-group read-only-field">
+                            <label>Density (ord)</label>
+                            <select name="density" class="density-input" tabindex="11" data-nav-group="row-fields" data-nav-col="5" onchange="handleAddNewOption(this, 'density')">
+                                <option value="">Density</option>
+                                {% for d in densities %}
+                                <option value="{{ d.id }}" data-value="{{ d.density }}">{{ d.density }}</option>
+                                {% endfor %}
+                                <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                            </select>
+                        </div>
+                        
+                        <div class="field-group read-only-field">
+                            <label>Color</label>
+                            <select name="color" class="color-input" tabindex="13" data-nav-group="row-fields" data-nav-col="7" onchange="handleAddNewOption(this, 'color')">
+                                <option value="">Color</option>
+                                {% for c in colors %}
+                                <option value="{{ c.id }}">{{ c.color }}</option>
+                                {% endfor %}
+                                <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                            </select>
+                        </div>
+                        
+                        <div class="field-group">
+                            <label>Qty</label>
+                            <input type="number" name="quantity" class="quantity-input" tabindex="14" data-nav-group="row-fields" data-nav-col="8" placeholder="Qty">
+                        </div>
+                        
+                        <div class="field-group">
+                            <label>Weight</label>
+                            <input type="number" name="weight" step="0.0001" class="weight-input" tabindex="15" data-nav-group="row-fields" data-nav-col="9" placeholder="Weight">
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom section: Read-only calculations & actions -->
+                    <div class="row-calculations-bar">
+                        <div class="calc-badges">
+                            <div class="calc-item">
+                                <span class="calc-label">Density (pro)</span>
+                                <div class="density-prod-display" tabindex="12" data-nav-group="row-fields" data-nav-col="6">0.00</div>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">Std Wt</span>
+                                <div class="std-display" tabindex="18" data-nav-group="row-fields" data-nav-col="12">0.00</div>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">Total Wt</span>
+                                <div class="total-weight-display" tabindex="17" data-nav-group="row-fields" data-nav-col="11">0.00</div>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">Norm Wt</span>
+                                <div class="total-norm-weight-display" tabindex="19" data-nav-group="row-fields" data-nav-col="13">0.00</div>
+                            </div>
+                            <div class="calc-item">
+                                <span class="calc-label">Excess/Less</span>
+                                <div class="excess-display" tabindex="20" data-nav-group="row-fields" data-nav-col="14">0.00</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row-actions">
+                            <button type="button" class="icon-btn btn-blue weight-sheet-btn" tabindex="16" data-nav-group="row-fields" data-nav-col="10" onclick="openWeightSheetModal(this)" title="Weight Sheet"><i class="fa-solid fa-scale-balanced"></i></button>
+                            <button type="button" class="icon-btn btn-red remove-row-btn" tabindex="21" data-nav-group="row-fields" data-nav-col="15" onclick="removeProductionRow(this)" title="Remove Row"><i class="fa fa-trash"></i></button>
+                        </div>
+                        
+                        <input type="hidden" name="sidepatti" class="sidepatti-input" value="0">
+                        <input type="hidden" name="line_setting" class="line-setting-input" value="0">
+                        <input type="hidden" name="plan_id" class="row-plan-id" value="">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="summary-row">
+            <div>
+                <label>Side Patti:</label>
+                <input type="number" step="0.01" name="sidepatti_summary" id="side_patti_input" value="0" tabindex="22" data-nav-group="summary-fields" data-nav-index="0">
+            </div>
+            <div>
+                <label>Line Setting:</label>
+                <input type="number" step="0.01" name="linesetting_summary" id="line_setting_input" value="0" tabindex="23" data-nav-group="summary-fields" data-nav-index="1">
+            </div>
+            <div>
+                <label>Actual Production:</label>
+                <input type="text" id="actual_production" readonly value="0.00" tabindex="24" data-nav-group="summary-fields" data-nav-index="2">
+            </div>
+            <div>
+                <label>Overall Production:</label>
+                <input type="text" id="overall_production" readonly value="0.00" tabindex="25" data-nav-group="summary-fields" data-nav-index="3">
+            </div>
+            <div>
+                <label>Remark:</label>
+                <input type="text" name="remark" id="remark_input" placeholder="Enter remark..." tabindex="26" data-nav-group="summary-fields" data-nav-index="4">
+            </div>
+        </div>
+        
+        <button type="submit" class="add-btn" tabindex="28" data-nav-group="modal-actions" data-nav-index="0" style="margin-top: 20px; width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:6px; font-weight:600;">Submit Production</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="weightSheetModal" onclick="closeWeightSheetModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="closeWeightSheetModal()" style="float:right; cursor:pointer; font-size:24px;">&times;</span>
+        <h3>Weight Sheet</h3>
+        <div class="ws-summary-grid">
+            <div class="ws-summary-card"><span>Balance Qty</span><strong id="ws-balance-qty">0</strong></div>
+            <div class="ws-summary-card"><span>Total</span><strong id="ws-total">0</strong></div>
+            <div class="ws-summary-card"><span>Average</span><strong id="ws-avg">0</strong></div>
+        </div>
+        <div id="weightSheetRows" class="ws-rows-list"></div>
+        <button type="button" onclick="addWeightRow()" class="ws-add-btn" style="width:100%; padding:10px; border:1px dashed var(--primary); border-radius:10px; background:rgba(63,46,151,0.06); color:var(--primary); font-weight:700; cursor:pointer;"><i class="fa fa-plus"></i> Add Weight</button>
+        <button type="button" onclick="saveWeightSheet()" style="width: 100%; margin-top: 12px; padding: 14px 16px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold;"><i class="fa fa-save"></i> Save</button>
+    </div>
+</div>
+
+</div>
+
+<script>
+// Keyboard Navigation System
+document.addEventListener('keydown', function(e) {
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        return;
+    }
+    
+    const active = document.activeElement;
+    if (!active) return;
+    
+    const navGroup = active.dataset.navGroup;
+    if (!navGroup) return;
+    
+    const tag = active.tagName.toLowerCase();
+    const isInput = tag === 'input' || tag === 'select' || tag === 'textarea';
+    
+    // For input fields, check if we should allow navigation
+    if (isInput) {
+        // For select elements, don't intercept (let default behavior work)
+        if (tag === 'select') {
+            return;
+        }
+        
+        // For text inputs, only navigate if cursor is at start/end
+        if (active.type === 'text') {
+            const isAtStart = active.selectionStart === 0;
+            const isAtEnd = active.selectionStart === active.value.length;
+            
+            // Only navigate if at start (left arrow) or end (right arrow)
+            if (e.key === 'ArrowLeft' && !isAtStart) return;
+            if (e.key === 'ArrowRight' && !isAtEnd) return;
+            // For up/down in text fields, always allow navigation
+        }
+        // For number inputs, always allow navigation
+    }
+    
+    e.preventDefault();
+    handleArrowNavigation(e.key);
+});
+
+function handleArrowNavigation(key) {
+    const active = document.activeElement;
+    if (!active) return;
+    
+    const navGroup = active.dataset.navGroup;
+    if (!navGroup) return;
+    
+    // Main page button navigation
+    if (navGroup === 'group-btns') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const buttons = Array.from(document.querySelectorAll('[data-nav-group="group-btns"]'));
+        
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+            const nextIndex = (currentIndex + 1) % buttons.length;
+            buttons[nextIndex].focus();
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+            const prevIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+            buttons[prevIndex].focus();
+        }
+        return;
+    }
+    
+    // Row button navigation
+    if (navGroup === 'row-btns') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const buttons = Array.from(document.querySelectorAll('[data-nav-group="row-btns"]'));
+        
+        if (key === 'ArrowDown') {
+            const nextIndex = (currentIndex + 1) % buttons.length;
+            buttons[nextIndex].focus();
+        } else if (key === 'ArrowUp') {
+            const prevIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+            buttons[prevIndex].focus();
+        }
+        return;
+    }
+    
+    // Modal form navigation
+    if (navGroup === 'header-fields') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const fields = Array.from(document.querySelectorAll('[data-nav-group="header-fields"]'));
+        
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+            const nextIndex = (currentIndex + 1) % fields.length;
+            fields[nextIndex].focus();
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+            const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
+            fields[prevIndex].focus();
+        } else if (key === 'ArrowDown' && currentIndex === fields.length - 1) {
+            // Move to first row field
+            const firstRowField = document.querySelector('[data-nav-group="row-fields"]');
+            if (firstRowField) firstRowField.focus();
+        }
+        return;
+    }
+    
+    // Row fields navigation
+    if (navGroup === 'row-fields') {
+        const currentCol = parseInt(active.dataset.navCol);
+        const currentRow = active.closest('.production-row');
+        const allRows = Array.from(document.querySelectorAll('.production-row'));
+        const currentRowIndex = allRows.indexOf(currentRow);
+        
+        if (key === 'ArrowRight') {
+            const nextCol = currentCol + 1;
+            const nextField = document.querySelector(`[data-nav-col="${nextCol}"][data-nav-group="row-fields"]`);
+            if (nextField) nextField.focus();
+        } else if (key === 'ArrowLeft') {
+            const prevCol = currentCol - 1;
+            const prevField = document.querySelector(`[data-nav-col="${prevCol}"][data-nav-group="row-fields"]`);
+            if (prevField) prevField.focus();
+        } else if (key === 'ArrowDown') {
+            const nextRowIndex = currentRowIndex + 1;
+            if (nextRowIndex < allRows.length) {
+                const nextField = allRows[nextRowIndex].querySelector(`[data-nav-col="${currentCol}"][data-nav-group="row-fields"]`);
+                if (nextField) nextField.focus();
+            }
+        } else if (key === 'ArrowUp') {
+            const prevRowIndex = currentRowIndex - 1;
+            if (prevRowIndex >= 0) {
+                const prevField = allRows[prevRowIndex].querySelector(`[data-nav-col="${currentCol}"][data-nav-group="row-fields"]`);
+                if (prevField) prevField.focus();
+            } else {
+                // Move to last header field
+                const headerFields = Array.from(document.querySelectorAll('[data-nav-group="header-fields"]'));
+                if (headerFields.length > 0) {
+                    headerFields[headerFields.length - 1].focus();
+                }
+            }
+        }
+        return;
+    }
+    
+    // Summary fields navigation
+    if (navGroup === 'summary-fields') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const fields = Array.from(document.querySelectorAll('[data-nav-group="summary-fields"]'));
+        
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+            const nextIndex = (currentIndex + 1) % fields.length;
+            fields[nextIndex].focus();
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+            const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
+            fields[prevIndex].focus();
+        } else if (key === 'ArrowDown' && currentIndex === fields.length - 1) {
+            // Move to submit button
+            const submitBtn = document.querySelector('[data-nav-group="modal-actions"]');
+            if (submitBtn) submitBtn.focus();
+        }
+        return;
+    }
+    
+    // Modal actions navigation
+    if (navGroup === 'modal-actions') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const buttons = Array.from(document.querySelectorAll('[data-nav-group="modal-actions"]'));
+        
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+            const nextIndex = (currentIndex + 1) % buttons.length;
+            buttons[nextIndex].focus();
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+            const prevIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+            buttons[prevIndex].focus();
+        } else if (key === 'ArrowUp') {
+            // Move back to summary fields
+            const summaryFields = Array.from(document.querySelectorAll('[data-nav-group="summary-fields"]'));
+            if (summaryFields.length > 0) {
+                summaryFields[summaryFields.length - 1].focus();
+            }
+        }
+        return;
+    }
+}
+
+function getTodayDate() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function openModalFromGroup(btn){
+    try {
+        const modal = document.getElementById("frameModal");
+        if (!modal) { console.error("Modal not found"); return; }
+        modal.dataset.planningQuantity = 0;
+        modal.dataset.planningBalance = 0;
+        modal.dataset.planId = "";
+        document.getElementById("plan_id").value = "";
+        document.getElementById("stamp_input").value = "";
+
+        const groupBlock = btn.closest(".group-block");
+        const tableRows = groupBlock ? groupBlock.querySelectorAll("table.planning-table tbody tr") : [];
+        const rowBtns = [];
+        tableRows.forEach(function(tr){
+            const b = tr.querySelector(".add-production-btn");
+            if (b) rowBtns.push(b);
+        });
+        const firstBtn = rowBtns.length > 0 ? rowBtns[0] : null;
+
+        const dateEl = document.getElementById("prod-date");
+        const shiftEl = document.getElementById("shift");
+        const machineEl = document.getElementById("machine");
+        const categoryEl = document.getElementById("category");
+
+        // Set date to today for new production entry
+        dateEl.value = getTodayDate();
+        
+        if (firstBtn) {
+            const s = firstBtn.getAttribute("data-shift");
+            if (s) shiftEl.value = s;
+            const m = firstBtn.getAttribute("data-machine");
+            if (m) {
+                for (let opt of machineEl.options) {
+                    if (opt.textContent.trim().toLowerCase() === m.toLowerCase()) {
+                        machineEl.value = opt.value;
+                        setCategory();
+                        filterOperators();
+                        break;
+                    }
+                }
+            }
+            const cat = firstBtn.getAttribute("data-category");
+            if (cat && categoryEl) {
+                categoryEl.value = cat;
+            }
+            const stamp = firstBtn.getAttribute("data-stamp");
+            if (stamp) {
+                const stampInput = document.getElementById("stamp_input");
+                if (stampInput) stampInput.value = stamp;
+            }
+        }
+
+        // Clear existing production rows (keep the template row)
+        const container = document.getElementById("production-rows-container");
+        const templateRow = container.querySelector(".production-row");
+        container.querySelectorAll(".production-row").forEach(function(r){
+            if (r !== templateRow) r.remove();
+        });
+
+        // Reset template row
+        [".thickness-input", ".height-select", ".width-select", ".density-input"].forEach(function(selClass){
+            const el = templateRow.querySelector(selClass);
+            if (el) el.value = "";
+        });
+        var colorEl = templateRow.querySelector(".color-input");
+        if (colorEl) colorEl.value = "";
+        templateRow.querySelector(".quantity-input").value = "0";
+        templateRow.querySelector(".weight-input").value = "0";
+        var sidepattiInput = templateRow.querySelector(".sidepatti-input");
+        var lineSettingInput = templateRow.querySelector(".line-setting-input");
+        var rowPlanId = templateRow.querySelector(".row-plan-id");
+        if (sidepattiInput) sidepattiInput.value = 0;
+        if (lineSettingInput) lineSettingInput.value = 0;
+        if (rowPlanId) rowPlanId.value = "";
+
+        // Populate one row per planning item in the group
+        if (rowBtns.length > 0) {
+            rowBtns.forEach(function(b, idx){
+                let targetRow;
+                if (idx === 0) {
+                    targetRow = templateRow;
+                } else {
+                    targetRow = templateRow.cloneNode(true);
+                    container.appendChild(targetRow);
+                    attachRowListeners(targetRow);
+                }
+                // Set values from button data
+                setRowValuesFromButton(targetRow, b);
+            });
+        }
+
+        var sidepattiSummary = document.getElementById("side_patti_input");
+        var lineSettingSummary = document.getElementById("line_setting_input");
+        if (sidepattiSummary) sidepattiSummary.value = 0;
+        if (lineSettingSummary) lineSettingSummary.value = 0;
+        document.getElementById("actual_production").value = "0.00";
+        document.getElementById("overall_production").value = "0.00";
+        document.getElementById("remark_input").value = "";
+
+        const formSubhidden = document.getElementById("form_submitted");
+        if (formSubhidden) formSubhidden.value = "0";
+        const submitBtn = document.querySelector('#frameForm button[type="submit"]');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Submit Production'; }
+
+        // Group Add Production: Make fields read-only
+        setReadOnlyFields(true);
+
+        document.getElementById("frameModal").classList.add('active');
+        container.querySelectorAll(".production-row").forEach(calculateRow);
+    } catch(e) {
+        console.error("openModalFromGroup error:", e);
+        alert("Could not open modal. Please check console for details.");
+    }
+}
+
+function openModalEmpty(){
+    const modal = document.getElementById("frameModal");
+    modal.dataset.planningQuantity = 0;
+    modal.dataset.planningBalance = 0;
+    modal.dataset.planId = "";
+    
+    document.getElementById("plan_id").value = "";
+    document.getElementById("stamp_input").value = "";
+    
+    // Set date to today for new production entry
+    document.getElementById("prod-date").value = getTodayDate();
+    
+    // Clear any extra rows and reset to single empty row
+    const container = document.getElementById("production-rows-container");
+    const templateRow = container.querySelector(".production-row");
+    container.querySelectorAll(".production-row").forEach(function(r){
+        if (r !== templateRow) r.remove();
+    });
+    // Reset template row
+    [".thickness-input", ".height-select", ".width-select", ".density-input"].forEach(function(selClass){
+        const el = templateRow.querySelector(selClass);
+        if (el) el.value = "";
+    });
+    var colorEl = templateRow.querySelector(".color-input");
+    if (colorEl) colorEl.value = "";
+    templateRow.querySelector(".quantity-input").value = "0";
+    templateRow.querySelector(".weight-input").value = "0";
+    var sidepattiInput = templateRow.querySelector(".sidepatti-input");
+    var lineSettingInput = templateRow.querySelector(".line-setting-input");
+    var rowPlanId = templateRow.querySelector(".row-plan-id");
+    if (sidepattiInput) sidepattiInput.value = 0;
+    if (lineSettingInput) lineSettingInput.value = 0;
+    if (rowPlanId) rowPlanId.value = "";
+    
+    var sidepattiSummary = document.getElementById("side_patti_input");
+    var lineSettingSummary = document.getElementById("line_setting_input");
+    if (sidepattiSummary) sidepattiSummary.value = 0;
+    if (lineSettingSummary) lineSettingSummary.value = 0;
+    document.getElementById("actual_production").value = "0.00";
+    document.getElementById("overall_production").value = "0.00";
+    document.getElementById("remark_input").value = "";
+    
+    const formSubhidden = document.getElementById("form_submitted");
+    if (formSubhidden) formSubhidden.value = "0";
+    const submitBtn = document.querySelector('#frameForm button[type="submit"]');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = 'Submit Production'; }
+    
+    // Add Production: Make fields editable
+    setReadOnlyFields(false);
+    
+    document.getElementById("frameModal").classList.add('active');
+    calculateRow(templateRow);
+}
+
+function setRowValuesFromButton(row, btn){
+    // Thickness
+    const thickness = btn.getAttribute("data-thickness");
+    if (thickness && row.querySelector(".thickness-input")) {
+        for (let opt of row.querySelector(".thickness-input").options) {
+            if (opt.getAttribute('data-value') && parseFloat(opt.getAttribute('data-value')) === parseFloat(thickness)) {
+                row.querySelector(".thickness-input").value = opt.value;
+                break;
+            }
+        }
+    }
+    // Height
+    const height = btn.getAttribute("data-height");
+    if (height && row.querySelector(".height-select")) {
+        for (let opt of row.querySelector(".height-select").options) {
+            if (opt.getAttribute('data-height') && Math.abs(parseFloat(opt.getAttribute('data-height')) - parseFloat(height)) < 0.001) {
+                row.querySelector(".height-select").value = opt.value;
+                break;
+            }
+        }
+    }
+    // Width
+    const width = btn.getAttribute("data-width");
+    if (width && row.querySelector(".width-select")) {
+        for (let opt of row.querySelector(".width-select").options) {
+            if (opt.getAttribute('data-width') && Math.abs(parseFloat(opt.getAttribute('data-width')) - parseFloat(width)) < 0.001) {
+                row.querySelector(".width-select").value = opt.value;
+                break;
+            }
+        }
+    }
+    // Color
+    const color = btn.getAttribute("data-color");
+    if (color && row.querySelector(".color-input")) {
+        for (let opt of row.querySelector(".color-input").options) {
+            if (opt.textContent.trim().toLowerCase() === color.trim().toLowerCase()) {
+                row.querySelector(".color-input").value = opt.value;
+                break;
+            }
+        }
+    }
+    // Density
+    const density = btn.getAttribute("data-density");
+    if (density && row.querySelector(".density-input")) {
+        for (let opt of row.querySelector(".density-input").options) {
+            if (opt.getAttribute('data-value') && parseFloat(opt.getAttribute('data-value')) === parseFloat(density)) {
+                row.querySelector(".density-input").value = opt.value;
+                break;
+            }
+        }
+    }
+    // Plan ID
+    const planId = btn.getAttribute("data-plan-id");
+    const rowPlanId = row.querySelector(".row-plan-id");
+    if (rowPlanId) rowPlanId.value = planId || "";
+}
+
+function handleFormSubmit(form) {
+    // Re-enable read-only fields so their auto-filled values are included in the POST
+    setReadOnlyFields(false);
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const formSubhidden = document.getElementById("form_submitted");
+    
+    if (formSubhidden && formSubhidden.value === "1") {
+        alert("Production is already being processed. Please wait...");
+        submitBtn.disabled = true;
+        return false;
+    }
+    
+    if (formSubhidden) formSubhidden.value = "1";
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Submitting...';
+    
+    return true;
+}
+
+function setReadOnlyFields(readOnly) {
+    const fields = document.querySelectorAll('.read-only-field select, .read-only-field input');
+    fields.forEach(field => {
+        field.disabled = readOnly;
+    });
+}
+
+function openModalFromButton(btn){
+    // Single-row add: ensure fields are editable
+    setReadOnlyFields(false);
+    
+    const modal = document.getElementById("frameModal");
+    modal.dataset.planningQuantity = btn.dataset.quantity || 0;
+    modal.dataset.planningBalance = btn.dataset.balance || 0;
+    modal.dataset.planId = btn.dataset.planId || "";
+    
+    document.getElementById("plan_id").value = btn.dataset.planId || "";
+    
+    // Clear any extra rows and reset to single row
+    const container = document.getElementById("production-rows-container");
+    const templateRow = container.querySelector(".production-row");
+    container.querySelectorAll(".production-row").forEach(function(r){
+        if (r !== templateRow) r.remove();
+    });
+    // Reset template row
+    [".thickness-input", ".height-select", ".width-select", ".density-input"].forEach(function(selClass){
+        const el = templateRow.querySelector(selClass);
+        if (el) el.value = "";
+    });
+    var colorEl = templateRow.querySelector(".color-input");
+    if (colorEl) colorEl.value = "";
+    templateRow.querySelector(".quantity-input").value = "0";
+    templateRow.querySelector(".weight-input").value = "0";
+    var sidepattiInput = templateRow.querySelector(".sidepatti-input");
+    var lineSettingInput = templateRow.querySelector(".line-setting-input");
+    var rowPlanId = templateRow.querySelector(".row-plan-id");
+    if (sidepattiInput) sidepattiInput.value = 0;
+    if (lineSettingInput) lineSettingInput.value = 0;
+    if (rowPlanId) rowPlanId.value = btn.dataset.planId || "";
+    
+    const formSubhidden = document.getElementById("form_submitted");
+    if (formSubhidden) formSubhidden.value = "0";
+    
+    const submitBtn = document.querySelector('#frameForm button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Production';
+    }
+    
+    openModal(btn.dataset.date, btn.dataset.shift, btn.dataset.machine, btn.dataset.category, btn.dataset.thickness, btn.dataset.height, btn.dataset.width, btn.dataset.color, btn.dataset.density, btn.dataset.stamp);
+}
+
+function openModal(date, shift, machine, category, thickness, height, width, color, density, stamp){
+    if(date) document.getElementById("prod-date").value = date;
+    if(shift) document.getElementById("shift").value = shift;
+    
+    if(machine){
+        const select = document.getElementById("machine");
+        for(let opt of select.options){
+            if(opt.textContent.trim().toLowerCase() === machine.toLowerCase()){ select.value = opt.value; setCategory(); filterOperators(); break; }
+        }
+    }
+    if(category) document.getElementById("category").value = category;
+    
+    const row = document.querySelector(".production-row");
+    if(thickness && row.querySelector(".thickness-input")){
+        for(let opt of row.querySelector(".thickness-input").options){
+            if(opt.getAttribute('data-value') && parseFloat(opt.getAttribute('data-value')) === parseFloat(thickness)){ opt.closest('select').value = opt.value; break; }
+        }
+    }
+    if(height && row.querySelector(".height-select")){
+        for(let opt of row.querySelector(".height-select").options){
+            if(opt.getAttribute('data-height') && Math.abs(parseFloat(opt.getAttribute('data-height')) - parseFloat(height)) < 0.001){ opt.closest('select').value = opt.value; break; }
+        }
+    }
+    if(width && row.querySelector(".width-select")){
+        for(let opt of row.querySelector(".width-select").options){
+            if(opt.getAttribute('data-width') && Math.abs(parseFloat(opt.getAttribute('data-width')) - parseFloat(width)) < 0.001){ opt.closest('select').value = opt.value; break; }
+        }
+    }
+    if(color && row.querySelector(".color-input")){
+        for(let opt of row.querySelector(".color-input").options){
+            if(opt.textContent.trim().toLowerCase() === color.trim().toLowerCase()){ opt.closest('select').value = opt.value; break; }
+        }
+    }
+    if(density && row.querySelector(".density-input")){
+        for(let opt of row.querySelector(".density-input").options){
+            if(opt.getAttribute('data-value') && parseFloat(opt.getAttribute('data-value')) === parseFloat(density)){ opt.closest('select').value = opt.value; break; }
+        }
+    }
+    if(stamp){
+        const stampSel = document.getElementById("stamp_input");
+        if(stampSel) stampSel.value = stamp;
+    }
+    
+    document.getElementById("frameModal").classList.add('active');
+    calculateRow(row);
+}
+
+function closeModal(){ 
+    const modal = document.getElementById("frameModal");
+    modal.classList.remove('active');
+    
+    const formSubhidden = document.getElementById("form_submitted");
+    if (formSubhidden) formSubhidden.value = "0";
+    
+    const submitBtn = document.querySelector('#frameForm button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Production';
+    }
+}
+
+function setCategory(){
+    const m = document.getElementById("machine");
+    const cat = document.getElementById("category");
+    if(m.value && m.options[m.selectedIndex].dataset.category){ cat.value = m.options[m.selectedIndex].dataset.category; cat.disabled = true; } else { cat.disabled = false; }
+}
+
+async function filterOperators() {
+    const mId = document.getElementById("machine").value;
+    if (!mId) return;
+    try {
+        const resp = await fetch(`/api/operators-by-machine/?machine_id=${mId}`);
+        if (resp.ok) {
+            const data = await resp.json();
+            const opSel = document.getElementById("operator");
+            if(opSel){
+                opSel.innerHTML = '<option value="">Select Operator</option>';
+                data.operators.forEach(op => {
+                    const o = document.createElement('option'); o.value = op.operator__id || op.id; o.textContent = op.operator__username || op.full_name || op.username; opSel.appendChild(o);
+                });
+            }
+        }
+    } catch (e) { console.error(e); }
+}
+
+function removeProductionRow(btn){ btn.closest('.production-row').remove(); recalculateSummary(); }
+
+function attachRowListeners(row){
+    row.querySelectorAll("input, select").forEach(el => {
+        el.addEventListener("input", () => calculateRow(row));
+        el.addEventListener("change", () => calculateRow(row));
+    });
+}
+
+function calculateRow(row){
+    const tOpt = row.querySelector(".thickness-input");
+    const hOpt = row.querySelector(".height-select");
+    const wOpt = row.querySelector(".width-select");
+    const dOpt = row.querySelector(".density-input");
+    
+    let qty = Number(row.querySelector(".quantity-input").value || 0);
+    let wt = Number(row.querySelector(".weight-input").value || 0);
+    
+    let thick = tOpt && tOpt.selectedIndex > 0 ? Number(tOpt.options[tOpt.selectedIndex].getAttribute('data-value')) : 0;
+    let h = hOpt && hOpt.selectedIndex > 0 ? Number(hOpt.options[hOpt.selectedIndex].getAttribute('data-height')) : 0;
+    let w = wOpt && wOpt.selectedIndex > 0 ? Number(wOpt.options[wOpt.selectedIndex].getAttribute('data-width')) : 0;
+    let dens = dOpt && dOpt.selectedIndex > 0 ? Number(dOpt.options[dOpt.selectedIndex].getAttribute('data-value')) : 0;
+    
+    if(row.querySelector('[name="height_unit"]').value === 'mm') h = Number(row.querySelector(".height-mm-input").value || 0) / 25.4;
+    if(row.querySelector('[name="width_unit"]').value === 'mm') w = Number(row.querySelector(".width-mm-input").value || 0) / 25.4;
+    
+    let vol = (h * 0.0254) * (w * 0.0254) * (thick / 1000);
+    let dProd = vol ? (wt / vol) : 0;
+    let std = dens * vol;
+    let totW = qty * wt;
+    let totN = qty * std;
+    
+    row.querySelector(".density-prod-display").innerText = dProd.toFixed(2);
+    row.querySelector(".std-display").innerText = std.toFixed(2);
+    row.querySelector(".total-weight-display").innerText = totW.toFixed(2);
+    row.querySelector(".total-norm-weight-display").innerText = totN.toFixed(2);
+    row.querySelector(".excess-display").innerText = (totW - totN).toFixed(2);
+    recalculateSummary();
+}
+
+function recalculateSummary(){
+    let actual = 0;
+    document.querySelectorAll(".production-row").forEach(r => {
+        actual += Number(r.querySelector(".total-weight-display").innerText) || 0;
+    });
+    let side = Number(document.getElementById("side_patti_input").value || 0);
+    let line = Number(document.getElementById("line_setting_input").value || 0);
+    
+    document.getElementById("actual_production").value = actual.toFixed(2);
+    document.getElementById("overall_production").value = (actual + side + line).toFixed(2);
+}
+
+let currentRow = null;
+function openWeightSheetModal(btn){
+    currentRow = btn.closest(".production-row");
+    document.getElementById("weightSheetModal").classList.add("active");
+    document.getElementById("ws-balance-qty").innerText = document.getElementById("frameModal").dataset.planningBalance || 0;
+    document.getElementById("weightSheetRows").innerHTML = "";
+    addWeightRow();
+}
+
+function getVolumeFromRow(row) {
+    const tOpt = row.querySelector(".thickness-input");
+    const hOpt = row.querySelector(".height-select");
+    const wOpt = row.querySelector(".width-select");
+    
+    let thick = tOpt && tOpt.selectedIndex > 0 ? Number(tOpt.options[tOpt.selectedIndex].getAttribute('data-value')) : 0;
+    let h = hOpt && hOpt.selectedIndex > 0 ? Number(hOpt.options[hOpt.selectedIndex].getAttribute('data-height')) : 0;
+    let w = wOpt && wOpt.selectedIndex > 0 ? Number(wOpt.options[wOpt.selectedIndex].getAttribute('data-width')) : 0;
+    
+    if(row.querySelector('[name="height_unit"]') && row.querySelector('[name="height_unit"]').value === 'mm') h = Number(row.querySelector(".height-mm-input").value || 0) / 25.4;
+    if(row.querySelector('[name="width_unit"]') && row.querySelector('[name="width_unit"]').value === 'mm') w = Number(row.querySelector(".width-mm-input").value || 0) / 25.4;
+    
+    return (h * 0.0254) * (w * 0.0254) * (thick / 1000);
+}
+
+function addWeightRow(val=""){
+    const container = document.getElementById("weightSheetRows");
+    const div = document.createElement("div");
+    div.className = "ws-row";
+    div.innerHTML = `<span class="ws-sno"></span><input type="number" step="0.0001" class="ws-weight" oninput="calculateWS()" value="${val}"><span class="ws-density">0.00</span><button type="button" onclick="this.parentElement.remove(); calculateWS();" style="background:var(--accent); color:white; border:none; padding:6px 10px; border-radius:6px;"><i class='fa fa-trash'></i></button>`;
+    container.appendChild(div);
+    calculateWS();
+}
+
+function calculateWS(){
+    let inputs = document.querySelectorAll(".ws-weight"), total = 0, count = 0;
+    const vol = currentRow ? getVolumeFromRow(currentRow) : 0;
+    
+    inputs.forEach(i => { 
+        let v = parseFloat(i.value); 
+        if(!isNaN(v)){ 
+            total += v; 
+            count++; 
+        } 
+    });
+    
+    document.getElementById("ws-total").innerText = total.toFixed(3);
+    document.getElementById("ws-avg").innerText = count ? (total / count).toFixed(3) : "0.000";
+    
+    const rows = document.querySelectorAll('#weightSheetRows .ws-row');
+    rows.forEach((r,idx)=> { 
+        r.querySelector('.ws-sno').innerText = (idx+1) + '.';
+        const weightInput = r.querySelector('.ws-weight');
+        const densitySpan = r.querySelector('.ws-density');
+        const wVal = parseFloat(weightInput.value);
+        if (!isNaN(wVal) && wVal > 0 && vol > 0) {
+            densitySpan.innerText = (wVal / vol).toFixed(2);
+            densitySpan.style.color = '#1d4ed8';
+        } else {
+            densitySpan.innerText = '0.00';
+            densitySpan.style.color = '';
+        }
+    });
+}
+
+function saveWeightSheet(){
+    let inputs = document.querySelectorAll(".ws-weight"), valid = [];
+    inputs.forEach(i => { if(parseFloat(i.value)) valid.push(parseFloat(i.value)); });
+    if(currentRow && valid.length){
+        currentRow.querySelector(".quantity-input").value = valid.length;
+        let avg = valid.reduce((a,b)=>a+b,0) / valid.length;
+        currentRow.querySelector(".weight-input").value = avg.toFixed(4);
+        calculateRow(currentRow);
+    }
+    closeWeightSheetModal();
+}
+
+function closeWeightSheetModal(){ document.getElementById("weightSheetModal").classList.remove("active"); }
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".production-row").forEach(attachRowListeners);
+    document.getElementById("side_patti_input").addEventListener("input", recalculateSummary);
+    document.getElementById("line_setting_input").addEventListener("input", recalculateSummary);
+});
+
+// Rearrange functionality
+let isRearrangeMode = false;
+
+function toggleRearrangeMode() {
+    isRearrangeMode = !isRearrangeMode;
+    const rearrangeBar = document.getElementById("rearrange-bar");
+    const groups = document.querySelectorAll(".group-block");
+    
+    if (isRearrangeMode) {
+        rearrangeBar.style.display = "flex";
+        groups.forEach(group => {
+            group.style.cursor = "move";
+            group.draggable = true;
+            group.addEventListener("dragstart", handleDragStart);
+            group.addEventListener("dragover", handleDragOver);
+            group.addEventListener("drop", handleDrop);
+            group.addEventListener("dragend", handleDragEnd);
+        });
+    } else {
+        rearrangeBar.style.display = "none";
+        groups.forEach(group => {
+            group.style.cursor = "";
+            group.draggable = false;
+            group.removeEventListener("dragstart", handleDragStart);
+            group.removeEventListener("dragover", handleDragOver);
+            group.removeEventListener("drop", handleDrop);
+            group.removeEventListener("dragend", handleDragEnd);
+        });
+    }
+}
+
+let draggedGroup = null;
+
+function handleDragStart(e) {
+    draggedGroup = this;
+    this.style.opacity = "0.5";
+    e.dataTransfer.effectAllowed = "move";
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = "move";
+    return false;
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    if (draggedGroup !== this && draggedGroup) {
+        const container = this.parentNode;
+        const allGroups = Array.from(container.querySelectorAll(".group-block"));
+        const draggedIdx = allGroups.indexOf(draggedGroup);
+        const targetIdx = allGroups.indexOf(this);
+        
+        if (draggedIdx < targetIdx) {
+            this.parentNode.insertBefore(draggedGroup, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedGroup, this);
+        }
+    }
+    return false;
+}
+
+function handleDragEnd() {
+    this.style.opacity = "1";
+    draggedGroup = null;
+}
+
+function cancelReorder() {
+    if (confirm("Are you sure you want to cancel? Any unsaved changes will be lost.")) {
+        location.reload();
+    }
+}
+
+function saveGroupOrder() {
+    const groups = document.querySelectorAll(".group-block");
+    const order = [];
+    
+    groups.forEach(group => {
+        const groupKey = group.getAttribute("data-group-key");
+        if (groupKey) {
+            order.push(groupKey);
+        }
+    });
+    
+    if (order.length === 0) {
+        alert("No groups to save.");
+        return;
+    }
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const machineId = urlParams.get('machine_id');
+    
+    if (!machineId) {
+        alert("Machine ID not found in URL.");
+        return;
+    }
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    
+    fetch("{% url 'reorder_groups' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({
+            machine_id: machineId,
+            category: "{{ current_category }}",
+            order: order
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("Group order saved successfully!");
+            toggleRearrangeMode();
+        } else {
+            alert("Failed to save group order. Please try again.");
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("An error occurred while saving the order.");
+    });
+}
+</script>
+{% endblock %}

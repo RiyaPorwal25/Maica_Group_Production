@@ -1,0 +1,507 @@
+{% extends "base.html" %}
+
+{% block title %}Unfinished Products{% endblock %}
+
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-light: rgba(63, 46, 151, 0.05);
+    --accent-red: #E1251B;
+    --accent-orange: #ff9800;
+    --accent-orange-light: rgba(255, 152, 0, 0.1);
+    --text-main: #2D3748;
+    --text-muted: #718096;
+    --white: #ffffff;
+    --light-bg: #F8F9FC;
+    --border-soft: rgba(63, 46, 151, 0.08);
+    --shadow-card: 0 10px 30px rgba(63, 46, 151, 0.04);
+    --radius-md: 10px;
+    --radius-lg: 16px;
+}
+
+/* Page Layout Container */
+.unfinished-container {
+    max-width: 1140px;
+    margin: 40px auto;
+    padding: 0 24px;
+}
+
+/* Breadcrumb / Actions Row */
+.action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-soft);
+    background: var(--white);
+    color: var(--text-main);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: all 0.25s ease;
+}
+
+.back-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateX(-2px);
+}
+
+/* Header Meta Card */
+.header-panel {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.header-panel h2 {
+    color: var(--text-main);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.count-badge {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(63, 46, 151, 0.1);
+}
+
+/* Data Table Wrapper */
+.table-responsive-card {
+    background: var(--white);
+    box-shadow: var(--shadow-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+}
+
+.unfinished-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.unfinished-table th {
+    background: #FAF9FE;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.unfinished-table td {
+    padding: 18px 24px;
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.unfinished-table tbody tr {
+    border-bottom: 1px solid var(--border-soft);
+    transition: background 0.2s ease;
+}
+
+.unfinished-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.unfinished-table tbody tr:hover {
+    background: rgba(63, 46, 151, 0.02);
+}
+
+/* Precise Column Alignments */
+.col-center { text-align: center; }
+.col-right { text-align: right; }
+.col-sl { width: 80px; color: var(--text-muted) !important; }
+
+/* Status Quantity Badges */
+.qty-pill {
+    display: inline-block;
+    background: var(--accent-orange-light);
+    color: var(--accent-orange);
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    background: var(--primary);
+    color: var(--white);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.action-btn:hover {
+    background: #2f2274;
+}
+
+.action-btn[disabled] {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+    padding: 24px;
+}
+
+.modal-card h3 {
+    margin: 0 0 18px;
+    color: var(--primary);
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 16px;
+}
+
+.modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modal-field.full {
+    grid-column: 1 / -1;
+}
+
+.modal-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.modal-field input,
+.modal-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dbe3ee;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.modal-help {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-secondary {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-soft);
+    background: var(--white);
+    color: var(--text-main);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-primary {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--primary);
+    color: var(--white);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Empty State Styling */
+.empty-state-row td {
+    padding: 60px 24px;
+}
+.empty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    gap: 12px;
+}
+.empty-container i {
+    font-size: 40px;
+    color: rgba(63, 46, 151, 0.15);
+}
+.empty-container p {
+    font-size: 15px;
+    font-weight: 500;
+}
+</style>
+
+<div class="unfinished-container">
+
+    <div class="action-bar">
+        <a href="{% url 'stock' %}" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i> Back to Stock
+        </a>
+    </div>
+
+    <div class="header-panel">
+        <h2>Unfinished Products</h2>
+        {% if data %}
+            <span class="count-badge">{{ data|length }} Items Pending</span>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive-card">
+        <table class="unfinished-table">
+            <thead>
+                <tr>
+                    <th class="col-center col-sl">S. No.</th>
+                    <th>Product Details</th>
+                    <th class="col-center">Quantity Pending</th>
+                    <th class="col-right">Date Flagged</th>
+                    <th class="col-center">Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in data %}
+                <tr>
+                    <td class="col-center col-sl">{{ forloop.counter }}</td>
+                    <td style="font-weight: 600;">{{ item.product }}</td>
+                    <td class="col-center">
+                        <span class="qty-pill">
+                            <i class="fa-solid fa-layer-group" style="margin-right: 4px; font-size: 11px;"></i> 
+                            {{ item.quantity }}
+                        </span>
+                    </td>
+                    <td class="col-right" style="color: var(--text-muted);">{{ item.date }}</td>
+                    <td class="col-center">
+                        {% if item.product.category == "Door" or item.product.category == "Sheet" %}
+                            <button
+                                type="button"
+                                class="action-btn"
+                                data-action="{% url 'convert_unfinished' item.id %}"
+                                data-product="{{ item.product }}"
+                                data-width="{{ item.product.width|default_if_none:'' }}"
+                                data-height="{{ item.product.height|default_if_none:'' }}"
+                                data-stamp="{{ item.product.stamp|default_if_none:'' }}"
+                                data-quantity="{{ item.quantity }}"
+                                onclick="openConvertModal(this)">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button
+                                type="button"
+                                class="action-btn"
+                                style="background: var(--accent-red); margin-left: 6px;"
+                                data-action="{% url 'add_to_scrap' item.id %}"
+                                data-product="{{ item.product }}"
+                                data-quantity="{{ item.quantity }}"
+                                onclick="openScrapModal(this)">
+                                <i class="fa-solid fa-trash"></i> Add to Scrap
+                            </button>
+                        {% else %}
+                            <button type="button" class="action-btn" disabled>Not available</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr class="empty-state-row">
+                    <td colspan="5">
+                        <div class="empty-container">
+                            <i class="fa-solid fa-boxes-packing"></i>
+                            <p>No unfinished products found on the logs.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div class="modal" id="convertModal" onclick="closeConvertModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>Convert Unfinished Product</h3>
+        <form id="convertForm" method="POST">
+            {% csrf_token %}
+            <div class="modal-grid">
+                <div class="modal-field full">
+                    <label>Product</label>
+                    <input type="text" id="convert-product" readonly>
+                </div>
+                <div class="modal-field">
+                    <label>Original Width</label>
+                    <input type="text" id="original-width" readonly>
+                </div>
+                <div class="modal-field">
+                    <label>Original Height</label>
+                    <input type="text" id="original-height" readonly>
+                </div>
+                <div class="modal-field">
+                    <label for="convert-width">New Width</label>
+                    <select id="convert-width" name="width" required>
+                        <option value="">Select Width</option>
+                        {% for width in widths %}
+                            <option value="{{ width.id }}">{{ width }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-field">
+                    <label for="convert-height">New Height</label>
+                    <select id="convert-height" name="height" required>
+                        <option value="">Select Height</option>
+                        {% for height in heights %}
+                            <option value="{{ height.id }}">{{ height }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-field full">
+                    <label for="convert-stamp">Stamp</label>
+                    <select id="convert-stamp" name="stamp" required>
+                        <option value="">Select Stamp</option>
+                        <option value="Star">Star</option>
+                        <option value="Royal">Royal</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Diamonds">Diamonds</option>
+                        <option value="Platinum">Platinum</option>
+                        <option value="Premium">Premium</option>
+                    </select>
+                </div>
+                <div class="modal-field full">
+                    <label for="convert-quantity">Quantity To Convert</label>
+                    <input type="number" step="0.01" min="0.01" id="convert-quantity" name="convert_quantity" required>
+                    <span class="modal-help" id="convert-qty-help"></span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeConvertModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Convert To Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="scrapModal" onclick="closeScrapModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <h3>Add to Scrap</h3>
+        <form id="scrapForm" method="POST">
+            {% csrf_token %}
+            <div class="modal-grid">
+                <div class="modal-field full">
+                    <label>Product</label>
+                    <input type="text" id="scrap-product" readonly>
+                </div>
+                <div class="modal-field full">
+                    <label for="scrap-quantity">Quantity to Scrap</label>
+                    <input type="number" step="0.01" min="0.01" id="scrap-quantity" name="scrap_quantity" required>
+                    <span class="modal-help" id="scrap-qty-help"></span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeScrapModal()">Cancel</button>
+                <button type="submit" class="btn-primary" style="background: var(--accent-red);">Add to Scrap</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openConvertModal(button) {
+    const modal = document.getElementById('convertModal');
+    const form = document.getElementById('convertForm');
+    const quantity = parseFloat(button.dataset.quantity || '0');
+
+    form.action = button.dataset.action || '';
+    document.getElementById('convert-product').value = button.dataset.product || '';
+    document.getElementById('original-width').value = button.dataset.width || '-';
+    document.getElementById('original-height').value = button.dataset.height || '-';
+    document.getElementById('convert-width').value = '';
+    document.getElementById('convert-height').value = '';
+    document.getElementById('convert-stamp').value = button.dataset.stamp || '';
+    document.getElementById('convert-quantity').value = quantity;
+    document.getElementById('convert-quantity').max = quantity;
+    document.getElementById('convert-qty-help').textContent = `Available unfinished quantity: ${quantity.toFixed(2)}`;
+
+    modal.classList.add('active');
+}
+
+function closeConvertModal(event) {
+    if (event && event.target && event.target.id !== 'convertModal') {
+        return;
+    }
+    document.getElementById('convertModal').classList.remove('active');
+}
+
+function openScrapModal(button) {
+    const modal = document.getElementById('scrapModal');
+    const form = document.getElementById('scrapForm');
+    const quantity = parseFloat(button.dataset.quantity || '0');
+
+    form.action = button.dataset.action || '';
+    document.getElementById('scrap-product').value = button.dataset.product || '';
+    document.getElementById('scrap-quantity').value = quantity;
+    document.getElementById('scrap-quantity').max = quantity;
+    document.getElementById('scrap-qty-help').textContent = `Available unfinished quantity: ${quantity.toFixed(2)}`;
+
+    modal.classList.add('active');
+}
+
+function closeScrapModal(event) {
+    if (event && event.target && event.target.id !== 'scrapModal') {
+        return;
+    }
+    document.getElementById('scrapModal').classList.remove('active');
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Master{% endblock %}
+
+{% block content %}
+
+<div class="stock-container">
+
+<h1>Master Management</h1>
+
+<div class="master-grid">
+
+<!-- <a href="{% url 'machine_list' %}" class="master-card">Machine</a> -->
+<a href="{% url 'color_list' %}" class="master-card">Color</a>
+<a href="{% url 'density_list' %}" class="master-card">Density</a>
+<a href="{% url 'density_name_list' %}" class="master-card">Density Name</a>
+<a href="{% url 'thickness_list' %}" class="master-card">Thickness</a>
+<a href="{% url 'size_list' %}" class="master-card">Size</a>
+<a href="{% url 'length_list' %}" class="master-card">Length</a>
+<a href="{% url 'height_list' %}" class="master-card">Height</a>
+<a href="{% url 'width_list' %}" class="master-card">Width</a>
+<a href="{% url 'party_list' %}" class="master-card">Party</a>
+
+</div>
+
+</div>
+
+<style>
+
+.master-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:20px;
+margin-top:30px;
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .stock-container {
+        width: 98%;
+        margin: 20px auto;
+        padding: 0 12px;
+    }
+    
+    .stock-container h1 {
+        font-size: 22px;
+        margin-bottom: 20px;
+    }
+    
+    .master-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+    }
+    
+    .master-card {
+        padding: 20px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .master-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .master-card {
+        padding: 16px;
+        font-size: 13px;
+    }
+}
+
+.master-card{
+background:#ffffff;
+border:2px solid #3F2E97;
+padding:30px;
+text-align:center;
+border-radius:10px;
+font-weight:600;
+text-decoration:none;
+color:#3F2E97;
+transition:0.3s;
+}
+
+.master-card:hover{
+background:#3F2E97;
+color:white;
+}
+
+</style>
+
+{% endblock %}

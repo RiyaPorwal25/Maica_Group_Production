@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+{% load filters %}
+{% block title %}Production{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #4F46E5;
+    --primary-soft: #EEF2FF;
+    --primary-dark: #3730A3;
+    --accent-red: #EF4444;
+    --white: #ffffff;
+    --light-bg: #F8FAFC;
+    --text: #0F172A;
+    --muted: #64748B;
+    --border: #E2E8F0;
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--light-bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Container */
+.calculator-container {
+    max-width: 768px;
+    margin: 40px auto;
+    padding: 0 24px;
+    box-sizing: border-box;
+}
+
+/* Topbar */
+.calc-topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.calc-topbar h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+.back-btn {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.back-btn:hover {
+    background: var(--light-bg);
+    color: var(--text);
+    border-color: #CBD5E1;
+}
+
+/* Calculator sections */
+.calculator-section {
+    background: var(--white);
+    padding: 28px;
+    margin-bottom: 24px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Section header */
+.calculator-section h3 {
+    margin: 0 0 24px 0;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+}
+
+/* Input rows */
+.input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.input-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.input-row input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--text);
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.input-row input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Results */
+.results {
+    margin-top: 28px;
+    background: #F8FAFC;
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+/* Each result row */
+.results div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.results div:last-child {
+    border-bottom: none;
+}
+
+/* Make label take only needed space */
+.results div span {
+    color: var(--muted);
+    font-weight: 500;
+}
+
+/* Value styling */
+.results div b {
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Highlight final / density */
+.results .final {
+    margin-top: 8px;
+    padding: 14px 16px;
+    background: var(--primary-soft);
+    border-radius: var(--radius-sm);
+    border: none;
+}
+
+.results .final span {
+    color: var(--primary-dark);
+    font-weight: 700;
+}
+
+.results .final b {
+    color: var(--primary-dark);
+    font-size: 20px;
+    font-weight: 800;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .input-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .calculator-section {
+        padding: 20px;
+    }
+}
+</style>
+
+<div class="calculator-container">
+
+    <div class="calc-topbar">
+        <button onclick="goBack()" class="back-btn">← Back</button>
+        <h2>Calculator</h2>
+    </div>
+
+    <div class="calculator-section">
+        <h3>Rate Calculator - </h3>
+        <div class="input-row">
+            <div class="input-field">
+                <label for="height">Length (inch) :</label>
+                <input type="number" id="height" placeholder="Length">
+            </div>
+            <div class="input-field">
+                <label for="width">Width (inch) :</label>
+                <input type="number" id="width" placeholder="Width">
+            </div>
+        </div>
+        <div class="input-row">
+            <div class="input-field">
+                <label for="thickness">Thickness (mm):</label>
+                <input type="number" id="thickness" placeholder="Thickness">
+            </div>
+            <div class="input-field">
+                <label for="density">Density :</label>
+                <input type="number" id="density" placeholder="Density">
+            </div>
+        </div>
+        <div class="input-row">
+            <div class="input-field">
+                <label for="qty">Quantity :</label>
+                <input type="number" id="qty" placeholder="Quantity">
+            </div>
+            <div class="input-field">
+                <label for="rate">Rate / Kg :</label>
+                <input type="number" id="rate" value="82" placeholder="Rate / Kg">
+            </div>
+        </div>
+        <div class="results">
+            <div><span>Weight / Sqft :</span> <b id="wpsf">0</b></div>
+            <div><span>Weight / Qty :</span> <b id="wpq">0</b></div>
+            <div><span>Rate / Sqft :</span> <b id="rpsf">0</b></div>
+            <div class="final"><span>Final Value :</span> <b id="final">0</b></div>
+        </div>
+    </div>
+
+    <div class="calculator-section">
+        <h3>Door Density Calculator - </h3>
+        <div class="input-row">
+            <div class="input-field">
+                <label for="d_height">Length (inch) :</label>
+                <input type="number" id="d_height" placeholder="Length">
+            </div>
+            <div class="input-field">
+                <label for="d_width">Width (inch) :</label>
+                <input type="number" id="d_width" placeholder="Width">
+            </div>
+        </div>
+        <div class="input-row">
+            <div class="input-field">
+                <label for="d_thickness">Thickness (mm) :</label>
+                <input type="number" id="d_thickness" placeholder="Thickness">
+            </div>
+            <div class="input-field">
+                <label for="d_weight">Weight (kg) :</label>
+                <input type="number" id="d_weight" placeholder="Weight">
+            </div>
+        </div>
+        <div class="results">
+            <div class="final"><span>Density :</span> <b id="density_result">0</b></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function goBack() {
+    window.history.back();
+}
+
+function calculateRate() {
+    let h = parseFloat(document.getElementById("height").value) || 0;
+    let w = parseFloat(document.getElementById("width").value) || 0;
+    let t = parseFloat(document.getElementById("thickness").value) || 0;
+    let d = parseFloat(document.getElementById("density").value) || 0;
+    let q = parseFloat(document.getElementById("qty").value) || 0;
+    let r = parseFloat(document.getElementById("rate").value) || 82;
+
+    // Convert to meters
+    let hm = h * 0.0254;
+    let wm = w * 0.0254;
+    let tm = t / 1000;
+
+    // Weight per quantity (rounded like Excel)
+    let wpq = +(hm * wm * tm * d).toFixed(2);
+
+    // Area (full precision)
+    let sqftExact = (h * w) / 144;
+
+    // Rounded area for weight per sqft
+    let sqftRounded = +sqftExact.toFixed(2);
+
+    let wpsf = +(wpq / sqftRounded).toFixed(2);
+    let rpsf = +(wpsf * r).toFixed(2);
+    let final = +(sqftExact * rpsf * q).toFixed(2);
+
+    document.getElementById("wpsf").innerText = wpsf;
+    document.getElementById("wpq").innerText = wpq;
+    document.getElementById("rpsf").innerText = rpsf;
+    document.getElementById("final").innerText = final;
+}
+
+function calculateDensity() {
+    let h = parseFloat(document.getElementById("d_height").value) || 0;
+    let w = parseFloat(document.getElementById("d_width").value) || 0;
+    let t = parseFloat(document.getElementById("d_thickness").value) || 0;
+    let weight = parseFloat(document.getElementById("d_weight").value) || 0;
+
+    let hh = h * 0.0254;
+    let ww = w * 0.0254;
+    let tt = t / 1000;
+
+    let volume = hh * ww * tt;
+    let density = weight / volume;
+
+    document.getElementById("density_result").innerText = density.toFixed(2);
+}
+
+// Auto-trigger calculation
+document.querySelectorAll("input").forEach(input => {
+    input.addEventListener("input", () => {
+        calculateRate();
+        calculateDensity();
+    });
+});
+</script>
+
+{% endblock %}

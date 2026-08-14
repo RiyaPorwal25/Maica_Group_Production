@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+{% load filters %}
+{% block title %}Dashboard {% endblock %}
+{% block content %}
+
+<style>
+:root {
+    --primary: #4F46E5;       
+    --primary-dark: #3730A3;
+    --accent-red: #EF4444;    
+    --white: #ffffff;
+    --light-bg: #F8FAFC;
+    --text: #0F172A;
+    --muted: #64748B;
+    --border: #E2E8F0;
+    --border-soft: rgba(79, 70, 229, 0.06);
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    user-select: none;
+    background-color: var(--light-bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ================= CONTAINER ================= */
+.stock-container {
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 32px 24px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .stock-container {
+        padding: 20px 16px;
+    }
+    
+    .toggle-capsule {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 16px;
+    }
+    
+    .filter-form input,
+    .filter-form select {
+        min-width: 100%;
+        width: 100%;
+        font-size: 14px;
+    }
+    
+    .code-search {
+        width: 100%;
+    }
+    
+    .code-search input {
+        width: 100%;
+    }
+    
+    .wide-report-section {
+        overflow-x: auto;
+    }
+    
+    .table-wrapper {
+        border-radius: 8px;
+    }
+    
+    .action-buttons {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .action-buttons a,
+    .action-buttons button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .stock-container {
+        padding: 12px 8px;
+    }
+    
+    .filter-form {
+        padding: 12px;
+        gap: 8px;
+    }
+    
+    .stock-table th,
+    .stock-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+}
+
+/* ================= PILL SWITCHER COMPONENT ================= */
+.toggle-capsule {
+    display: inline-flex;
+    align-items: center;
+    background-color: #E2E8F0;
+    border-radius: 9999px;
+    padding: 4px;
+    gap: 2px;
+}
+
+.toggle-link {
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+    color: var(--muted);
+}
+
+.toggle-link.active {
+    background-color: var(--white);
+    color: var(--primary);
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+}
+
+.toggle-link:not(.active):hover {
+    color: var(--text);
+}
+
+/* ================= FILTER MODULES ================= */
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+    align-items: center;
+    background: var(--white);
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+}
+
+.filter-form input,
+.filter-form select {
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    min-width: 180px;
+    height: 42px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: var(--white);
+    font-family: inherit;
+    outline: none;
+}
+
+.filter-form input:focus,
+.filter-form select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* ================= WIDE REPORT SECTION ================= */
+.wide-report-section {
+    width: 100%;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ================= TABLES ================= */
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+}
+
+.stock-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    text-align: left;
+}
+
+.stock-table th {
+    background: #F8FAFC;
+    color: var(--muted);
+    padding: 16px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.stock-table td {
+    padding: 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.stock-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.stock-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.stock-table tbody tr:hover {
+    background: #F8FAFC;
+}
+
+.machine-row {
+    cursor: pointer;
+}
+
+.machine-row td:first-child {
+    font-weight: 600;
+    transition: color 0.15s ease;
+}
+
+.machine-row:hover td:first-child {
+    color: var(--primary-dark) !important;
+}
+
+/* ================= BUTTONS ================= */
+.add-btn {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    background: #10B981;
+    color: white;
+    border: none;
+    padding: 0 18px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.add-btn:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.quick-date-btn {
+    padding: 10px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--white);
+    color: var(--muted);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.quick-date-btn:hover {
+    border-color: #CBD5E1;
+    color: var(--text);
+}
+
+.quick-date-btn.active {
+    background-color: var(--text);
+    color: var(--white);
+    border-color: var(--text);
+}
+
+input, textarea, select {
+    caret-color: auto;
+}
+
+@media (max-width: 1024px) {
+    .filter-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-form input, .filter-form select, .filter-form button {
+        width: 100%;
+    }
+}
+</style>
+
+<div class="stock-container">
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 20px; flex-shrink: 0;">
+    <div>
+        <h2 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em;">Welcome back, {{ user.full_name }}! 👋</h2>
+        <p style="color: var(--muted); margin: 6px 0 0 0; font-size: 15px;">Here's your production overview for today.</p>
+    </div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <div class="toggle-capsule">
+            <a href="/dashboard_v2/" class="toggle-link">Analytics</a>
+            <a href="/dashboard/" class="toggle-link active">Production Report</a>
+        </div>
+        <button class="add-btn" onclick="gotoPlanning('Frame')">+ Add Frame Planning</button>
+        <button class="add-btn" onclick="gotoPlanning('Door')">+ Add Door Planning</button>
+        <a href="{% url 'calculator' %}" class="add-btn" style="background-color:#2196F3">Calculator</a>
+    </div>
+</div>
+
+<div class="wide-report-section">
+    <h3 style="color: var(--text); margin: 0 0 16px 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">Summary of Production Report:</h3>
+    
+    <div style="background: var(--white); padding: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+            <label style="font-weight: 600; font-size: 14px; color: var(--text);">Filter Date:</label>
+            <input type="date" id="report_date" value="{{ report_date }}" style="padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; outline: none;" />
+            <button class="add-btn" style="height: 38px;" onclick="applyReportDate()">Load Report</button>
+            <button class="add-btn" style="background-color: var(--muted); height: 38px;" onclick="clearReportDate()">Clear</button>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="quick-date-btn" onclick="setDate(0, this)">Today</button>
+            <button class="quick-date-btn" onclick="setDate(-1, this)">Yesterday</button>
+            <button class="quick-date-btn" onclick="setDate(-2, this)">Day Before Yesterday</button>
+        </div>
+    </div>
+
+    {% if report_date %}
+        {% if report_rows %}
+
+        <div style="text-align: right; margin-bottom: 16px;">
+            <a href="{% url 'export_dashboard_report' %}?report_date={{ report_date }}" class="add-btn" style="background-color: var(--white); border: 1px solid var(--border); color: var(--text);">
+                ⬇️ Download Report
+            </a>
+        </div>
+
+            <div class="table-wrapper" style="margin-bottom: 32px;">
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>Machine</th>
+                            <th>Total Qty</th>
+                            <th>Total Weight</th>
+                            <th>Side Patti</th>
+                            <th>Line Setting</th>
+                            <th>Overall Production</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for machine, data in summary_data.items %}
+                        
+                        <tr class="machine-row" data-machine="{{ machine }}" data-shift="Day">
+                            <td style="color: var(--primary); font-weight: 600;">
+                                {{ machine }} (Day)
+                            </td>
+                            <td>{{ data.day_qty }}</td>
+                            <td>{{ data.day_weight|format_decimal }}</td>
+                            <td>{{ data.day_side_patti|format_decimal }}</td>
+                            <td>{{ data.day_line_setting|format_decimal }}</td>
+                            <td>{{ data.day_prod|format_decimal }}</td>
+                        </tr>
+
+                        <tr class="machine-row" data-machine="{{ machine }}" data-shift="Night">
+                            <td style="color: var(--primary); font-weight: 600;">
+                                {{ machine }} (Night)
+                            </td>
+                            <td>{{ data.night_qty }}</td>
+                            <td>{{ data.night_weight|format_decimal }}</td>
+                            <td>{{ data.night_side_patti|format_decimal }}</td>
+                            <td>{{ data.night_line_setting|format_decimal}}</td>
+                            <td>{{ data.night_prod|format_decimal }}</td>
+                        </tr>
+
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="detail-table" class="table-wrapper" style="display: none; border-top: 4px solid var(--primary);">
+                <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); background: #FAF5FF;">
+                    <h4 style="margin: 0; font-size: 15px; color: var(--primary-dark); font-weight: 600;">Detailed Breakdown Status</h4>
+                </div>
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>Machine</th>
+                            <th>Shift</th>
+                            <th>Operator</th>
+                            <th>Items</th>
+                            <th>Qty</th>
+                            <th>Sizes</th>
+                            <th>Actual Production</th>
+                            <th>Line setting</th>
+                            <th>Side Patti</th>
+                            <th>Overall Production</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-body">
+                    {% for row in raw_report_rows %}
+                        <tr class="detail-row" data-machine="{{ row.machine.name }}" data-shift="{{ row.shift }}">
+                            <td style="font-weight: 600;">{{ row.machine.name }}</td>
+                            <td>{{ row.shift }}</td>
+                            <td>{{ row.operator.full_name }}</td>
+                            <td>{{ row.product.product_name }}</td>
+                            <td>{{ row.quantity }}</td>
+                            <td>{{ row.size }}</td>                            
+                            <td>{{ row.actual_production|format_decimal }}</td>
+                            <td>{{ row.linesetting }}</td>
+                            <td>{{ row.sidepatti }}</td>
+                            <td>{{ row.overall_production|format_decimal }}</td>
+                            <td>{{ row.remark}}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="text-align: center; color: var(--muted); padding: 40px 0;">No production records found for {{ report_date }}.</p>
+        {% endif %}
+    {% else %}
+        <p style="text-align: center; color: var(--muted); padding: 40px 0;">Please select a date to load the report.</p>
+    {% endif %}
+</div>
+
+</div>
+
+<script>
+function gotoPlanning(category) {
+    window.location.href = category === "Frame" ? "/planning/frame-sheet/" : "/planning/";
+}
+
+function applyReportDate() {
+    const date = document.getElementById('report_date').value;
+    let url = new URL(window.location.href);
+    if (date) {
+        url.searchParams.set('report_date', date);
+    } else {
+        url.searchParams.delete('report_date');
+    }
+    window.location.href = url.toString();
+}
+
+function clearReportDate() {
+    let url = new URL(window.location.href);
+    url.searchParams.delete('report_date');
+    window.location.href = url.toString();
+}
+
+function setDate(offset, btn) {
+    let today = new Date();
+    today.setDate(today.getDate() + offset);
+
+    let yyyy = today.getFullYear();
+    let mm = String(today.getMonth() + 1).padStart(2, '0');
+    let dd = String(today.getDate()).padStart(2, '0');
+
+    let formatted = `${yyyy}-${mm}-${dd}`;
+    document.getElementById("report_date").value = formatted;
+
+    document.querySelectorAll('.quick-date-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    applyReportDate();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".machine-row").forEach(row => {
+        row.addEventListener("click", function() {
+            const machine = this.dataset.machine;
+            const shift = this.dataset.shift;
+
+            document.getElementById("detail-table").style.display = "block";
+
+            document.querySelectorAll(".detail-row").forEach(r => {
+                const rowMachine = r.dataset.machine;
+                const rowShift = r.dataset.shift;
+
+                if (rowMachine === machine && rowShift === shift) {
+                    r.style.display = "";
+                } else {
+                    r.style.display = "none";
+                }
+            });
+            
+            document.getElementById("detail-table").scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    });
+});
+</script>
+
+{% endblock %}

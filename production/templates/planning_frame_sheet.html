@@ -1,0 +1,1475 @@
+{% extends "base.html" %}
+{% load static %}
+{% load filters %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #4F46E5;
+    --primary-dark: #4338CA;
+    --primary-light: #EEF2FF;
+    --accent: #EF4444;
+    --accent-dark: #DC2626;
+    --accent-light: #FEF2F2;
+    --success: #10B981;
+    --success-light: #ECFDF5;
+    --warning: #F59E0B;
+    --warning-light: #FFFBEB;
+    --text-main: #111827; 
+    --text-muted: #374151; 
+    --border-color: #D1D5DB; 
+    --bg-light: #F9FAFB;
+    --white: #FFFFFF;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+}
+
+.planning-page {
+    max-width: 1650px;
+    margin: 20px auto;
+    padding: 0 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-main);
+}
+
+/* Machine Selector Bar */
+.machine-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.machine-buttons label {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-main);
+    margin-right: 8px;
+}
+
+.machine-btn {
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    font-weight: 700;
+    font-size: 13px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.machine-btn:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.machine-btn.active {
+    background-color: var(--primary);
+    color: var(--white);
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+}
+
+.machine-btn.clear-btn {
+    background-color: var(--accent-light);
+    color: var(--accent-dark);
+    border-color: #FCA5A5;
+}
+
+.print-btn {
+    background-color: #374151;
+    color: var(--white);
+    border-color: #374151;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.print-btn:hover {
+    background-color: #111827;
+    border-color: #111827;
+    color: var(--white);
+}
+
+/* Action Header */
+.planning-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.planning-header h1 {
+    color: var(--text-main);
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.add-btn {
+    padding: 8px 18px;
+    border-radius: var(--radius-sm);
+    background-color: var(--primary);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 13px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+}
+
+.add-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Group Headers & Grid Tables */
+.group-section-title {
+    margin: 24px 0 10px 0;
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--primary-dark);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: var(--primary-light);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+.planning-card {
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+/* --- SUPER DENSE HIGH-READABILITY TABLE ENGINE --- */
+.table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    position: relative;
+}
+
+.planning-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13.5px;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.planning-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #E5E7EB;
+    color: #111827;
+    font-weight: 800;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 12px;
+    border-bottom: 2.5px solid #9CA3AF;
+    border-right: 1px solid #D1D5DB;
+}
+
+.planning-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid #E5E7EB;
+    color: var(--text-main);
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+.planning-table tbody tr:nth-child(even) {
+    background-color: #F9FAFB;
+}
+
+.planning-table tbody tr:hover {
+    background-color: #E0E7FF !important;
+}
+
+.planning-table th.num-col,
+.planning-table td.num-col {
+    text-align: right;
+    font-family: 'SFMono-Regular', Consolas, "Liberation Mono", Menlo, monospace;
+    font-weight: 700;
+}
+
+.planning-table th.center-col,
+.planning-table td.center-col {
+    text-align: center;
+}
+
+/* Highlighted Column Core Tracks */
+.col-qty-highlight {
+    background-color: #F1F5F9;
+    font-weight: 700 !important;
+    color: #000000 !important;
+}
+.col-prod-highlight {
+    background-color: #D1FAE5;
+    color: #064E3B !important;
+    font-weight: 800 !important;
+}
+.col-bal-highlight {
+    background-color: #FEF3C7;
+    color: #78350F !important;
+    font-weight: 800 !important;
+}
+.col-twt-highlight {
+    background-color: #E2E8F0;
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+
+/* Inline Action Row Components */
+.action-cell {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.btn-icon {
+    border: 1px solid #9CA3AF;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    background-color: var(--white);
+    color: var(--text-main);
+    transition: all 0.15s;
+}
+
+.btn-icon.edit-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background-color: var(--primary-light);
+}
+
+.btn-icon.view-btn:hover {
+    border-color: var(--success);
+    color: var(--success);
+    background-color: var(--success-light);
+}
+
+/* Badges */
+.badge-count {
+    font-family: monospace;
+    font-weight: 700;
+    color: #111827;
+    background: #D1D5DB;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.badge-remark {
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.badge-remark.urgent { background-color: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+.badge-remark.order { background-color: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE; }
+.badge-remark.stock { background-color: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+
+/* Overlay Dialog Architecture */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(17, 24, 39, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 4vh auto;
+    padding: 24px;
+    width: 92%;
+    max-width: 950px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    margin: 0 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-main);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.modal-content form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Custom Segmented Control styling */
+.unit-toggle-container {
+    display: inline-flex;
+    background: #E5E7EB;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    height: 40px;
+    box-sizing: border-box;
+}
+.unit-toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 0 12px;
+    transition: all 0.15s ease;
+}
+.unit-toggle-btn.active {
+    background: var(--white);
+    color: var(--primary-dark);
+    box-shadow: var(--shadow-sm);
+}
+
+.close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.close:hover { color: var(--accent-dark); }
+
+.modal-content label {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-main);
+}
+
+.modal-content input,
+.modal-content select {
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    font-size: 14px;
+    background-color: var(--white);
+    outline: none;
+    color: var(--text-main);
+}
+
+.modal-content input:focus,
+.modal-content select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.modal-content input[readonly] {
+    background-color: var(--bg-light);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* View Details Structural Layout */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: var(--radius-md);
+}
+
+.detail-item span {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.detail-item p {
+    margin: 2px 0 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.btn-delete {
+    background-color: var(--accent);
+    color: var(--white);
+}
+
+.btn-delete:hover { background-color: var(--accent-dark); }
+
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Modern Responsive Breakdowns & Mobile Sticky Systems */
+@media (max-width: 1024px) {
+    .detail-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .planning-page {
+        margin: 10px auto;
+        padding: 0 6px;
+    }
+    
+    .planning-header h1 { 
+        font-size: 16px; 
+        letter-spacing: -0.3px;
+    }
+    
+    .add-btn { 
+        width: 100%; 
+        justify-content: center; 
+        min-height: 44px;
+        font-size: 14px;
+        padding: 10px 18px;
+    }
+
+    .machine-buttons {
+        padding: 10px 12px;
+        gap: 8px;
+        justify-content: flex-start;
+    }
+    
+    .machine-buttons label {
+        width: 100%;
+        margin-bottom: 4px;
+        font-size: 13px;
+    }
+    
+    .machine-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .print-btn {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+        margin-top: 4px;
+    }
+
+    /* Enhanced Mobile Table Readability */
+    .planning-table {
+        font-size: 12px;
+        min-width: 800px;
+    }
+    
+    .planning-table thead th {
+        padding: 10px 8px;
+        font-size: 10px;
+        letter-spacing: 0.3px;
+        background: #4F46E5;
+        color: #FFFFFF;
+        font-weight: 700;
+    }
+    
+    .planning-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .planning-table th.num-col,
+    .planning-table td.num-col {
+        font-size: 12px;
+        font-weight: 700;
+    }
+    
+    /* Sticky Column System - First 2 columns */
+    .planning-table thead th:nth-child(1),
+    .planning-table tbody td:nth-child(1) {
+        position: sticky;
+        left: 0;
+        z-index: 5;
+        background: #E5E7EB;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.15);
+    }
+    .planning-table tbody tr:nth-child(even) td:nth-child(1) { background: #F3F4F6; }
+    .planning-table tbody tr:nth-child(odd) td:nth-child(1) { background: #FFFFFF; }
+    
+    .planning-table thead th:nth-child(2),
+    .planning-table tbody td:nth-child(2) {
+        position: sticky;
+        left: 55px;
+        z-index: 5;
+        background: #E5E7EB;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.15);
+    }
+    .planning-table tbody tr:nth-child(even) td:nth-child(2) { background: #F9FAFB; }
+    .planning-table tbody tr:nth-child(odd) td:nth-child(2) { background: #FFFFFF; }
+    
+    /* Highlight important columns with better contrast */
+    .col-qty-highlight {
+        background-color: #DBEAFE !important;
+        font-weight: 800 !important;
+        color: #1E40AF !important;
+    }
+    .col-prod-highlight {
+        background-color: #D1FAE5 !important;
+        color: #065F46 !important;
+        font-weight: 800 !important;
+    }
+    .col-bal-highlight {
+        background-color: #FEF3C7 !important;
+        color: #92400E !important;
+        font-weight: 800 !important;
+    }
+    .col-twt-highlight {
+        background-color: #E0E7FF !important;
+        color: #1E1B4B !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Better badges for mobile */
+    .badge-remark {
+        padding: 5px 10px;
+        font-size: 10px;
+        font-weight: 800;
+        border-radius: 6px;
+        display: inline-block;
+        line-height: 1.2;
+    }
+    
+    .badge-count {
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 6px;
+        display: inline-block;
+    }
+    
+    /* Total Summary Row - Mobile Fix */
+    .summary-tr {
+        background: #E5E7EB !important;
+        font-weight: 700 !important;
+    }
+    
+    .summary-tr td {
+        padding: 10px 8px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        border-top: 2px solid #9CA3AF !important;
+        border-bottom: none !important;
+        position: static !important;
+        left: auto !important;
+        box-shadow: none !important;
+    }
+    
+    .summary-tr td[colspan] {
+        text-align: center !important;
+        font-size: 11px !important;
+        letter-spacing: 0.5px !important;
+        background: #E5E7EB !important;
+        font-weight: 800 !important;
+    }
+    
+    .summary-tr .num-col {
+        font-size: 11px !important;
+        font-weight: 800 !important;
+    }
+    
+    .summary-tr span[style*="background: var(--primary)"] {
+        font-size: 10px !important;
+        padding: 3px 8px !important;
+        display: inline-block;
+        line-height: 1.3;
+    }
+
+    .combination-grid-frame {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    
+    .combination-grid-frame select,
+    .combination-grid-frame input {
+        height: 44px !important;
+        font-size: 14px !important;
+    }
+    
+    .unit-toggle-container { 
+        width: 100%; 
+        height: 44px;
+    }
+    
+    .unit-toggle-btn {
+        font-size: 13px;
+        padding: 0 8px;
+    }
+    
+    .combination-grid-frame button { 
+        width: 100% !important; 
+        justify-content: center !important; 
+        height: 44px !important;
+        font-size: 14px !important;
+    }
+    
+    .modal-content { 
+        padding: 16px; 
+        width: 96%; 
+        margin: 2vh auto;
+    }
+    
+    .modal-content form { 
+        grid-template-columns: 1fr; 
+        gap: 12px; 
+    }
+    
+    .action-cell { 
+        flex-direction: column; 
+        gap: 4px;
+    }
+    
+    .btn-icon {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 38px;
+        width: 100%;
+        text-align: center;
+    }
+    
+    .group-section-title {
+        font-size: 11px;
+        padding: 5px 10px;
+        margin: 18px 0 8px 0;
+    }
+    
+    .planning-card {
+        border-radius: var(--radius-sm);
+    }
+    
+    .table-wrapper {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table-wrapper::after {
+        content: '← Scroll →';
+        display: block;
+        text-align: center;
+        font-size: 10px;
+        color: #9CA3AF;
+        padding: 4px 0;
+        background: #F3F4F6;
+    }
+    
+    .detail-grid { 
+        grid-template-columns: 1fr; 
+        gap: 10px;
+    }
+    
+    .detail-item {
+        padding: 8px;
+    }
+    
+    .detail-item p {
+        font-size: 13px;
+    }
+    
+    #frameRowsTable td,
+    #frameRowsTable th {
+        padding: 8px 6px !important;
+        font-size: 12px !important;
+    }
+    
+    .modal-content { 
+        padding: 14px; 
+        width: 98%; 
+        margin: 2vh auto;
+    }
+    
+    .modal-content form { 
+        grid-template-columns: 1fr; 
+        gap: 10px; 
+    }
+    
+    .modal-content h3 {
+        font-size: 16px;
+        padding-bottom: 10px;
+    }
+    
+    .modal-content input,
+    .modal-content select {
+        padding: 10px 12px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+    
+    .modal-content label {
+        font-size: 12px;
+    }
+    
+    .close {
+        top: 14px;
+        right: 14px;
+        font-size: 20px;
+        padding: 6px;
+    }
+    
+    .action-cell { 
+        flex-direction: column; 
+        gap: 4px;
+    }
+    
+    .btn-icon {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 38px;
+        width: 100%;
+        text-align: center;
+    }
+    
+    .badge-remark {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+    
+    .badge-count {
+        padding: 2px 5px;
+        font-size: 10px;
+    }
+    
+    .group-section-title {
+        font-size: 11px;
+        padding: 5px 10px;
+        margin: 18px 0 8px 0;
+    }
+    
+    .planning-card {
+        border-radius: var(--radius-sm);
+    }
+    
+    .table-wrapper {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table-wrapper::after {
+        content: '← Scroll →';
+        display: block;
+        text-align: center;
+        font-size: 10px;
+        color: #9CA3AF;
+        padding: 4px 0;
+        background: #F3F4F6;
+    }
+    
+    .detail-grid { 
+        grid-template-columns: 1fr; 
+        gap: 10px;
+    }
+    
+    .detail-item {
+        padding: 8px;
+    }
+    
+    .detail-item p {
+        font-size: 13px;
+    }
+    
+    .form-group.full-width[style*="background: #F3F4F6"] {
+        padding: 14px !important;
+    }
+}
+
+/* --- PRINT SYSTEM ARCHITECTURE --- */
+@media print {
+    #sidebar, nav, header, footer, .sidebar, .navbar,
+    .machine-buttons, .planning-header, .action-cell, 
+    th:last-child, td:last-child, .modal, .add-btn, .print-btn {
+        display: none !important;
+    }
+    
+    html, body, main, .content-wrapper, #content, .planning-page {
+        display: block !important;
+        visibility: visible !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #FFF !important;
+        color: #000 !important;
+    }
+
+    .planning-card {
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    .table-wrapper {
+        overflow: visible !important;
+        width: 100% !important;
+    }
+
+    .planning-table {
+        width: 100% !important;
+        border: 1px solid #000 !important;
+        border-collapse: collapse !important;
+    }
+
+    .planning-table thead th {
+        background: #E5E7EB !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000 !important;
+        border-right: 1px solid #000 !important;
+        font-weight: bold !important;
+    }
+
+    .planning-table td {
+        border-bottom: 1px solid #000 !important;
+        border-right: 1px solid #000 !important;
+        background: transparent !important;
+        color: #000 !important;
+    }
+
+    .group-section-title {
+        background: #F3F4F6 !important;
+        color: #000 !important;
+        border: 1px solid #000 !important;
+        margin-top: 15px !important;
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+        display: inline-block !important;
+    }
+}
+</style>
+
+<div class="planning-page">
+    <div class="machine-buttons">
+        <label>Select Machine:</label>
+        <a href="?machine=L-1" class="machine-btn {% if machine_filter == 'L-1' %}active{% endif %}">L-1</a>
+        <a href="?machine=L-2" class="machine-btn {% if machine_filter == 'L-2' %}active{% endif %}">L-2</a>
+        <a href="?machine=L-3" class="machine-btn {% if machine_filter == 'L-3' %}active{% endif %}">L-3</a>
+        {% if machine_filter %}
+        <a href="?" class="machine-btn clear-btn">Clear Filter</a>
+        {% endif %}
+        
+        <button class="machine-btn print-btn" onclick="window.print()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Print Table
+        </button>
+    </div>
+
+    <div class="planning-header">
+        <h1>{{ page_heading }}</h1>
+        <button class="add-btn" onclick="openAddModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add Planning
+        </button>
+    </div>
+
+    {% if machine_filter %}
+    <script>
+        sessionStorage.setItem('machine_filter', '{{ machine_filter }}');
+    </script>
+    {% endif %}
+
+    {% for group in grouped_plans %}
+    <div class="group-section-title">{{ group.title }}</div>
+    <div class="planning-card" style="margin-bottom: 20px;">
+        <div class="table-wrapper">
+            <table class="planning-table">
+                <thead>
+                    <tr>
+                        <th class="center-col" style="width: 45px;">S.No</th>
+                        {% comment %} <th>Date</th> {% endcomment %}
+                        <th>Machine</th>
+                        <th>Category</th>
+                        <th>Size</th>
+                        <th class="num-col">Length</th>
+                        <th>Color</th>
+                        <th class="num-col">Quantity</th>
+                        <th class="num-col">Production</th>
+                        <th class="num-col">Balance</th>
+                        <th class="num-col">Wt.sheet/kg</th>
+                        <th class="num-col">Total Wt.</th>
+                        <th class="center-col">Remark</th>
+                        <th class="center-col" style="width: 90px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in group.items %}
+                    <tr>
+                        <td class="center-col"><span class="badge-count">{{ forloop.counter }}</span></td>
+                        {% comment %} <td>{{ p.date|date:"Y-m-d" }}</td>`````````{% endcomment %}
+                        <td><strong>{{ p.machine.name|default_if_none:"-" }}</strong></td>
+                        <td><strong>{{ p.category }}</strong></td>
+                        <td>{{ p.size|default_if_none:"-" }}</td>
+                        <td class="num-col">{{ p.length|default_if_none:"-" }}</td>
+                        <td>{{ p.color|default_if_none:"-" }}</td>
+                        <td class="num-col col-qty-highlight">{{ p.quantity }}</td>
+                        <td class="num-col col-prod-highlight">{{ p.produced }}</td>
+                        <td class="num-col col-bal-highlight">{{ p.balance }}</td>
+                        <td class="num-col">{{ p.weight|floatformat:4 }}</td>
+                        <td class="num-col col-twt-highlight">{{ p.tweight|floatformat:4 }}</td>
+                        <td class="center-col">
+                            {% if p.remark %}
+                                <span class="badge-remark {{ p.remark|lower }}">{{ p.remark }}</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="center-col">
+                            <div class="action-cell">
+                                <button
+                                    class="btn-icon edit-btn"
+                                    data-plan-id="{{ p.id }}"
+                                    data-date="{{ p.date|date:'Y-m-d' }}"
+                                    data-machine-id="{{ p.machine_id|default_if_none:'' }}"
+                                    data-size-id="{{ p.size_id|default_if_none:'' }}"
+                                    data-length-id="{{ p.length_id|default_if_none:'' }}"
+                                    data-color-id="{{ p.color_id|default_if_none:'' }}"
+                                    data-quantity="{{ p.quantity }}"
+                                    data-weight="{{ p.weight }}"
+                                    data-tweight="{{ p.tweight }}"
+                                    data-remark="{{ p.remark|default_if_none:''|escape }}"
+                                    onclick="editPlan(this)">
+                                    Edit
+                                </button>
+                                <button
+                                    class="btn-icon view-btn"
+                                    data-view-url="{% url 'planning_detail_json' p.id %}"
+                                    data-delete-url="{% url 'delete_planning' p.id %}"
+                                    onclick="viewPlan(this)">
+                                    View
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if group.total_balance or group.total_tweight %}
+                    <tr style="background: #E5E7EB; font-weight: 700; border-top: 2px solid #9CA3AF;">
+                        <td class="center-col" colspan="6">TOTAL SUMMARY</td>
+                        <td class="num-col" style="background: #E2E8F0; color: #000000;">{{ group.total_quantity|floatformat:0 }}</td>
+                        <td class="num-col" style="background: #D1FAE5; color: #065F46;">{{ group.total_produced|floatformat:0 }}</td>
+                        <td class="num-col" style="background: #FEF3C7; color: #92400E;">{{ group.total_balance|floatformat:0 }}</td>
+                        <td class="num-col"></td>
+                        <td class="num-col" style="background: #CBD5E1; color: #000000;">{{ group.total_tweight|floatformat:4 }}</td>
+                        <td class="center-col" colspan="2">
+                            <span style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; text-transform: uppercase; font-weight: bold;">
+                                Expected Days: {{ group.expected_days|floatformat:5 }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <div class="planning-card">
+        <div class="empty-state">No active planning records found.</div>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="planModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 id="modalTitle">Add Planning</h3>
+
+        <form method="POST" id="planForm">
+            {% csrf_token %}
+            <input type="hidden" id="plan_id" name="plan_id">
+
+            <div class="form-group">
+                <label for="plan_date">Date</label>
+                <input type="date" name="plan_date" id="plan_date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="machine">Machine</label>
+                <select name="machine" id="machine" required>
+                    <option value="">Select Machine</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}" data-name="{{ m.name }}">{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="size">Size</label>
+                <select name="size" id="size" required>
+                    <option value="">Select Size</option>
+                    {% for s in sizes %}
+                    <option value="{{ s.id }}" data-standard-weight="{{ s.standard_weight|default_if_none:'' }}">{{ s.size }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="color">Color</label>
+                <select name="color" id="color" required>
+                    <option value="">Select Color</option>
+                    {% for c in colors %}
+                    <option value="{{ c.id }}">{{ c.color }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="weight">Weight</label>
+                <input type="text" name="weight" id="weight" readonly style="width: 100%;">
+            </div>
+
+            <div class="form-group full-width" style="background: #F3F4F6; padding: 22px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); margin-top: 10px;">
+                <label style="display: block; margin-bottom: 14px; font-size: 14px; font-weight: 700; color: var(--primary-dark); letter-spacing: 0.3px;">
+                    Add Frame Combinations <span style="font-weight: 500; color: var(--text-muted);">(Length × Quantity)</span>
+                </label>
+                
+                <div class="combination-grid-frame" style="display: grid; grid-template-columns: 3fr 1.5fr 2fr auto; gap: 10px; align-items: center; margin-bottom: 16px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <select id="length" class="value-select" style="width: 100%; height: 40px;">
+                            <option value="">Select Length</option>
+                            {% for l in lengths %}
+                            <option value="{{ l.id }}" data-value="{{ l.length }}" data-unit="{{ l.unit }}">{{ l }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="number" id="length_mm" step="0.01" placeholder="Enter MM" style="width: 100%; height: 40px; display: none;">
+                    </div>
+                    
+                    <div class="unit-toggle-container">
+                        <button type="button" class="unit-toggle-btn active" id="toggle_length_ft" onclick="setMeasurementUnit('length', 'ft')">Feet</button>
+                        <button type="button" class="unit-toggle-btn" id="toggle_length_mm" onclick="setMeasurementUnit('length', 'mm')">MM</button>
+                        <input type="hidden" id="length_unit" value="ft">
+                    </div>
+
+                    <input type="number" id="frame_quantity" placeholder="Qty" min="1" value="1" style="width: 100%; height: 40px; text-align: center; font-weight: 700;">
+                    
+                    <button type="button" onclick="addFrameRow()" style="padding: 0 22px; height: 40px; font-size: 14px; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--white); border: none; border-radius: var(--radius-sm); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(79, 70, 229, 0.25); transition: all 0.15s ease;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Add
+                    </button>
+                </div>
+
+                <div style="background: var(--white); border-radius: var(--radius-md); border: 1px solid var(--border-color); overflow: hidden; box-shadow: var(--shadow-sm);">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #E5E7EB; border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 12px; font-weight: 700; color: var(--text-main); text-transform: uppercase; font-size: 11px; text-align: center; width: 60px;">#</th>
+                                <th style="padding: 12px; font-weight: 700; color: var(--text-main); text-transform: uppercase; font-size: 11px; text-align: left;">Length</th>
+                                <th style="padding: 12px; font-weight: 700; color: var(--text-main); text-transform: uppercase; font-size: 11px; text-align: center; width: 100px;">Qty</th>
+                                <th style="padding: 12px; font-weight: 700; color: var(--text-main); text-transform: uppercase; font-size: 11px; text-align: center; width: 70px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="frameRowsTable">
+                        </tbody>
+                    </table>
+                </div>
+                <input type="hidden" name="frame_rows" id="frame_rows">
+            </div>
+
+            <div class="form-group full-width" style="margin-top: 16px;">
+                <label for="remark">Remark</label>
+                <select name="remark" id="remark" required>
+                    <option value="">Select Remark</option>
+                    <option value="Order">Order</option>
+                    <option value="Urgent">Urgent</option>
+                    <option value="Stock">Stock</option>
+                    <option value="G.P">G.P</option>
+                    <option value="J.P">J.P</option>
+                </select>
+            </div>
+            {% comment %} <div class="form-group full-width" style="margin-top: 16px;">
+                <label for="stamp">Stamp</label>
+                <select name="stamp" id="stamp">
+                    <option value="">Select Stamp</option>
+                    <option value="Star">Star</option>
+                    <option value="Royal">Royal</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Diamonds">Diamond</option>
+                    <option value="Platinum">Platinum</option>
+                    <option value="Premium">Premium</option>
+                </select>
+            </div>
+            <div class="form-group full-width" style="margin-top: 16px;">
+                <label for="masking">Masking</label>
+                <select name="masking" id="masking">
+                    <option value="">Select Masking</option>
+                    <option value="Maica Masking">Maica Masking</option>
+                    <option value="Plain Masking">Plain Masking</option>
+                    <option value="Without Masking">Without Masking</option>
+                </select>
+            </div> {% endcomment %}
+            <div class="form-group full-width" style="margin-top: 16px;">
+                <button type="submit" class="add-btn" style="justify-content: center; grid-column: 1 / -1; width: 100%;">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="viewModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeViewModal()">&times;</span>
+        <h3>View Details</h3>
+        <div id="viewContent"></div>
+        <form id="deletePlanForm" method="POST" action="" onsubmit="return confirm('Are you sure you want to delete this planning record? This action cannot be undone.');">
+            {% csrf_token %}
+            <button type="submit" class="add-btn btn-delete" style="margin-top: 16px; width: 100%; justify-content: center;">Delete Record</button>
+        </form>
+    </div>
+</div>
+
+<script>
+const isDoorPlanning = false;
+
+function setFieldValue(id, value) {
+    const field = document.getElementById(id);
+    if (field) { field.value = value; }
+}
+
+function setFieldReadOnly(id, readOnly) {
+    const field = document.getElementById(id);
+    if (field) { field.readOnly = readOnly; }
+}
+
+function setMeasurementUnit(fieldName, unit) {
+    setFieldValue(`${fieldName}_unit`, unit);
+    
+    const toggleFt = document.getElementById(`toggle_${fieldName}_ft`);
+    const toggleMm = document.getElementById(`toggle_${fieldName}_mm`);
+    const selectField = document.getElementById(fieldName);
+    const mmField = document.getElementById(`${fieldName}_mm`);
+
+    if(unit === 'mm') {
+        toggleFt.classList.remove('active');
+        toggleMm.classList.add('active');
+        if(selectField) selectField.style.display = 'none';
+        if(mmField) mmField.style.display = 'block';
+    } else {
+        toggleMm.classList.remove('active');
+        toggleFt.classList.add('active');
+        if(selectField) selectField.style.display = 'block';
+        if(mmField) { mmField.style.display = 'none'; mmField.value = ''; }
+    }
+    calculateFrameWeight();
+}
+
+function getMeasurementValue(fieldName, mmDivisor) {
+    const unitField = document.getElementById(`${fieldName}_unit`);
+    const mmField = document.getElementById(`${fieldName}_mm`);
+
+    if (unitField && unitField.value === "mm") {
+        const mmValue = parseFloat(mmField?.value) || 0;
+        return mmValue ? mmValue / mmDivisor : 0;
+    }
+
+    const selectField = document.getElementById(fieldName);
+    return parseFloat(selectField?.options[selectField.selectedIndex]?.dataset.value) || 0;
+}
+
+function calculateFrameWeight() {
+    const sizeField = document.getElementById("size");
+    const weightField = document.getElementById("weight");
+    if (!sizeField || !weightField) return;
+
+    const selectedOption = sizeField.options[sizeField.selectedIndex];
+    const standardWeight = parseFloat(selectedOption?.dataset.standardWeight) || 0;
+    weightField.value = standardWeight ? standardWeight.toFixed(2) : "";
+}
+
+function resetPlanningForm() {
+    document.getElementById("planForm").reset();
+    setFieldValue("plan_id", "");
+    setFieldValue("size", "");
+    setFieldValue("weight", "");
+    setFieldValue("remark", "");
+    
+    setMeasurementUnit('length', 'ft');
+    calculateFrameWeight();
+
+    frameRowCount = 0;
+    const frameRowsTable = document.getElementById("frameRowsTable");
+    const frameRowsInput = document.getElementById("frame_rows");
+
+    if (frameRowsTable) { frameRowsTable.innerHTML = ""; }
+    if (frameRowsInput) { frameRowsInput.value = ""; }
+}
+
+function openAddModal() {
+    document.getElementById("modalTitle").innerText = "Add Planning";
+    resetPlanningForm();
+
+    const machineFilter = sessionStorage.getItem('machine_filter') || getUrlParameter('machine');
+    if (machineFilter) {
+        const machineSelect = document.getElementById('machine');
+        if (machineSelect) {
+            for (let option of machineSelect.options) {
+                if (option.value && option.textContent.includes(machineFilter)) {
+                    machineSelect.value = option.value;
+                    break;
+                }
+            }
+        }
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const dateField = document.getElementById('plan_date');
+    if (dateField) { dateField.value = today; }
+
+    const savedPlan = sessionStorage.getItem("lastAddedPlan");
+    if (savedPlan) {
+        try {
+            const data = JSON.parse(savedPlan);
+            setFieldValue("size", data.size);
+            setFieldValue("color", data.color);
+            setFieldValue("remark", data.remark);
+            
+            setMeasurementUnit('length', data.length_unit || 'ft');
+            if(data.length_unit === 'mm') setFieldValue("length_mm", data.length_mm);
+            else setFieldValue("length", data.length);
+            
+            calculateFrameWeight();
+        } catch (e) {
+            console.error("Could not parse previous planning data", e);
+        }
+    }
+    document.getElementById("planModal").style.display = "block";
+}
+
+function getUrlParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+function editPlan(button) {
+    const data = button.dataset;
+    document.getElementById("modalTitle").innerText = "Edit Planning";
+    setFieldValue("plan_id", data.planId || "");
+    if (data.date) { setFieldValue("plan_date", data.date); }
+    if (data.machineId) { setFieldValue("machine", data.machineId); }
+    
+    setFieldValue("size", data.sizeId || "");
+    setFieldValue("color", data.colorId || "");
+    setFieldValue("weight", data.weight || "");
+
+    setMeasurementUnit('length', 'ft');
+    setFieldValue("length", data.lengthId || "");
+
+    setFieldValue("remark", data.remark || "");
+    calculateFrameWeight();
+
+    document.getElementById("planModal").style.display = "block";
+}
+
+/* Script files remain perfectly preserved below */
+function viewPlan(button) {
+    const data = button.dataset;
+    document.getElementById("viewContent").innerHTML = "<p>Loading...</p>";
+    document.getElementById("deletePlanForm").action = data.deleteUrl || "";
+    document.getElementById("viewModal").style.display = "block";
+
+    fetch(data.viewUrl || "", { cache: "no-store" })
+        .then(response => {
+            if (!response.ok) { throw new Error("Unable to load planning details."); }
+            return response.json();
+        })
+        .then(plan => {
+            const html = `
+                <div class="detail-grid">
+                    <div class="detail-item"><span>Date</span><p>${plan.date || "-"}</p></div>
+                    <div class="detail-item"><span>Machine</span><p>${plan.machine || "-"}</p></div>
+                    <div class="detail-item"><span>Category</span><p>${plan.category || "-"}</p></div>
+                    <div class="detail-item"><span>Size</span><p>${plan.size || "-"}</p></div>
+                    <div class="detail-item"><span>Length</span><p>${plan.length ?? "-"}</p></div>
+                    <div class="detail-item"><span>Color</span><p>${plan.color || "-"}</p></div>
+                    <div class="detail-item"><span>Quantity</span><p>${plan.quantity ?? 0}</p></div>
+                    <div class="detail-item"><span>Weight</span><p>${plan.weight ?? 0}</p></div>
+                    <div class="detail-item" style="grid-column: span 2;"><span>Remark</span><p>${plan.remark || "-"}</p></div>
+                </div>
+            `;
+            document.getElementById("viewContent").innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById("viewContent").innerHTML = "<p>Unable to load planning details.</p>";
+        });
+}
+
+function closeModal() { document.getElementById("planModal").style.display = "none"; }
+function closeViewModal() { document.getElementById("viewModal").style.display = "none"; }
+
+window.onclick = function(event) {
+    const planModal = document.getElementById("planModal");
+    const viewModal = document.getElementById("viewModal");
+    if (event.target === planModal) closeModal();
+    if (event.target === viewModal) closeViewModal();
+};
+
+let frameRowCount = 0;
+
+const sizeField = document.getElementById("size");
+const weightField = document.getElementById("weight");
+if (sizeField) { sizeField.addEventListener("change", calculateFrameWeight); }
+
+["length", "length_mm"].forEach((fieldId) => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+        field.addEventListener("input", calculateFrameWeight);
+        field.addEventListener("change", calculateFrameWeight);
+    }
+});
+
+if (weightField) { weightField.readOnly = true; }
+calculateFrameWeight();
+
+function addFrameRow() {
+    const lengthSelect = document.getElementById("length");
+    const lengthUnit = document.getElementById("length_unit").value;
+    const lengthMm = document.getElementById("length_mm").value;
+    const quantity = document.getElementById("frame_quantity").value;
+
+    if ((lengthUnit === 'ft' && !lengthSelect.value) || (lengthUnit === 'mm' && !lengthMm) || !quantity || quantity <= 0) {
+        alert("Please select length and enter valid quantity");
+        return false;
+    }
+
+    const lengthText = lengthUnit === "mm" ? `${lengthMm} MM` : (lengthSelect.options[lengthSelect.selectedIndex]?.text || "");
+
+    frameRowCount++;
+    const row = {
+        id: frameRowCount,
+        length_id: lengthSelect.value || "",
+        length_text: lengthText,
+        length_unit: lengthUnit,
+        length_mm: lengthMm,
+        quantity: quantity
+    };
+
+    const tbody = document.getElementById("frameRowsTable");
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid var(--border-color)";
+    tr.innerHTML = `
+        <td style="padding: 12px; text-align: center;"><span class="badge-count">${row.id}</span></td>
+        <td style="padding: 12px; font-weight: 600;">${row.length_text}</td>
+        <td style="padding: 12px; text-align: center; font-weight: 700; color: var(--primary);">${row.quantity}</td>
+        <td style="padding: 12px; text-align: center;">
+            <button type="button" onclick="deleteFrameRow(this)" style="color: var(--accent-dark); border: 1px solid #FCA5A5; background: var(--accent-light); padding: 4px 10px; font-size: 14px; font-weight: bold; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s;">×</button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+
+    const rows = JSON.parse(document.getElementById("frame_rows").value || "[]");
+    rows.push(row);
+    document.getElementById("frame_rows").value = JSON.stringify(rows);
+
+    lengthSelect.value = "";
+    document.getElementById("length_mm").value = "";
+    document.getElementById("frame_quantity").value = "1";
+    return true;
+}
+
+function deleteFrameRow(btn) {
+    const row = btn.closest("tr");
+    const tbody = document.getElementById("frameRowsTable");
+    const index = Array.from(tbody.children).indexOf(row);
+    tbody.removeChild(row);
+
+    const rows = JSON.parse(document.getElementById("frame_rows").value || "[]");
+    rows.splice(index, 1);
+    document.getElementById("frame_rows").value = JSON.stringify(rows);
+
+    Array.from(tbody.children).forEach((tr, i) => {
+        tr.children[0].innerHTML = `<span class="badge-count">${i + 1}</span>`;
+    });
+    frameRowCount = tbody.children.length;
+}
+
+document.getElementById("planForm").addEventListener("submit", function(event) {
+    const frameRowsValue = document.getElementById("frame_rows").value;
+    if (!frameRowsValue || frameRowsValue === "[]") {
+        const lSel = document.getElementById("length").value;
+        const lMm = document.getElementById("length_mm").value;
+
+        if (lSel || lMm) {
+            const added = addFrameRow();
+            if (!added) { event.preventDefault(); return false; }
+        } else {
+            alert("Required Error: You must add at least one Frame Combination row using the '+' button before saving.");
+            event.preventDefault();
+            return false;
+        }
+    }
+
+    const planId = document.getElementById("plan_id").value;
+    if (!planId) {
+        const formData = {
+            size: document.getElementById("size")?.value || "",
+            length_unit: document.getElementById("length_unit")?.value || "ft",
+            length: document.getElementById("length")?.value || "",
+            length_mm: document.getElementById("length_mm")?.value || "",
+            color: document.getElementById("color")?.value || "",
+            remark: document.getElementById("remark")?.value || ""
+        };
+        sessionStorage.setItem("lastAddedPlan", JSON.stringify(formData));
+    }
+    frameRowCount = 0;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1150 @@
+{% extends "base.html" %}
+{% load static %}
+{% load filters %}
+{% block title %}Planning - Frame Sheet{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-dark: #2c1f6f;
+    --primary-light: rgba(63, 46, 151, 0.05);
+    --accent: #E1251B;
+    --accent-dark: #b91c1c;
+    --text-main: #2d3748;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --bg-light: #f8fafc;
+    --white: #ffffff;
+}
+
+.planning-page {
+    max-width: 1800px;
+    margin: 40px auto;
+    padding: 0 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-main);
+}
+
+.planning-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+
+.planning-header h1 {
+    color: var(--primary);
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.planning-header p {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.planning-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(63, 46, 151, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    padding: 20px;
+}
+
+.group-block {
+    margin-bottom: 35px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.group-title-bar {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.group-title-bar .group-badges {
+    display: flex;
+    gap: 8px;
+}
+
+.group-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.group-badge.qty { background: #e0f2fe; color: #0369a1; }
+.group-badge.bal { background: #fef3c7; color: #b45309; }
+
+.table-wrapper {
+    overflow-x: auto;
+    background: var(--white);
+}
+
+.planning-table {
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.planning-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--primary);
+    color: var(--white);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 18px;
+    border: none;
+}
+
+.planning-table th.num-col,
+.planning-table td.num-col {
+    text-align: right;
+}
+
+.planning-table th.center-col,
+.planning-table td.center-col {
+    text-align: center;
+}
+
+.planning-table td {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    color: var(--text-main);
+}
+
+.planning-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.planning-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.planning-table tbody tr:hover {
+    background-color: var(--primary-light);
+}
+
+.badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.badge-remark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    padding: 5px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.badge-remark.urgent { background: #fee2e2; color: #dc2626; }
+.badge-remark.order { background: #dbeafe; color: #2563eb; }
+.badge-remark.stock { background: #dcfce7; color: #15803d; }
+
+.action-cell {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    min-height: 34px;
+    padding: 8px 14px;
+    border: 1px solid rgba(63, 46, 151, 0.18);
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), #5b4bc4);
+    color: var(--white);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(63, 46, 151, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    text-decoration: none;
+}
+
+.btn-icon:hover {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    box-shadow: 0 10px 22px rgba(63, 46, 151, 0.24);
+    transform: translateY(-1px);
+    color: var(--white);
+}
+
+.btn-icon.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: background 0.15s ease;
+}
+.btn-primary:hover { background: var(--primary-dark); }
+
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* Machine Filter Bar */
+.machine-filter-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.machine-filter-bar label {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-main);
+    margin-right: 8px;
+}
+
+.machine-filter-bar .btn-icon {
+    min-width: auto;
+    padding: 6px 16px;
+    background: #fff;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+}
+
+.machine-filter-bar .btn-icon:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: none;
+    transform: none;
+}
+
+.machine-filter-bar .btn-icon.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 10px rgba(63, 46, 151, 0.2);
+}
+
+.machine-filter-bar .btn-icon.clear {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+/* Modals Modernized */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal.active { display: flex !important; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 95%;
+    max-width: 750px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1001;
+}
+
+.modal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    border-bottom: 3px solid var(--primary);
+    padding-bottom: 12px;
+}
+
+.modal-top h3 {
+    margin: 0;
+    color: var(--primary);
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.close {
+    border: none;
+    background: #f1f5f9;
+    font-size: 18px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.close:hover { background: #e2e8f0; color: var(--text-main); }
+
+.form-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+    background: #f7f7f7;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.form-grid-4 label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-main);
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: #fff;
+    color: var(--text-main);
+    outline: none;
+    box-sizing: border-box;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 5px rgba(63, 46, 151, 0.2);
+}
+.form-control[readonly] {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    cursor: not-allowed;
+    border-color: #cbd5e1;
+}
+
+.search-box { margin: 20px 0 12px; }
+
+/* Collapsible Categories for Materials */
+.cat-box {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.cat-head {
+    background: var(--bg-light);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+}
+.cat-badge { font-weight: 600; color: var(--text-main); font-size: 13px; }
+.cat-body { padding: 12px; background: #fff; border-top: 1px solid var(--border-color); }
+
+.material-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+}
+.material-item {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+}
+.material-item label { font-size: 12px; font-weight: 500; color: var(--text-main); line-height: 1.4; }
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+.table th, .table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+}
+.table th { font-weight: 600; background: var(--bg-light); }
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.detail-item {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.detail-item span {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.detail-item p { margin: 0; font-weight: 600; color: var(--text-main); font-size: 14px; }
+
+.col-twt-highlight {
+    font-weight: 600;
+}
+
+/* Summary row in table */
+.summary-tr td {
+    background: #e2e8f0;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .planning-page {
+        margin: 20px auto;
+        padding: 0 8px;
+    }
+    
+    .planning-header { 
+        padding: 12px 10px 6px; 
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .planning-header h1 {
+        font-size: 18px;
+    }
+    
+    .planning-header p {
+        font-size: 12px;
+    }
+    
+    .planning-card {
+        padding: 10px;
+        border-radius: 10px;
+    }
+    
+    .machine-filter-bar {
+        padding: 10px 12px;
+        gap: 8px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .machine-filter-bar label {
+        width: 100%;
+        margin-bottom: 2px;
+        font-size: 13px;
+    }
+    
+    .machine-filter-bar .btn-icon {
+        min-width: auto;
+        padding: 8px 14px;
+        font-size: 13px;
+        min-height: 40px;
+    }
+    
+    .table-wrapper { 
+        padding: 0; 
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table-wrapper::after {
+        content: '← Scroll →';
+        display: block;
+        text-align: center;
+        font-size: 10px;
+        color: #9CA3AF;
+        padding: 4px 0;
+        background: #F3F4F6;
+    }
+    
+    .planning-table th, 
+    .planning-table td { 
+        padding: 8px 6px; 
+        font-size: 11px; 
+    }
+    
+    .planning-table thead th {
+        padding: 10px 6px;
+        font-size: 10px;
+    }
+    
+    .detail-grid { 
+        grid-template-columns: 1fr; 
+        gap: 8px;
+    }
+    
+    .detail-item {
+        padding: 10px;
+    }
+    
+    .detail-item p {
+        font-size: 13px;
+    }
+    
+    .form-grid-4 { 
+        grid-template-columns: 1fr; 
+        gap: 10px;
+        padding: 12px;
+    }
+    
+    .form-grid-4 label {
+        font-size: 11px;
+    }
+    
+    .form-control {
+        padding: 10px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+    
+    .modal-content { 
+        padding: 14px; 
+        width: 98%;
+        margin: 2vh auto;
+    }
+    
+    .modal-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding-bottom: 10px;
+    }
+    
+    .modal-top h3 {
+        font-size: 18px;
+    }
+    
+    .close {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+    
+    .group-title-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px 14px;
+    }
+    
+    .group-title-bar > div {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .group-title-bar .btn-icon {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 10px;
+        font-size: 11px;
+        min-height: 38px;
+    }
+    
+    .group-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
+    
+    .badge-count {
+        min-width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+    
+    .badge-remark {
+        padding: 4px 8px;
+        font-size: 10px;
+        min-width: 40px;
+    }
+    
+    .action-cell {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .btn-icon {
+        min-width: 0;
+        min-height: 36px;
+        padding: 6px 10px;
+        font-size: 11px;
+        width: 100%;
+    }
+    
+    .search-box {
+        margin: 12px 0 8px;
+    }
+    
+    .material-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px;
+    }
+    
+    .material-item {
+        padding: 8px;
+    }
+    
+    .material-item label {
+        font-size: 11px;
+    }
+    
+    .cat-head {
+        padding: 8px 12px;
+    }
+    
+    .cat-badge {
+        font-size: 12px;
+    }
+    
+    .table th, 
+    .table td {
+        padding: 8px;
+        font-size: 12px;
+    }
+    
+    .summary-tr td {
+        font-size: 11px !important;
+        padding: 8px 6px !important;
+    }
+    
+    .btn-primary {
+        padding: 12px !important;
+        font-size: 14px !important;
+    }
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="planning-page">
+    <div class="planning-card" style="margin-bottom: 24px;">
+        <div class="planning-header">
+            <div>
+                <h1><i class="fa-solid fa-border-all"></i> Frameline</h1>
+                <p>Frame planning records pending formulation</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="machine-filter-bar">
+        <label><i class="fa-solid fa-filter"></i> Select Machine:</label>
+        <a href="?machine=L-1" class="btn-icon {% if machine_filter == 'L-1' %}active{% endif %}">L-1</a>
+        <a href="?machine=L-2" class="btn-icon {% if machine_filter == 'L-2' %}active{% endif %}">L-2</a>
+        <a href="?machine=L-3" class="btn-icon {% if machine_filter == 'L-3' %}active{% endif %}">L-3</a>
+        {% if machine_filter %}
+        <a href="?" class="btn-icon clear"><i class="fa-solid fa-times"></i> Clear</a>
+        {% endif %}
+    </div>
+
+    {% for group in grouped_frame_plans %}
+    <div class="group-block-wrapper" style="margin-bottom: 24px;">
+        <div class="group-title-bar">
+            <span><i class="fa-solid fa-layer-group"></i> {{ group.title }}</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <div class="group-badges" style="margin-right: 8px;">
+                    <span class="group-badge qty">Total: {{ group.total_quantity }}</span>
+                    <span class="group-badge bal">Wt: {{ group.total_tweight|floatformat:2 }}</span>
+                </div>
+                <button
+                    class="btn-icon"
+                    type="button"
+                    style="min-width: auto; padding: 6px 14px; font-size: 12px;"
+                    data-date="{{ group.items.0.date|date:'Y-m-d' }}"
+                    data-machine-id="{{ group.items.0.machine_id }}"
+                    data-machine-name="{{ group.items.0.machine.name|default:'L-1' }}"
+                    onclick="openGroupModal(this)">
+                    <i class="fa-solid fa-flask"></i> Add Formulation
+                </button>
+                <form method="POST" action="{% url 'batch_issue_page' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="group_id" value="{{ group.items.0.group_id|default:'' }}">
+                    <input type="hidden" name="batch_group_qty" id="batch_group_qty_input_{{ forloop.counter }}" value="">
+                    <button
+                        class="btn-icon"
+                        type="submit"
+                        style="min-width: auto; padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16,185,129,0.3);">
+                        <i class="fa-solid fa-check"></i> Complete
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="planning-card" style="border-top-left-radius: 0; border-top-right-radius: 0; padding: 0;">
+            <input type="hidden" class="group-plan-ids" value="{% for plan in group.items %}{{ plan.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+            <div class="table-wrapper">
+                <table class="planning-table">
+                    <thead>
+                        <tr>
+                            <th class="center-col" style="width: 50px;">S.No</th>
+                            <th>Category</th>
+                            <th>Size</th>
+                            <th class="num-col">Length</th>
+                            <th>Color</th>
+                            <th class="num-col">Quantity</th>
+                            <th class="num-col">Wt.Sheet/KG</th>
+                            <th class="num-col">Total Wt.</th>
+                            <th class="center-col">Remark</th>
+                            <th class="center-col" style="width: 100px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in group.items %}
+                        <tr>
+                            <td class="center-col"><span class="badge-count">{{ forloop.counter }}</span></td>
+                            <td><strong>{{ plan.category }}</strong></td>
+                            <td>{% if plan.size %}{{ plan.size.size }}{% else %}-{% endif %}</td>
+                            <td class="num-col">{% if plan.length %}{{ plan.length }}{% else %}-{% endif %}</td>
+                            <td>{{ plan.color|default_if_none:"-" }}</td>
+                            <td class="num-col"><strong>{{ plan.quantity }}</strong></td>
+                            <td class="num-col">{{ plan.weight|floatformat:4 }}</td>
+                            <td class="num-col col-twt-highlight">
+                                {{ plan.tweight|default_if_none:"0.0000"|floatformat:4 }}
+                            </td>
+                            <td class="center-col">
+                                {% if plan.remark %}
+                                    <span class="badge-remark {% if plan.remark == 'Urgent' %}urgent{% elif plan.remark == 'Order' %}order{% elif plan.remark == 'Stock' %}stock{% endif %}">{{ plan.remark }}</span>
+                                {% else %}
+                                    <span class="muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="center-col">
+                                <div class="action-cell">
+                                    <button
+                                        class="btn-icon"
+                                        type="button"
+                                        style="min-width: auto; padding: 4px 12px; font-size: 11px;"
+                                        data-view-url="{% url 'planning_detail_json' plan.id %}"
+                                        onclick="viewPlan(this)">
+                                        <i class="fa-solid fa-eye"></i> View
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% if group.total_tweight %}
+                        <tr class="summary-tr">
+                            <td class="center-col" colspan="5" style="font-weight: 800; letter-spacing: 0.05em;">TOTAL SUMMARY</td>
+                            <td class="num-col" style="background: #cbd5e1; color: #000000; font-weight: 800;">{{ group.total_quantity|floatformat:0 }}</td>
+                            <td class="num-col"></td>
+                            <td class="num-col" style="background: #94a3b8; color: #000000; font-weight: 800;">{{ group.total_tweight|floatformat:4 }}</td>
+                            <td class="center-col" colspan="2">
+                                <span style="background: var(--primary); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; text-transform: uppercase; font-weight: bold;">
+                                    <i class="fa-solid fa-calendar-day"></i> Expected Days: {{ group.expected_days|floatformat:5 }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="planning-card">
+        <div class="empty-state"><i class="fa-solid fa-inbox" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px; display: block;"></i>No frame planning records found.</div>
+    </div>
+    {% endfor %}
+</div>
+
+<div id="viewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-top">
+            <h3><i class="fa-solid fa-eye"></i> View Planning Details</h3>
+            <button class="close" type="button" onclick="closeViewModal()">&times;</button>
+        </div>
+        <div id="viewContent" class="detail-grid"></div>
+    </div>
+</div>
+
+<div class="modal" id="mainModal">
+    <div class="modal-content" style="max-width: 750px;">
+        <div class="modal-top">
+            <h3 id="modalTitle"><i class="fa-solid fa-flask"></i> Add Formulation</h3>
+            <button type="button" class="close" onclick="closeModal()">&times;</button>
+        </div>
+
+        <form method="POST" id="mainForm" action="{% url 'formulation_page' %}" onsubmit="return beforeSubmit()" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="is_loss" value="0">
+            <input type="hidden" name="plan_id" id="planIdInput" value="">
+
+            <div class="form-grid-4">
+                <div>
+                    <label>Date</label>
+                    <input type="date" name="date" class="form-control" readonly>
+                </div>
+                <div>
+                    <label>Machine</label>
+                    <input type="text" id="machineNameDisplay" class="form-control" readonly>
+                    <input type="hidden" name="machine" id="machineIdInput">
+                </div>
+                <div>
+                    <label>Product Name</label>
+                    <input type="text" name="name" class="form-control" readonly>
+                </div>
+            </div>
+
+            <table class="table" id="selectedTable" style="display:none; margin-bottom:24px; border: 1px solid var(--border-color); border-radius:8px;">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">S.No</th>
+                        <th>Active Raw Material Configured</th>
+                        <th style="text-align: right; width: 150px;">Weight</th>
+                    </tr>
+                </thead>
+                <tbody id="selectedBody"></tbody>
+            </table>
+
+            <div class="search-box">
+                <input type="text" id="searchMaterial" class="form-control" placeholder="🔍 Quick search raw materials..." onkeyup="filterMaterials()">
+            </div>
+
+            <div id="materialList">
+            {% for category, mats in materials_grouped.items %}
+                <div class="cat-box">
+                    <div class="cat-head">
+                        <span class="cat-badge">{{ category }}</span>
+                    </div>
+                    <div class="cat-body show-cat">
+                        <div class="material-grid">
+                        {% for rm in mats %}
+                            <div class="material-item">
+                                <label>{{ rm.name }} <br><span style="font-size:11px; color:var(--text-muted); font-weight:normal;">Stock: {{ rm.current_stock }} kg</span></label>
+                                <input type="number" step="0.01" name="weight_{{ rm.id }}" data-name="{{ rm.name|lower }}" class="weight-input form-control" placeholder="0.00" min="0">
+                            </div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+
+            <input type="hidden" name="materials" id="materialsData">
+            <button class="btn-primary" style="width:100%; margin-top:24px; padding: 14px; border:none; font-weight:600; font-size: 16px; border-radius: 8px;"><i class="fa-solid fa-paper-plane"></i> Submit Formulation</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="formulaCompositionModal">
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-top">
+            <h3><i class="fa-solid fa-flask"></i> Formula Composition View</h3>
+            <button type="button" class="close" onclick="closeFormulaModal()">&times;</button>
+        </div>
+        <div class="table-container" style="margin-top: 15px; overflow-x:auto;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">S.No</th>
+                        <th>Raw Material Item</th>
+                        <th style="text-align: right; width: 160px;">Specified Weight</th>
+                    </tr>
+                </thead>
+                <tbody id="formulaBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function hideGroupBlock(button) {
+    const wrapper = button.closest('.group-block-wrapper');
+    const titleElement = wrapper ? wrapper.querySelector('.group-title-bar span') : null;
+    if (!titleElement) return;
+
+    const groupTitle = titleElement.textContent.trim();
+
+    if (confirm(`Are you finished with the group "${groupTitle}"?`)) {
+        wrapper.style.opacity = '0';
+        wrapper.style.transform = 'scale(0.98)';
+        
+        setTimeout(() => {
+            wrapper.style.display = 'none';
+        }, 300);
+
+        let completedGroups = JSON.parse(localStorage.getItem('completedPlanningGroups')) || [];
+        if (!completedGroups.includes(groupTitle)) {
+            completedGroups.push(groupTitle);
+            localStorage.setItem('completedPlanningGroups', JSON.stringify(completedGroups));
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const completedGroups = JSON.parse(localStorage.getItem('completedPlanningGroups')) || [];
+    
+    document.querySelectorAll('.group-block-wrapper').forEach(wrapper => {
+        const titleElement = wrapper.querySelector('.group-title-bar span');
+        if (titleElement) {
+            const groupTitle = titleElement.textContent.trim();
+            if (completedGroups.includes(groupTitle)) {
+                wrapper.style.display = 'none';
+            }
+        }
+    });
+});
+
+function closeViewModal() {
+    document.getElementById('viewModal').style.display = 'none';
+}
+
+async function viewPlan(button) {
+    const url = button.dataset.viewUrl;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const details = [
+            ['Category', data.category || '-'],
+            ['Size', data.size || '-'],
+            ['Length', data.length || '-'],
+            ['Color', data.color || '-'],
+            ['Quantity', data.quantity ?? '-'],
+            ['Weight', data.weight ?? '-'],
+            ['Remark', data.remark || '-'],
+        ];
+
+        const container = document.getElementById('viewContent');
+        container.innerHTML = details.map(([label, value]) => `
+            <div class="detail-item">
+                <span>${label}</span>
+                <p>${value}</p>
+            </div>
+        `).join('');
+
+        document.getElementById('viewModal').style.display = 'block';
+    } catch (error) {
+        console.error("Error fetching plan data:", error);
+    }
+}
+
+ function openGroupModal(btn){
+    const strip = btn.closest('.group-title-bar');
+    const pageCard = strip ? strip.nextElementSibling : null;
+    const planIdsInput = pageCard ? pageCard.querySelector('.group-plan-ids') : null;
+    const planIds = planIdsInput ? planIdsInput.value : '';
+    const groupLabel = strip ? strip.querySelector('span')?.textContent?.trim() : '';
+    const date = btn.dataset.date || '';
+    const machineId = btn.dataset.machineId || '';
+    const machineName = btn.dataset.machineName || 'L-1';
+
+    document.getElementById("mainModal").classList.add('active');
+    document.getElementById("mainForm").reset();
+    document.querySelectorAll(".weight-input").forEach(input => { input.value = ""; });
+    document.getElementById("selectedBody").innerHTML = "";
+    document.getElementById("selectedTable").style.display = "none";
+
+    document.getElementById("planIdInput").value = planIds;
+    document.querySelector("input[name='name']").value = groupLabel;
+    document.querySelector("input[name='date']").value = date;
+    
+    document.getElementById("machineIdInput").value = machineId;
+    document.getElementById("machineNameDisplay").value = machineName;
+
+    document.getElementById("modalTitle").innerHTML = '<i class="fa-solid fa-flask"></i> Add Group Formulation';
+}
+
+ function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 9999;
+        font-weight: 500;
+        font-size: 14px;
+        max-width: 400px;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.5s';
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+
+ function showFormula(id){
+    let body = document.getElementById("formulaBody");
+    body.innerHTML = "";
+    let rows = formulaData[id] || [];
+
+    if(rows.length === 0){
+        body.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:20px;">No components found.</td></tr>`;
+    } else {
+        rows.forEach((x, i) => {
+            body.innerHTML += `
+            <tr>
+                <td>${i+1}</td>
+                <td><strong>${x.name}</strong></td>
+                <td style="text-align: right;"><span class="badge" style="background:#f0fdf4; color:#166534; border-color:#bbf7d0;">${x.weight} kg</span></td>
+            </tr>`;
+        });
+    }
+    document.getElementById("formulaCompositionModal").classList.add('active');
+}
+
+function openEditModal(id){
+    window.location.href = "/formulation/edit/" + id + "/";
+}
+
+function closeModal(){
+    document.getElementById("mainModal").classList.remove('active');
+}
+
+function closeFormulaModal() {
+    document.getElementById('formulaCompositionModal').classList.remove('active');
+}
+
+function filterMaterials() {
+    const input = document.getElementById('searchMaterial').value.toLowerCase();
+    const items = document.querySelectorAll('.material-item');
+    
+    items.forEach(item => {
+        const inputElement = item.querySelector('.weight-input');
+        if (inputElement) {
+            const name = inputElement.getAttribute('data-name');
+            if (name.includes(input)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        }
+    });
+}
+
+window.addEventListener('click', function(event) {
+    const viewModal = document.getElementById('viewModal');
+    const mainModal = document.getElementById('mainModal');
+    const formulaModal = document.getElementById('formulaCompositionModal');
+    if (event.target === viewModal) closeViewModal();
+    if (event.target === mainModal) closeModal();
+    if (event.target === formulaModal) closeFormulaModal();
+});
+
+function beforeSubmit() {
+    let inputs = document.querySelectorAll(".weight-input");
+    let data = [];
+    inputs.forEach(input => {
+        let value = input.value.trim();
+        if (value !== "" && parseFloat(value) > 0) {
+            let id = input.name.split("_")[1];
+            data.push({ id: id, weight: value });
+        }
+    });
+    if(data.length === 0){
+        alert("Please add weights to at least one raw material ingredient.");
+        return false;
+    }
+    document.getElementById("materialsData").value = JSON.stringify(data);
+    
+    // After successful submission, mark group as completed to hide on reload
+    const groupName = document.querySelector("input[name='name']")?.value;
+    if (groupName) {
+        let completedGroups = JSON.parse(localStorage.getItem('completedPlanningGroups')) || [];
+        if (!completedGroups.includes(groupName)) {
+            completedGroups.push(groupName);
+            localStorage.setItem('completedPlanningGroups', JSON.stringify(completedGroups));
+        }
+    }
+    
+    return true;
+}
+
+const formulaData = {
+{% for f in formulations %}
+    "{{ f.id }}":[
+    {% for item in f.items.all %}
+        {name:"{{ item.raw_material.name }}", weight:"{{ item.weight }}"},
+    {% endfor %}
+    ],
+{% endfor %}
+};
+</script>
+{% endblock %}

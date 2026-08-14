@@ -1,0 +1,479 @@
+{% extends "base_mobile.html" %}
+{% load static %}
+
+{% block title %}Stock - Maica Groups{% endblock %}
+
+{% block content %}
+<style>
+    .mobile-header {
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        padding: 16px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        z-index: 100;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .hamburger {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+    }
+
+    .hamburger-line {
+        width: 100%;
+        height: 2px;
+        background: var(--text-primary);
+        border-radius: 2px;
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 700;
+        flex: 1;
+        text-align: center;
+    }
+
+    .notification {
+        width: 24px;
+        height: 24px;
+        background: var(--bg);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .action-bar {
+        background: var(--surface);
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .quick-actions::-webkit-scrollbar {
+        display: none;
+    }
+
+    .action-pill {
+        flex: 0 0 auto;
+        height: 44px;
+        padding: 0 20px;
+        border-radius: 22px;
+        font-size: 13px;
+        font-weight: 600;
+        background: var(--bg);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        white-space: nowrap;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .search-section {
+        padding: 16px;
+    }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        color: var(--text-secondary);
+    }
+
+    .search-input {
+        width: 100%;
+        height: 48px;
+        padding: 0 14px 0 44px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 14px;
+        font-family: inherit;
+        background: var(--surface);
+        color: var(--text-primary);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+    }
+
+    .filter-section {
+        padding: 0 16px 16px;
+    }
+
+    .category-pills {
+        display: flex;
+        gap: 10px;
+    }
+
+    .category-pill {
+        flex: 1;
+        height: 44px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-secondary);
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .category-pill.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .advanced-filters {
+        margin: 0 16px 16px;
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+    }
+
+    .filter-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .filter-dropdowns {
+        display: none;
+        margin-top: 12px;
+        gap: 10px;
+        flex-direction: column;
+    }
+
+    .filter-dropdowns.open {
+        display: flex;
+    }
+
+    .filter-select {
+        height: 48px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: inherit;
+        background: var(--bg);
+        color: var(--text-primary);
+    }
+
+    .stock-list {
+        padding: 0 16px;
+    }
+
+    .stock-card {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+    }
+
+    .stock-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .product-info {
+        flex: 1;
+    }
+
+    .product-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--primary);
+        text-decoration: underline;
+        margin-bottom: 4px;
+    }
+
+    .product-serial {
+        font-size: 12px;
+        color: var(--text-secondary);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stock-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .badge-category {
+        background: #E5E7EB;
+        color: #374151;
+    }
+
+    .badge-stock-zero {
+        background: var(--critical);
+        color: white;
+    }
+
+    .badge-stock-low {
+        background: var(--warning);
+        color: white;
+    }
+
+    .badge-stock-normal {
+        background: #D1FAE5;
+        color: #065F46;
+    }
+
+    .stock-card-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stock-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .stock-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .fab {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        border: none;
+        font-size: 24px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        padding: 20px 16px;
+    }
+
+    .page-btn {
+        height: 44px;
+        padding: 0 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .page-btn.active {
+        background: var(--text-primary);
+        color: white;
+        border-color: var(--text-primary);
+    }
+
+    .page-numbers {
+        display: flex;
+        gap: 6px;
+    }
+</style>
+
+<!-- Top Navigation -->
+<div class="mobile-header">
+    <div class="hamburger">
+        <div class="hamburger-line"></div>
+        <div class="hamburger-line"></div>
+        <div class="hamburger-line"></div>
+    </div>
+    <div class="page-title">Product Stock</div>
+    <div class="notification">🔔</div>
+</div>
+
+<!-- Quick Actions -->
+<div class="action-bar">
+    <div class="quick-actions">
+        <a href="{% url 'unfinished_list' %}" class="action-pill">📦 Unfinished</a>
+        <a href="{% url 'export_stock' %}{% if query or current_category %}?{% endif %}{% if query %}q={{ query }}{% endif %}{% if current_category %}{% if query %}&{% endif %}category={{ current_category }}{% endif %}" class="action-pill">📥 Export</a>
+        <a href="{% url 'product_list' %}" class="action-pill">➕ Add New</a>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="search-section">
+    <form method="GET" style="display: flex; gap: 8px;">
+        <div class="search-wrapper" style="flex: 1;">
+            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <input type="text" name="q" class="search-input" placeholder="Search products..." value="{{ query }}">
+        </div>
+        <input type="hidden" name="category" value="{{ current_category }}">
+        <button type="submit" class="btn btn-primary" style="height: 48px; padding: 0 20px;">Search</button>
+    </form>
+</div>
+
+<!-- Category Filters -->
+<div class="filter-section">
+    <div class="category-pills">
+        <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_color %}color={{ selected_color }}&{% endif %}{% if selected_thickness %}thickness={{ selected_thickness }}&{% endif %}{% if selected_length %}length={{ selected_length }}&{% endif %}{% if selected_stamp %}stamp={{ selected_stamp }}&{% endif %}category=" class="category-pill {% if not current_category %}active{% endif %}">All</a>
+        <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_color %}color={{ selected_color }}&{% endif %}{% if selected_thickness %}thickness={{ selected_thickness }}&{% endif %}{% if selected_length %}length={{ selected_length }}&{% endif %}{% if selected_stamp %}stamp={{ selected_stamp }}&{% endif %}category=DoorSheet" class="category-pill {% if current_category == 'DoorSheet' %}active{% endif %}">Door/Sheet</a>
+        <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_color %}color={{ selected_color }}&{% endif %}{% if selected_thickness %}thickness={{ selected_thickness }}&{% endif %}{% if selected_length %}length={{ selected_length }}&{% endif %}{% if selected_stamp %}stamp={{ selected_stamp }}&{% endif %}category=Frame" class="category-pill {% if current_category == 'Frame' %}active{% endif %}">Frames</a>
+    </div>
+</div>
+
+<!-- Advanced Filters (Collapsible) -->
+<div class="advanced-filters">
+    <div class="filter-toggle" onclick="toggleFilters()">Filters ▼</div>
+    <div class="filter-dropdowns" id="filterDropdowns">
+        <select class="filter-select" onchange="this.form.submit()">
+            <option value="">All Colors</option>
+            {% for c in all_colors %}
+                <option value="{{ c.id }}" {% if selected_color == c.id|stringformat:"i" %}selected{% endif %}>{{ c.color|upper }}</option>
+            {% endfor %}
+        </select>
+        <select class="filter-select" onchange="this.form.submit()">
+            <option value="">All Thicknesses</option>
+            {% for t in all_thicknesses %}
+                <option value="{{ t.id }}" {% if selected_thickness == t.id|stringformat:"i" %}selected{% endif %}>{{ t.thickness }}</option>
+            {% endfor %}
+        </select>
+        <select class="filter-select" onchange="this.form.submit()">
+            <option value="">All Lengths</option>
+            {% for l in all_lengths %}
+                <option value="{{ l.id }}" {% if selected_length == l.id|stringformat:"i" %}selected{% endif %}>{{ l.length|floatformat:2 }} {{ l.unit|upper }}</option>
+            {% endfor %}
+        </select>
+        <select class="filter-select" onchange="this.form.submit()">
+            <option value="">All Density</option>
+            {% for val, label in all_stamps %}
+                <option value="{{ val }}" {% if selected_stamp == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <a href="?{% if current_category %}category={{ current_category }}{% endif %}" class="btn btn-secondary" style="width: 100%; height: 48px; border-radius: 10px; margin-top: 10px;">Clear Filters</a>
+    </div>
+</div>
+
+<!-- Stock List -->
+<div class="stock-list">
+    {% for item in page_obj %}
+    <div class="stock-card">
+        <div class="stock-card-header">
+            <div class="product-info">
+                <div class="product-name">{{ item.product_name }}</div>
+                <div class="product-serial">SKU: PRD-{{ item.id }}</div>
+            </div>
+        </div>
+        <div class="stock-card-body">
+            <div>
+                <div class="stock-label">Stock Quantity</div>
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <span class="badge {% if item.stock == 0 %}badge-stock-zero{% elif item.stock < 5 %}badge-stock-low{% else %}badge-stock-normal{% endif %}">
+                        {{ item.stock }} pcs
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <div class="empty-title">No Products Found</div>
+        <div class="empty-text">No products match your current filters. Try adjusting your search criteria.</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+    {% if page_obj.number > 1 %}
+        <a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}" class="page-btn">« First</a>
+    {% endif %}
+    <div class="page-numbers">
+        {% for num in page_obj.paginator.page_range|slice:":5" %}
+            {% if page_obj.number == num %}
+                <span class="page-btn active">{{ num }}</span>
+            {% else %}
+                <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}" class="page-btn">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}" class="page-btn">Next »</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Floating Action Button -->
+<a href="{% url 'product_list' %}" class="fab">+</a>
+
+<script>
+    function toggleFilters() {
+        const dropdowns = document.getElementById('filterDropdowns');
+        dropdowns.classList.toggle('open');
+    }
+</script>
+
+{% endblock %}

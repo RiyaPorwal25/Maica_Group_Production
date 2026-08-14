@@ -1,0 +1,806 @@
+{% extends "base.html" %}
+{% load static %}
+{% load filters %}
+{% block title %}Planning - Frame Sheet{% endblock %}
+
+
+{% block content %}
+<style>
+:root {
+    --primary: #3f2e97;
+    --primary-hover: #31227b;
+    --accent: #e1251b;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --bg-light: #f9fafb;
+    --bg-shell: #f3f4f6;
+    --success: #10b981;
+}
+
+.page-shell {
+    max-width: 1300px;
+    margin: 32px auto;
+    padding: 0 24px 40px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.page-card {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 32px 32px 16px;
+    flex-wrap: wrap;
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .page-shell {
+        max-width: 98%;
+        margin: 20px auto;
+        padding: 0 12px 32px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 24px 16px 12px;
+        gap: 12px;
+    }
+    
+    .page-header h1 {
+        font-size: 22px;
+    }
+    
+    .page-header p {
+        font-size: 13px;
+    }
+    
+    .table-wrap {
+        padding: 12px;
+    }
+    
+    .planning-table th,
+    .planning-table td {
+        padding: 10px 8px;
+        font-size: 11px;
+    }
+    
+    .btn-icon {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+}
+
+.page-header h1 {
+    margin: 0;
+    color: var(--primary);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.page-header p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    padding: 16px 32px 32px;
+}
+
+.planning-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.planning-table thead th {
+    background: var(--bg-light);
+    color: var(--text);
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+
+.planning-table tbody td {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 14px;
+}
+
+.planning-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.planning-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.center { text-align: center; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: #eef2ff;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.badge-remark {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.badge-remark.urgent {
+    background: #fef2f2;
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.action-cell {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-icon {
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-icon:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background 0.15s ease;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+.empty-state {
+    padding: 64px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* Modals Modernized */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.modal-content {
+    max-width: 650px;
+    width: 100%;
+    margin: 4vh auto;
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+}
+
+.modal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+}
+
+.close {
+    border: none;
+    background: #f3f4f6;
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #6b7280;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+.close:hover { background: #e5e7eb; color: var(--text); }
+
+/* Form Component layouts */
+.form-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #fff;
+    color: var(--text);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(63, 46, 151, 0.15);
+}
+
+.search-box { margin: 24px 0 16px; }
+
+/* Collapsible Categories for Materials */
+.cat-box {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+.cat-head {
+    background: var(--bg-light);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+.cat-badge { font-weight: 600; color: var(--text); font-size: 14px; }
+.cat-body { display: none; padding: 16px; background: #fff; border-top: 1px solid var(--border); }
+.cat-body.show-cat { display: block; }
+
+.material-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+}
+.material-item {
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+}
+.material-item label { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.4; }
+
+/* Sub tables in modal */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+.table th, .table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+.table th { font-weight: 600; background: var(--bg-light); }
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.detail-item {
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.detail-item span {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.detail-item p { margin: 0; font-weight: 600; color: var(--text); font-size: 15px; }
+
+@media (max-width: 768px) {
+    .page-header { padding: 24px 16px 8px; }
+    .table-wrap { padding: 8px 16px 24px; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .form-grid-4 { grid-template-columns: 1fr; }
+    .modal-content { padding: 20px; }
+}
+</style>
+
+<div class="page-shell">
+    <div class="page-card">
+        <div class="page-header">
+            <div>
+                <h1>Doorline</h1>
+                <p>Door planning records</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="planning-table">
+                <thead>
+                    <tr>
+                        <th class="center" style="width: 70px;">S.No</th>
+                        <th>Category</th>
+                        <th>Thickness</th>
+                        <th>height</th>
+                        <th>width</th>
+                        <th>Color</th>
+                        <th>density</th>
+                        <th class="num">Quantity</th>
+                        <th class="num">Wt.Sheet/KG</th>
+                        <th class="center">Remark</th>
+                        <th class="center" style="width: 240px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan in door_plans %}
+                    <tr>
+                        <td class="center"><span class="badge-count">{{ forloop.counter }}</span></td>
+                        <td><strong>{{ plan.category }}</strong></td>
+                        <td>{{ plan.thickness|default_if_none:"-" }}</td>
+                        <td>{{ plan.height|default_if_none:"-" }}</td>
+                        <td>{{ plan.width|default_if_none:"-" }}</td>
+                        <td>{{ plan.density|default_if_none:"-" }}</td>
+                        <td>{{ plan.color|default_if_none:"-" }}</td>
+                        <td class="num"><strong>{{ plan.quantity }}</strong></td>
+                        <td class="num">{{ plan.weight|floatformat:4 }}</td>
+                        <td class="center">
+                            {% if plan.remark %}
+                                <span class="badge-remark {% if plan.remark == 'Urgent' %}urgent{% endif %}">{{ plan.remark }}</span>
+                            {% else %}
+                                <span class="muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="center">
+                            <div class="action-cell">
+                                <button
+                                    class="btn-icon"
+                                    type="button"
+                                    data-plan-id="{{ plan.id }}"
+                                    data-size="{% if plan.thickness %}{{ plan.thickness }}{% endif %}"
+                                    data-length="{% if plan.height %}{{ plan.height }}{% endif %}"
+                                    data-width="{% if plan.width %}{{ plan.width }}{% endif %}"
+                                    data-color="{{ plan.color|default:'' }}"
+                                    onclick="openModalWithData(this)">
+                                    Add Formulation
+                                </button>
+                                <button
+                                    class="btn-icon"
+                                    type="button"
+                                    data-view-url="{% url 'planning_detail_json' plan.id %}"
+                                    onclick="viewPlan(this)">
+                                    View
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11">
+                            <div class="empty-state">No door planning records found.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============ FORMULATIONS TABLE ============ -->
+    {% comment %} {% if formulations %}
+    <div class="page-card" style="margin-top: 24px;">
+        <div class="page-header">
+            <div>
+                <h1>Frame Formulations</h1>
+                <p>{{ formulations|length }} pending formulation(s)</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="planning-table">
+                <thead>
+                    <tr>
+                        <th class="center" style="width: 70px;">S.No</th>
+                        <th>Date</th>
+                        <th>Machine</th>
+                        <th>Shift</th>
+                        <th>Product Name</th>
+                        <th class="center" style="width: 250px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in formulations %}
+                    <tr>
+                        <td class="center"><span class="badge-count">{{ forloop.counter }}</span></td>
+                        <td>{{ f.date|date:"d-m-Y" }}</td>
+                        <td><span class="badge-count">{{ f.machine.name }}</span></td>
+                        <td>{{ f.shift }}</td>
+                        <td><strong>{{ f.name }}</strong></td>
+                        <td class="center">
+                            <div class="action-cell">
+                                <button class="btn-icon" onclick="showFormula('{{ f.id }}')" style="background:var(--primary); color:#fff; border:none;">Show Formulation</button>
+                                <button class="btn-icon" onclick="openEditModal('{{ f.id }}')" style="background:#f59e0b; color:#fff; border:none;">Edit</button>
+                                <a href="{% url 'add_batch' f.id %}" class="btn-icon" style="background:var(--success); color:#fff; border:none;">Add Batch</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div> {% endcomment %}
+
+<div id="viewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-top">
+            <h3 style="margin:0;color:var(--primary); font-size: 20px; font-weight:700;">View Planning Details</h3>
+            <button class="close" type="button" onclick="closeViewModal()">&times;</button>
+        </div>
+        <div id="viewContent" class="detail-grid"></div>
+    </div>
+</div>
+
+<div class="modal" id="mainModal">
+    <div class="modal-content" style="max-width: 750px;">
+        <div class="modal-top">
+            <h3 id="modalTitle" style="margin:0;color:var(--primary); font-size: 20px; font-weight:700;">Add Formulation</h3>
+            <button type="button" class="close" onclick="closeModal()">&times;</button>
+        </div>
+
+        <form method="POST" action="{% url 'batch_issue_page' %}" id="groupForm">
+            {% csrf_token %}
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin: 18px 0;">
+                <div style="flex: 1; min-width: 240px;">
+                    <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text)">Group name</label>
+                    <input type="text" name="group_name" class="form-control" placeholder="e.g. GROUP A" required>
+                </div>
+                <input type="hidden" name="action" value="group_formulation">
+                <button type="submit" class="btn-primary" style="border:none; padding:12px 16px;">Group Formulation (Set 1 Batch)</button>
+            </div>
+        </form>
+
+        <form method="POST" id="mainForm" action="{% url 'formulation_page' %}" onsubmit="return beforeSubmit()" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="is_loss" value="0">
+            <input type="hidden" name="plan_id" id="planIdInput" value="">
+
+            <div class="form-grid-4">
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text)">Date</label>
+                    <input type="date" name="date" class="form-control" required>
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text)">Machine</label>
+                    <select name="machine" class="form-control" required>
+                        <option value="">Select Machine</option>
+                        {% for m in machines %}
+                            <option value="{{ m.id }}">{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text)">Shift</label>
+                    <select name="shift" class="form-control" required>
+                        <option value="">Select Shift</option>
+                        <option value="Day">Day</option>
+                        <option value="Night">Night</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--text)">Product Name</label>
+                    <input type="text" name="name" placeholder="Product Name" class="form-control" required>
+                </div>
+            </div>
+
+            <table class="table" id="selectedTable" style="display:none; margin-bottom:24px; border: 1px solid var(--border); border-radius:8px;">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">S.No</th>
+                        <th>Active Raw Material Configured</th>
+                        <th style="text-align: right; width: 150px;">Weight</th>
+                    </tr>
+                </thead>
+                <tbody id="selectedBody"></tbody>
+            </table>
+
+            <div class="search-box">
+                <input type="text" id="searchMaterial" class="form-control" placeholder="🔍 Quick search raw materials..." onkeyup="filterMaterials()">
+            </div>
+
+            <div id="materialList">
+            {% for category, mats in materials_grouped.items %}
+                <div class="cat-box">
+                    <div class="cat-head" onclick="toggleCat(this)">
+                        <span class="cat-badge">{{ category }}</span>
+                        <span class="toggle-icon" style="font-size: 16px; font-weight: bold; color: var(--muted);">+</span>
+                    </div>
+                    <div class="cat-body {% if forloop.first %}show-cat{% endif %}">
+                        <div class="material-grid">
+                        {% for rm in mats %}
+                            <div class="material-item">
+                                <label>{{ rm.name }} <br><span style="font-size:11px; color:var(--muted); font-weight:normal;">Stock: {{ rm.current_stock }} kg</span></label>
+                                <input type="number" step="0.01" name="weight_{{ rm.id }}" data-name="{{ rm.name|lower }}" class="weight-input form-control" placeholder="0.00" min="0">
+                            </div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+
+            <input type="hidden" name="materials" id="materialsData">
+            <button class="btn-primary" style="width:100%; margin-top:24px; padding: 14px; border:none; font-weight:600;">Submit Formulation</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="formulaCompositionModal">
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-top">
+            <h3 style="margin:0;color:var(--primary); font-size: 20px; font-weight:700;">Formula Composition View</h3>
+            <button type="button" class="close" onclick="closeFormulaModal()">&times;</button>
+        </div>
+        <div class="table-container" style="margin-top: 15px; overflow-x:auto;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">S.No</th>
+                        <th>Raw Material Item</th>
+                        <th style="text-align: right; width: 160px;">Specified Weight</th>
+                    </tr>
+                </thead>
+                <tbody id="formulaBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function closeViewModal() {
+    document.getElementById('viewModal').style.display = 'none';
+}
+
+async function viewPlan(button) {
+    const url = button.dataset.viewUrl;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const details = [
+            ['Category', data.category || '-'],
+            ['thickness', data.thickness || '-'],
+            ['height', data.height || '-'],
+            ['width', data.width || '-'],
+            ['density', data.density || '-'],
+            ['Color', data.color || '-'],
+            ['Quantity', data.quantity ?? '-'],
+            ['Weight', data.weight ?? '-'],
+            ['Remark', data.remark || '-'],
+        ];
+
+        const container = document.getElementById('viewContent');
+        container.innerHTML = details.map(([label, value]) => `
+            <div class="detail-item">
+                <span>${label}</span>
+                <p>${value}</p>
+            </div>
+        `).join('');
+
+        document.getElementById('viewModal').style.display = 'block';
+    } catch (error) {
+        console.error("Error fetching plan data:", error);
+    }
+}
+
+function openModalWithData(btn){
+    // Get plan data from button data attributes
+    const planId = btn.dataset.planId || '';
+    const size = btn.dataset.size || '';
+    const length = btn.dataset.length || '';
+    const width = btn.dataset.width || '';
+    const color = btn.dataset.color || '';
+    
+    // Generate product name using the same pattern as Product.generate_name()
+    let productName = '';
+    if (size && length && width && color) {
+        productName = `WPC Door ${size} -${length} x${width} ${color}`;
+    } else if (size && length && width) {
+        productName = `WPC Door ${size} -${length} x${width}`;
+    } else if (size && length && color) {
+        productName = `WPC Door ${size} -${length} ${color}`;
+    } else if (size && length) {
+        productName = `WPC Door ${size} -${length}`;
+    } else if (size) {
+        productName = `WPC Door ${size}`;
+    } else {
+        productName = 'WPC Door';
+    }
+    
+    document.getElementById("mainModal").style.display = "block";
+    document.getElementById("mainForm").reset();
+    document.querySelectorAll(".weight-input").forEach(input => { input.value = ""; });
+    document.getElementById("selectedBody").innerHTML = "";
+    document.getElementById("selectedTable").style.display = "none";
+    
+    // Set the plan_id hidden field so the planning record gets deleted after submission
+    document.getElementById("planIdInput").value = planId;
+    
+    // Auto-fill the product name
+    document.querySelector("input[name='name']").value = productName;
+}
+function showFormula(id){
+    let body = document.getElementById("formulaBody");
+    body.innerHTML = "";
+    let rows = formulaData[id] || [];
+
+    if(rows.length === 0){
+        body.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:20px;">No components found.</td></tr>`;
+    } else {
+        rows.forEach((x, i) => {
+            body.innerHTML += `
+            <tr>
+                <td>${i+1}</td>
+                <td><strong>${x.name}</strong></td>
+                <td style="text-align: right;"><span class="badge" style="background:#f0fdf4; color:#166534; border-color:#bbf7d0;">${x.weight} kg</span></td>
+            </tr>`;
+        });
+    }
+    document.getElementById("formulaCompositionModal").style.display = "block";
+}
+
+function openEditModal(id){
+    // Redirect to the edit formulation page
+    window.location.href = "/formulation/edit/" + id + "/";
+}
+
+function closeModal(){
+    document.getElementById("mainModal").style.display = "none";
+}
+
+function closeFormulaModal() {
+    document.getElementById('formulaCompositionModal').style.display = 'none';
+}
+
+function toggleCat(header) {
+    const body = header.nextElementSibling;
+    const icon = header.querySelector('.toggle-icon');
+    if (body.classList.contains('show-cat')) {
+        body.classList.remove('show-cat');
+        if(icon) icon.innerText = '+';
+    } else {
+        body.classList.add('show-cat');
+        if(icon) icon.innerText = '−';
+    }
+}
+
+function filterMaterials() {
+    const input = document.getElementById('searchMaterial').value.toLowerCase();
+    const items = document.querySelectorAll('.material-item');
+    
+    items.forEach(item => {
+        const inputElement = item.querySelector('.weight-input');
+        if (inputElement) {
+            const name = inputElement.getAttribute('data-name');
+            if (name.includes(input)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        }
+    });
+}
+
+window.addEventListener('click', function(event) {
+    const viewModal = document.getElementById('viewModal');
+    const mainModal = document.getElementById('mainModal');
+    const formulaModal = document.getElementById('formulaCompositionModal');
+    if (event.target === viewModal) closeViewModal();
+    if (event.target === mainModal) closeModal();
+    if (event.target === formulaModal) closeFormulaModal();
+});
+
+function beforeSubmit() {
+    let inputs = document.querySelectorAll(".weight-input");
+    let data = [];
+    inputs.forEach(input => {
+        let value = input.value.trim();
+        if (value !== "" && parseFloat(value) > 0) {
+            let id = input.name.split("_")[1];
+            data.push({ id: id, weight: value });
+        }
+    });
+    if(data.length === 0){
+        alert("Please add weights to at least one raw material ingredient.");
+        return false;
+    }
+    document.getElementById("materialsData").value = JSON.stringify(data);
+    return true;
+}
+
+// Structural initialization for Django templates array definitions
+const formulaData = {
+{% for f in formulations %}
+    "{{ f.id }}":[
+    {% for item in f.items.all %}
+        {name:"{{ item.raw_material.name }}", weight:"{{ item.weight }}"},
+    {% endfor %}
+    ],
+{% endfor %}
+};
+</script>
+{% endblock %}

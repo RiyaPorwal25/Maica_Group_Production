@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+{% load static %}
+<link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+<!-- this is login page -->
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-dark: #2c1f6f;
+    --accent-red: #E1251B;
+    --white: #ffffff;
+    --light-bg: #f4f5ff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* background image layer */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url("{% static 'images/bg.jpeg' %}") no-repeat center center fixed;
+    background-size: cover;
+    z-index: -2;
+}
+
+/* blur + white fade ONLY on background */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(1px);
+    z-index: -1;
+}
+
+/* your form / content */
+.content {
+    position: relative;
+    z-index: 1;
+}
+.login-container {
+    background: var(--white);
+    padding: 40px 30px;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+    width: 360px;
+    max-width: 90%;
+    text-align: center;
+    border-top: 6px solid var(--primary);
+}
+
+/* Logo */
+.login-logo {
+    width: 130px;
+    max-width: 60%;
+    margin-bottom: 20px;
+}
+
+.login-container h2 {
+    color: var(--primary);
+    margin-bottom: 25px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .login-container {
+        padding: 30px 20px;
+        width: 90%;
+        max-width: 350px;
+    }
+    
+    .login-logo {
+        width: 100px;
+    }
+    
+    .login-container h2 {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .login-container input[type="text"],
+    .login-container input[type="password"] {
+        font-size: 14px;
+        padding: 10px;
+    }
+    
+    .login-container button {
+        font-size: 15px;
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 24px 16px;
+    }
+    
+    .login-logo {
+        width: 80px;
+        margin-bottom: 15px;
+    }
+    
+    .login-container h2 {
+        font-size: 18px;
+        margin-bottom: 18px;
+    }
+}
+
+.login-container input[type="text"],
+.login-container input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    font-size: 15px;
+    transition: 0.3s ease;
+    background: #fafafa;
+}
+
+.login-container input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(63,46,151,0.15);
+    background: var(--white);
+}
+
+.login-container button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.login-container button:hover {
+    box-shadow: 0 8px 25px rgba(63,46,151,0.3);
+}
+
+.login-container .footer {
+    margin-top: 15px;
+    font-size: 13px;
+    color: var(--primary);
+}
+
+.credit {
+    margin-top: 20px;
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 0.5px;
+}
+
+.credit span {
+    color: var(--primary);
+    font-weight: 600;
+}
+</style>
+<script>
+    // Prevent browser back button from showing cached pages after logout.
+    // When the login page loads, replace the current history entry so the
+    // user cannot go "back" to a previously viewed authenticated page.
+    if (window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.href);
+    }
+    // Also clear forward history entries pointing to protected pages.
+    if (window.history.pushState) {
+        window.history.pushState(null, '', window.location.href);
+        window.onpopstate = function () {
+            window.history.pushState(null, '', window.location.href);
+        };
+    }
+</script>
+</head>
+<body>
+
+<div class="login-container">
+
+    <!-- Added Logo Only -->
+    <img src="{% static 'images/new.png' %}" alt="Logo" class="login-logo">
+
+    <h2>Login</h2>
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            {% if error %}
+                <p style="color:red;">{{ error }}</p>
+            {% endif %}
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Log In</button>
+        </form>
+
+    <!-- <div class="footer">
+        Forgot your password?
+    </div> -->
+
+    <div class="credit">
+        ~Design by <span>Riya Porwal</span>
+    </div>
+
+</div>
+</body>
+</html>

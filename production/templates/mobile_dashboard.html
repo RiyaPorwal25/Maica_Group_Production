@@ -1,0 +1,590 @@
+{% extends "base_mobile.html" %}
+{% load static %}
+
+{% block title %}Dashboard - Maica Groups{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Mobile Dashboard Specific Styles */
+    .mobile-header {
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        padding: 16px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        z-index: 100;
+    }
+
+    .header-greeting {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .header-subtitle {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .action-bar {
+        background: var(--surface);
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .pill-switcher {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .pill-switcher::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pill {
+        flex: 0 0 auto;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        background: var(--bg);
+        color: var(--text-secondary);
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+        text-decoration: none;
+    }
+
+    .pill.active {
+        background: var(--text-primary);
+        color: white;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        min-height: 48px;
+        padding: 0 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+    .btn:active {
+        transform: scale(0.98);
+    }
+
+    .btn-primary {
+        background: var(--success);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: var(--info);
+        color: white;
+    }
+
+    .filter-card {
+        margin: 12px 16px;
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+    }
+
+    .filter-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
+    }
+
+    .date-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .input-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .input-field {
+        height: 48px;
+        padding: 0 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--text-primary);
+        background: var(--surface);
+    }
+
+    .input-field:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+    }
+
+    .btn-full {
+        width: 100%;
+        min-height: 48px;
+        background: var(--text-primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+    }
+
+    .machine-filter-section {
+        padding: 0 16px;
+        margin-bottom: 16px;
+    }
+
+    .machine-pills {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+    }
+
+    .machine-pills::-webkit-scrollbar {
+        display: none;
+    }
+
+    .machine-pill {
+        flex: 0 0 auto;
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        background: var(--surface);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        scroll-snap-align: start;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+    }
+
+    .machine-pill.active {
+        background: var(--text-primary);
+        color: white;
+        border-color: var(--text-primary);
+    }
+
+    .kpi-section {
+        padding: 0 16px;
+    }
+
+    .kpi-card {
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: var(--shadow);
+        border-left: 4px solid;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .kpi-card.blue { border-left-color: #2196F3; }
+    .kpi-card.green { border-left-color: var(--success); }
+    .kpi-card.purple { border-left-color: #8B5CF6; }
+    .kpi-card.orange { border-left-color: var(--warning); }
+    .kpi-card.red { border-left-color: var(--critical); }
+    .kpi-card.teal { border-left-color: var(--primary); }
+    .kpi-card.gray { border-left-color: #6B7280; }
+
+    .kpi-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .kpi-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .section-header {
+        padding: 0 16px;
+        margin: 24px 0 12px;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .machine-card {
+        margin: 0 16px 12px;
+        background: var(--surface);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        border-left: 4px solid;
+    }
+
+    .machine-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .machine-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .status-badge.running {
+        background: #D1FAE5;
+        color: #065F46;
+    }
+
+    .status-badge.idle {
+        background: #FEE2E2;
+        color: #991B1B;
+    }
+
+    .machine-body {
+        padding: 12px 16px;
+    }
+
+    .machine-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        font-size: 14px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .machine-row:last-child {
+        border-bottom: none;
+    }
+
+    .machine-row .label {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .machine-row .value {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .charts-section {
+        padding: 0 16px 24px;
+    }
+
+    .chart-card {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow);
+    }
+
+    .chart-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+    }
+
+    .chart-placeholder {
+        height: 280px;
+        background: var(--bg);
+        border-radius: 12px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        padding: 20px;
+        gap: 12px;
+    }
+
+    .chart-bar {
+        flex: 1;
+        max-width: 60px;
+        background: var(--primary);
+        border-radius: 8px 8px 0 0;
+        position: relative;
+    }
+
+    .chart-bar.amber {
+        background: var(--secondary);
+    }
+
+    .chart-bar-label {
+        position: absolute;
+        bottom: -24px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 11px;
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+
+    .chart-bar-value {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 11px;
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+
+    .chart-legend {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 24px;
+        flex-wrap: wrap;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+    }
+
+    .legend-dot.teal { background: var(--primary); }
+    .legend-dot.amber { background: var(--secondary); }
+    .legend-dot.sky { background: #7DD3FC; }
+    .legend-dot.soft-blue { background: #BAE6FD; }
+    .legend-dot.soft-red { background: #FECACA; }
+    .legend-dot.red { background: #EF4444; }
+</style>
+
+<!-- Top Header -->
+<div class="mobile-header">
+    <div class="header-greeting">Good morning, {{ user.full_name }}!</div>
+    <div class="header-subtitle">Production Overview</div>
+</div>
+
+<!-- Action Bar -->
+<div class="action-bar">
+    <div class="pill-switcher">
+        <a href="/dashboard_v2/" class="pill active">Analytics</a>
+        <a href="/dashboard/" class="pill">Production Report</a>
+    </div>
+    <div class="action-buttons">
+        <a href="/planning/" class="btn btn-primary">+ Add Frame Planning</a>
+        <a href="/planning/" class="btn btn-primary">+ Add Door Planning</a>
+        <a href="{% url 'calculator' %}" class="btn btn-secondary">Calculator</a>
+    </div>
+</div>
+
+<!-- Date Filter Card -->
+<div class="filter-card">
+    <form method="GET">
+        <div class="filter-label">SELECT DATE RANGE</div>
+        <div class="date-inputs">
+            <div class="input-group">
+                <label>From</label>
+                <input type="date" name="from_date" class="input-field" value="{{ from_date|date:'Y-m-d' }}">
+            </div>
+            <div class="input-group">
+                <label>To</label>
+                <input type="date" name="to_date" class="input-field" value="{{ to_date|date:'Y-m-d' }}">
+            </div>
+        </div>
+        <button type="submit" class="btn-full">Apply</button>
+    </form>
+</div>
+
+<!-- Machine Filter -->
+<div class="machine-filter-section">
+    <div class="machine-pills">
+        <a href="?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}" class="machine-pill {% if not selected_machine %}active{% endif %}">ALL DATA</a>
+        {% for m in machines %}
+        <a href="?from_date={{ from_date|date:'Y-m-d' }}&to_date={{ to_date|date:'Y-m-d' }}&machine={{ m.name }}" class="machine-pill {% if selected_machine == m.name %}active{% endif %}">{{ m.name }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-section">
+    <div class="kpi-card blue">
+        <div class="kpi-label">Consumption</div>
+        <div class="kpi-value">{{ kpis.consumption|floatformat:2 }} kg</div>
+    </div>
+    <div class="kpi-card green">
+        <div class="kpi-label">Actual Production</div>
+        <div class="kpi-value">{{ kpis.actual_production|floatformat:2 }} kg</div>
+    </div>
+    <div class="kpi-card purple">
+        <div class="kpi-label">Prod vs Cons</div>
+        <div class="kpi-value">{{ kpis.consumption_vs_production|floatformat:2 }} kg</div>
+    </div>
+    <div class="kpi-card orange">
+        <div class="kpi-label">Side Patti</div>
+        <div class="kpi-value">{{ kpis.side_patti|floatformat:2 }} kg</div>
+    </div>
+    <div class="kpi-card red">
+        <div class="kpi-label">Scrap</div>
+        <div class="kpi-value">{{ kpis.scrap|floatformat:2 }} kg</div>
+    </div>
+    <div class="kpi-card teal">
+        <div class="kpi-label">Target Achieved</div>
+        <div class="kpi-value">{{ kpis.target_achieved }}%</div>
+    </div>
+    <div class="kpi-card gray">
+        <div class="kpi-label">Rejection</div>
+        <div class="kpi-value">{{ kpis.rejection|floatformat:2 }} kg</div>
+    </div>
+</div>
+
+<!-- Machine Status Section -->
+<div class="section-header">Machine Status</div>
+
+{% for m in machine_status %}
+<div class="machine-card" style="border-left-color: {{ m.status|yesno:'#10B981,#EF4444' }};">
+    <div class="machine-header">
+        <div class="machine-name">{{ m.machine }}</div>
+        <span class="status-badge {% if m.status == 'RUNNING' %}running{% else %}idle{% endif %}">{{ m.status }}</span>
+    </div>
+    <div class="machine-body">
+        <div class="machine-row">
+            <span class="label">Operator</span>
+            <span class="value">{{ m.operator }}</span>
+        </div>
+        <div class="machine-row">
+            <span class="label">Target Achieved</span>
+            <span class="value">{{ m.target_achieved }}%</span>
+        </div>
+        <div class="machine-row">
+            <span class="label">Consumption</span>
+            <span class="value">{{ m.consumption|floatformat:2 }} kg</span>
+        </div>
+        <div class="machine-row">
+            <span class="label">Production</span>
+            <span class="value">{{ m.production|floatformat:2 }} kg</span>
+        </div>
+        <div class="machine-row">
+            <span class="label">Difference</span>
+            <span class="value">{{ m.difference|floatformat:2 }} kg</span>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Charts Section -->
+<div class="section-header">Production Analytics</div>
+
+<div class="charts-section">
+    <div class="chart-card">
+        <div class="chart-title">Day vs Night Output</div>
+        <div class="chart-placeholder">
+            {% for item in chart_data %}
+            <div class="chart-bar" style="height: {{ item.day|floatformat:0|default:'50' }}px;">
+                <div class="chart-bar-value">{{ item.day|floatformat:0 }}</div>
+                <div class="chart-bar-label">Day</div>
+            </div>
+            <div class="chart-bar amber" style="height: {{ item.night|floatformat:0|default:'50' }}px;">
+                <div class="chart-bar-value">{{ item.night|floatformat:0 }}</div>
+                <div class="chart-bar-label">Night</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-title">Production vs Scrap</div>
+        <div class="chart-placeholder">
+            <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; flex: 1;">
+                {% for item in scrap_chart_data %}
+                <div style="display: flex; gap: 4px; align-items: flex-end; height: 200px;">
+                    <div class="chart-bar" style="height: {{ item.day_prod|floatformat:0|default:'50' }}px; background: #0EA5E9;"></div>
+                    <div class="chart-bar" style="height: {{ item.night_prod|floatformat:0|default:'50' }}px; background: #7DD3FC;"></div>
+                    <div class="chart-bar red" style="height: {{ item.day_scrap|floatformat:0|default:'20' }}px; background: #FECACA;"></div>
+                    <div class="chart-bar red" style="height: {{ item.night_scrap|floatformat:0|default:'20' }}px; background: #FCA5A5;"></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="chart-legend">
+            <div class="legend-item">
+                <div class="legend-dot sky"></div>
+                <span>Production Day</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot soft-blue"></div>
+                <span>Production Night</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot soft-red"></div>
+                <span>Scrap Day</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot red"></div>
+                <span>Scrap Night</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

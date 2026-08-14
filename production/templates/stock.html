@@ -1,0 +1,729 @@
+{% extends "base.html" %}
+
+{% block title %}Stock{% endblock %}
+
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+:root {
+    --primary: #3F2E97;       /* Logo Purple */
+    --primary-dark: #2c1f6f;
+    --accent-red: #E1251B;    /* Logo Red */
+    --white: #ffffff;
+    --light-bg: #f4f5ff;
+    --border-soft: rgba(63,46,151,0.08);
+    --border-gray: #e5e7eb;
+}
+
+/* ================= PAGE LAYOUT ================= */
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    user-select: none;
+}
+
+.stock-container {
+    max-width: 1100px;
+    width: 95%;
+    margin: 20px auto;
+    padding: 0;
+}
+
+.stock-container h1 {
+    color: var(--primary);
+    margin-bottom: 25px;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* ================= PILL SWITCHER COMPONENT ================= */
+.toggle-capsule {
+    display: inline-flex;
+    align-items: center;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 50px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.toggle-link {
+    text-decoration: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 50px;
+    transition: all 0.2s ease;
+    color: #4b5563;
+}
+
+.toggle-link.active {
+    background-color: #eef2ff;
+    color: #3f2e97;
+    font-weight: 600;
+}
+
+.toggle-link:not(.active):hover {
+    color: #1f2937;
+    background-color: #f9fafb;
+}
+
+/* ================= TABLES ================= */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+    border: 1px solid var(--border-gray);
+    background: var(--white);
+    margin-top: 20px;
+}
+
+.stock-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stock-table thead th {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    font-weight: 600;
+    padding: 14px 15px;
+    text-align: center;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.stock-table td {
+    padding: 13px 15px;
+    text-align: center;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-soft);
+    color: #333;
+}
+
+.stock-table tbody tr {
+    transition: all 0.25s ease;
+}
+
+.stock-table tbody tr:hover {
+    background: rgba(63,46,151,0.04);
+}
+
+/* ================= BUTTONS ================= */
+.add-btn, .edit-btn, .delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    border: none;
+    height: 38px;
+}
+
+.add-btn {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+}
+
+.add-btn:hover {
+    box-shadow: 0 6px 20px rgba(63,46,151,0.25);
+    opacity: 0.95;
+}
+
+.edit-btn {
+    background-color: #f3f4ff;
+    color: var(--primary);
+    border: 1px solid rgba(63,46,151,0.2);
+}
+
+.edit-btn:hover {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.delete-btn {
+    border: 1.5px solid var(--accent-red);
+    color: var(--accent-red);
+    background: transparent;
+}
+
+.delete-btn:hover {
+    background: var(--accent-red);
+    color: var(--white);
+}
+
+/* ================= FORM CONTROLS ================= */
+.search-input {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    height: 38px;
+    font-size: 14px;
+    outline: none;
+    transition: 0.25s;
+}
+
+.search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(63,46,151,0.12);
+}
+
+/* ================= STOCK ALERTS ================= */
+.stock-zero { color: var(--accent-red); font-weight: 700; background: #ffeeef; padding: 4px 10px; border-radius: 20px; }
+.stock-low { color: #ff9800; font-weight: 600; background: #fffcf4; padding: 4px 10px; border-radius: 20px; }
+.stock-normal { color: #2e7d32; font-weight: 600; }
+
+/* ================= PAGINATION ================= */
+.pagination {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    margin: 25px 0 0 0;
+    padding: 0;
+    gap: 6px;
+}
+
+.pagination li {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--white);
+}
+
+.pagination li a, .pagination li span {
+    display: block;
+    padding: 8px 16px;
+    text-decoration: none;
+    color: #4b5563;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.pagination li a:hover {
+    background: #f3f4ff;
+    color: var(--primary);
+}
+
+.pagination li span.current {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    border-color: var(--primary);
+}
+
+/* ================= MODALS ================= */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: var(--white);
+    margin: 6% auto;
+    padding: 28px;
+    width: 480px;
+    max-width: 90%;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: fadeIn 0.2s ease-out;
+    border: 1px solid var(--border-gray);
+}
+
+.dispatch-modal {
+    width: 850px !important;
+}
+
+.modal-content h3 {
+    color: var(--primary);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.close {
+    color: #9ca3af;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+}
+
+.close:hover { color: var(--accent-red); }
+
+.modal-form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.modal form select, .modal form input {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    background: #fafafa;
+    box-sizing: border-box;
+}
+
+.modal form select:focus, .modal form input:focus {
+    border-color: var(--primary);
+    background: var(--white);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(63,46,151,0.12);
+}
+
+/* Dynamic Rows for Dispatch */
+.dispatch-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-gray);
+}
+
+.dispatch-product { flex: 2; }
+.dispatch-qty { flex: 1; }
+
+/* ================= SELECT2 CUSTOMIZATION ================= */
+.select2-container--default .select2-selection--single {
+    height: 40px !important;
+    border-radius: 8px !important;
+    border: 1px solid #d1d5db !important;
+    padding: 6px 10px !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 38px !important;
+}
+
+/* Caret Control */
+input, textarea, select { caret-color: auto; }
+body, td, th, span, div, p { caret-color: transparent; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .stock-container {
+        width: 98%;
+        margin: 10px auto;
+        padding: 0 8px;
+    }
+    
+    .stock-container h1 {
+        font-size: 22px;
+        margin-bottom: 15px;
+    }
+    
+    .toggle-capsule {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .table-wrapper {
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    }
+    
+    .stock-table th,
+    .stock-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+    
+    .add-btn, .edit-btn, .stock-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        height: 34px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stock-container {
+        width: 100%;
+        padding: 0 4px;
+    }
+    
+    .stock-container h1 {
+        font-size: 18px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+        margin: 10% auto;
+    }
+}
+
+/* ================= STOCK MOBILE HORIZONTAL / LANDSCAPE ================= */
+@media (max-width: 768px) and (orientation: landscape) {
+    .stock-container { width: 98%; margin: 8px auto; padding: 0 4px; }
+    .stock-container h1 { font-size: 18px; margin-bottom: 10px; }
+    
+    /* Header row - title and unfinished goods button */
+    .stock-container > div:first-child { flex-direction: row; align-items: center; gap: 10px; }
+    .stock-container > div:first-child > div:first-child { flex: 1; }
+    
+    /* Second row - export and search */
+    .stock-container > div:nth-child(2) { flex-direction: row; align-items: center; gap: 8px; }
+    .stock-container > div:nth-child(2) > div { flex: 1; }
+    .stock-container > div:nth-child(2) form { flex: 1; }
+    
+    /* Category filter bar */
+    .toggle-capsule { width: auto; }
+    .toggle-link { padding: 6px 12px; font-size: 12px; }
+    
+    /* Advanced filter form */
+    .stock-container form[method="GET"][style*="background"] { 
+        flex-direction: row !important; 
+        flex-wrap: wrap !important; 
+        gap: 6px !important; 
+        padding: 8px 12px !important; 
+    }
+    .stock-container form[method="GET"][style*="background"] input[type="text"] { 
+        min-width: 120px; 
+        flex: 1; 
+    }
+    .stock-container form[method="GET"][style*="background"] select { 
+        min-width: 100px; 
+        padding: 6px 8px; 
+        font-size: 12px; 
+    }
+    .stock-container form[method="GET"][style*="background"] a, 
+    .stock-container form[method="GET"][style*="background"] button { 
+        padding: 6px 10px; 
+        font-size: 12px; 
+        height: 32px; 
+    }
+    
+    .table-wrapper { border-radius: 6px; }
+    .stock-table th, .stock-table td { padding: 8px 6px; font-size: 11px; }
+    .stock-table thead th { padding: 10px 8px; font-size: 12px; }
+    
+    .add-btn, .edit-btn, .stock-btn { padding: 6px 10px; font-size: 11px; height: 30px; }
+    
+    .modal-content { padding: 16px; margin: 5% auto; }
+    .dispatch-modal { width: 95% !important; }
+    .modal-content h3 { font-size: 16px; margin-bottom: 12px; }
+    
+    .dispatch-row { flex-direction: row; flex-wrap: wrap; gap: 8px; padding: 8px; }
+    .dispatch-product { flex: 2; min-width: 150px; }
+    .dispatch-qty { flex: 1; min-width: 80px; }
+    
+    .pagination { gap: 4px; margin: 15px 0 0 0; }
+    .pagination li a, .pagination li span { padding: 6px 10px; font-size: 12px; }
+    
+    /* History modal table */
+    #historyModal .modal-content { width: 95% !important; }
+    #historyModal .table-wrapper { max-height: 300px; }
+}
+
+@media (max-width: 480px) and (orientation: landscape) {
+    .stock-container h1 { font-size: 16px; }
+    .toggle-link { padding: 4px 8px; font-size: 11px; }
+    .stock-container form[method="GET"][style*="background"] select { min-width: 80px; }
+    .stock-table th, .stock-table td { padding: 6px 4px; font-size: 10px; }
+}
+</style>
+
+<div class="stock-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h1>Product Stock Details</h1>
+            {% if messages %}
+                {% for message in messages %}
+                    <div style="color: var(--accent-red); font-weight: 600; font-size: 14px;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <a href="{% url 'unfinished_list' %}" class="add-btn" style="background: #e67e22;">📦 View Unfinished Goods</a>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <div style="display: flex; gap: 10px;">
+            {% if user.role == "Admin" %}
+            <button class="add-btn" style="background: #4b5563;" onclick="window.location.href='{% url 'export_stock' %}{% if query or current_category %}?{% endif %}{% if query %}q={{ query }}{% endif %}{% if current_category %}{% if query %}&{% endif %}category={{ current_category }}{% endif %}'">📥 Export CSV</button>
+            {% endif %}
+        </div>
+
+        <form method="GET" style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" name="q" placeholder="Search Product..." value="{{ query }}" class="search-input">
+            <input type="hidden" name="category" value="{{ current_category }}">
+            <button type="submit" class="add-btn">Search</button>
+        </form>
+    </div>
+
+    <div style="background:#f8fafc; padding:12px 20px; border-radius:12px; border: 1px solid var(--border-gray); display:flex; gap:15px; align-items:center; margin-bottom: 20px; flex-wrap: wrap;">
+        <label style="font-weight:600; color: #4b5563; font-size: 14px;">Filter Category:</label>
+        <div class="toggle-capsule">
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_color %}color={{ selected_color }}&{% endif %}{% if selected_thickness %}thickness={{ selected_thickness }}&{% endif %}{% if selected_length %}length={{ selected_length }}&{% endif %}{% if selected_stamp %}stamp={{ selected_stamp }}&{% endif %}category=" class="toggle-link {% if not current_category %}active{% endif %}">All Stock</a>
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_color %}color={{ selected_color }}&{% endif %}{% if selected_thickness %}thickness={{ selected_thickness }}&{% endif %}{% if selected_length %}length={{ selected_length }}&{% endif %}{% if selected_stamp %}stamp={{ selected_stamp }}&{% endif %}category=DoorSheet" class="toggle-link {% if current_category == 'DoorSheet' %}active{% endif %}">Door / Sheet</a>
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_color %}color={{ selected_color }}&{% endif %}{% if selected_thickness %}thickness={{ selected_thickness }}&{% endif %}{% if selected_length %}length={{ selected_length }}&{% endif %}{% if selected_stamp %}stamp={{ selected_stamp }}&{% endif %}category=Frame" class="toggle-link {% if current_category == 'Frame' %}active{% endif %}">Frames</a>
+        </div>
+    </div>
+
+    <form method="GET" style="background:#f8fafc; padding:12px 20px; border-radius:12px; border: 1px solid var(--border-gray); display:flex; gap:10px; align-items:center; margin-bottom: 20px; flex-wrap: wrap;">
+        <input type="text" name="q" placeholder="Search Product..." value="{{ query }}" class="search-input" style="flex: 1; min-width: 200px;">
+        <input type="hidden" name="category" value="{{ current_category }}">
+        
+        <select name="color" onchange="this.form.submit()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; min-width: 140px;">
+            <option value="">All Colors</option>
+            {% for c in all_colors %}
+                <option value="{{ c.id }}" {% if selected_color == c.id|stringformat:"i" %}selected{% endif %}>{{ c.color|upper }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="thickness" onchange="this.form.submit()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; min-width: 140px;">
+            <option value="">All Thicknesses</option>
+            {% for t in all_thicknesses %}
+                <option value="{{ t.id }}" {% if selected_thickness == t.id|stringformat:"i" %}selected{% endif %}>{{ t.thickness }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="length" onchange="this.form.submit()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; min-width: 140px;">
+            <option value="">All Lengths</option>
+            {% for l in all_lengths %}
+                <option value="{{ l.id }}" {% if selected_length == l.id|stringformat:"i" %}selected{% endif %}>{{ l.length|floatformat:2 }} {{ l.unit|upper }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="stamp" onchange="this.form.submit()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; min-width: 140px;">
+            <option value="">All Density</option>
+            {% for val, label in all_stamps %}
+                <option value="{{ val }}" {% if selected_stamp == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <a href="?{% if current_category %}category={{ current_category }}{% endif %}" class="add-btn" style="background: #6b7280; text-decoration: none;">Clear Filters</a>
+        <button type="submit" class="add-btn">Search</button>
+    </form>
+
+    <div class="table-wrapper">
+        <table class="stock-table" id="stockTable">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">S. No.</th>
+                    <th>Product Name</th>
+                    <th>Category Type</th>
+                    <th style="width: 200px;">Available Stock Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page_obj %}
+                <tr>
+                    <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+                    <td>
+                        <span onclick="openHistory('{{ item.id }}','{{ item.product_name }}')" style="cursor:pointer; color: var(--primary); font-weight: 600; text-decoration: underline;">
+                            {{ item.product_name }}
+                        </span>
+                    </td>
+                    <td><span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px; font-size: 13px;">{{ item.category }}</span></td>
+                    <td>
+                        <span class="{% if item.stock == 0 %}stock-zero{% elif item.stock < 5 %}stock-low{% else %}stock-normal{% endif %}">
+                            {{ item.stock }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="color: #6b7280; padding: 30px;">No final stock products found matching criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <ul class="pagination">
+        {% if page_obj.number > 1 %}
+            <li><a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">« First</a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li><span class="current">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+                <li><a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.number < page_obj.paginator.num_pages %}
+            <li><a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">Last »</a></li>
+        {% endif %}
+    </ul>
+    {% endif %}
+</div>
+
+<div id="dispatchModal" class="modal">
+    <div class="modal-content dispatch-modal">
+        <span class="close" onclick="closeModal('dispatchModal')">&times;</span>
+        <h3>📤 Order Dispatch Form</h3>
+
+        <form method="POST" id="dispatchForm" class="modal-form-grid">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="dispatch">
+
+            <div class="dispatch-row">
+                <div class="dispatch-product">
+                    <select id="dispatchProduct" class="product-select">
+                        <option value="">Search and select product item...</option>
+                        {% for p in products %}
+                            <option value="{{ p.id }}">{{ p.product_name }} (Available: {{ p.stock }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="dispatch-qty">
+                    <input type="number" id="dispatchQty" placeholder="Quantity">
+                </div>
+                <button type="button" onclick="addDispatchItem()" class="add-btn" style="background:#2e7d32;">+ Add Item</button>
+            </div>
+
+            <div class="table-wrapper" style="margin-top:10px; max-height: 250px; overflow-y: auto;">
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>Selected Product Target</th>
+                            <th style="width:120px;">Dispatch Qty</th>
+                            <th style="width:100px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dispatchTableBody"></tbody>
+                </table>
+            </div>
+
+            <input type="hidden" name="dispatch_data" id="dispatchData">
+            <button type="submit" class="add-btn" style="width:100%; margin-top:10px; height: 44px; font-size: 15px;">Confirm and Dispatch Invoice</button>
+        </form>
+    </div>
+</div>
+
+<div id="historyModal" class="modal">
+    <div class="modal-content" style="width:750px;">
+        <span class="close" onclick="closeHistory()">&times;</span>
+        <h3 id="historyTitle">Stock Lifecycle Ledger</h3>
+        <div class="table-wrapper" style="max-height:400px; overflow-y:auto; margin-top:15px;">
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Transaction Action</th>
+                        <th>Adjusted Qty</th>
+                        <th>Authorized Operator</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(id) { document.getElementById(id).style.display = 'block'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = "none";
+    }
+}
+
+$(document).ready(function() {
+    $('#dispatchProduct').select2({
+        placeholder: "Search item code or dimension name...",
+        allowClear: true,
+        dropdownParent: $('#dispatchModal')
+    });
+});
+
+function openHistory(id, name){
+    document.getElementById("historyTitle").innerText = name + " - Ledger History";
+    fetch(`/product/${id}/history-json/`)
+    .then(res => res.json())
+    .then(data => {
+        let html = "";
+        data.data.forEach(item => {
+            let isItemIn = item.type === "IN";
+            let badgeStyle = isItemIn ? "color:#1b5e20; background:#e8f5e9; font-weight:600; padding:4px 8px; border-radius:6px;" : "color:#c62828; background:#ffebee; font-weight:600; padding:4px 8px; border-radius:6px;";
+            let label = isItemIn ? "IN (Log Entry)" : "OUT (Dispatch Trx)";
+            html += `<tr>
+                <td>${item.date}</td>
+                <td><span style="${badgeStyle}">${label}</span></td>
+                <td style="font-weight:700;">${isItemIn ? '+' : '-'}${item.quantity}</td>
+                <td>${item.operator}</td>
+            </tr>`;
+        });
+        document.getElementById("historyBody").innerHTML = html || `<tr><td colspan="4" style="color:#6b7280; padding:20px;">No operational ledger records mapped to this component.</td></tr>`;
+        document.getElementById("historyModal").style.display = "block";
+    });
+}
+
+function closeHistory(){ document.getElementById("historyModal").style.display = "none"; }
+
+let dispatchItems = [];
+function addDispatchItem() {
+    let select = document.getElementById("dispatchProduct");
+    let qty = document.getElementById("dispatchQty");
+    let id = select.value;
+    let name = select.options[select.selectedIndex].text;
+
+    if (!id || !qty.value || qty.value <= 0) {
+        alert("Please completely assign a valid non-zero transaction value.");
+        return;
+    }
+    dispatchItems.push({ id: id, name: name, qty: qty.value });
+    renderDispatchTable();
+    $(select).val('').trigger('change');
+    qty.value = "";
+}
+
+function renderDispatchTable() {
+    let tbody = document.getElementById("dispatchTableBody");
+    tbody.innerHTML = "";
+    dispatchItems.forEach((item, index) => {
+        tbody.innerHTML += `<tr>
+            <td style="text-align:left; font-weight:600;">${item.name}</td>
+            <td style="font-weight:700; color:var(--primary);">${item.qty}</td>
+            <td><button type="button" class="delete-btn" style="padding:4px 10px; height:28px;" onclick="removeDispatch(${index})">✕ Remove</button></td>
+        </tr>`;
+    });
+}
+
+function removeDispatch(index) {
+    dispatchItems.splice(index, 1);
+    renderDispatchTable();
+}
+
+document.getElementById("dispatchForm").onsubmit = function () {
+    if (dispatchItems.length === 0) {
+        alert("Please stage at least 1 line item configuration before confirming form post.");
+        return false;
+    }
+    document.getElementById("dispatchData").value = JSON.stringify(dispatchItems);
+    return true;
+};
+</script>
+
+{% endblock %}

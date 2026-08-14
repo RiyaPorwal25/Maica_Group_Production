@@ -1,0 +1,1492 @@
+{% extends "base.html" %}
+{% load filters %}
+
+{% block title %}Reports{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="reports-page">
+
+    <!-- Page Header -->
+    <div class="reports-header">
+        <h1>Reports Control Panel</h1>
+    </div>
+
+    <div class="reports-layout">
+        <!-- Sidebar -->
+        <aside class="reports-sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">
+                <span>
+                    <i class="fa-solid fa-chart-pie" style="margin-right: 8px;"></i>
+                    Reports Menu
+                </span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+
+            <div class="reports-sidebar-card" id="sidebarContent">
+                <nav class="reports-nav-list">
+                    <!-- Production Dropdown -->
+                    <li class="reports-nav-item reports-dropdown {% if report_type == 'production' %}active{% endif %}">
+                        <a href="?type=production" class="reports-nav-link">
+                            <i class="fa-solid fa-industry reports-nav-icon"></i>
+                            <span>
+                                Production
+                                {% if mode == "by_operator" %} (Operator)
+                                {% elif mode == "by_machine" %} (Machine)
+                                {% elif mode == "by_date" %} (Date)
+                                {% endif %}
+                            </span>
+                            <i class="fa-solid fa-chevron-down reports-caret"></i>
+                        </a>
+                        <ul class="reports-dropdown-menu">
+                            <li><a href="?type=production&mode=by_operator" class="{% if mode == 'by_operator' %}active{% endif %}">By operator</a></li>
+                            <li><a href="?type=production&mode=by_machine" class="{% if mode == 'by_machine' %}active{% endif %}">By machine</a></li>
+                            <li><a href="?type=production&mode=by_date" class="{% if mode == 'by_date' %}active{% endif %}">By date</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Dispatch -->
+                    <li class="reports-nav-item {% if report_type == 'dispatch' %}active{% endif %}">
+                        <a href="?type=dispatch" class="reports-nav-link">
+                            <i class="fa-solid fa-truck-ramp-box reports-nav-icon"></i>
+                            Dispatch
+                        </a>
+                    </li>
+
+                    <!-- Consumption -->
+                    <li class="reports-nav-item {% if report_type == 'consumption' %}active{% endif %}">
+                        <a href="?type=consumption" class="reports-nav-link">
+                            <i class="fa-solid fa-flask reports-nav-icon"></i>
+                            Consumption
+                        </a>
+                    </li>
+
+                    <!-- Production vs Consumption -->
+                    <li class="reports-nav-item {% if report_type == 'consumption_vs_production' %}active{% endif %}">
+                        <a href="?type=consumption_vs_production" class="reports-nav-link">
+                            <i class="fa-solid fa-scale-balanced reports-nav-icon"></i>
+                            Production vs Consumption
+                        </a>
+                    </li>
+
+                    <!-- Raw Material -->
+                    <li class="reports-nav-item {% if report_type == 'raw_material' %}active{% endif %}">
+                        <a href="?type=raw_material" class="reports-nav-link">
+                            <i class="fa-solid fa-cubes reports-nav-icon"></i>
+                            Raw Material
+                        </a>
+                    </li>
+
+                    <!-- Scrap -->
+                    <li class="reports-nav-item {% if report_type == 'scrap' %}active{% endif %}">
+                        <a href="?type=scrap" class="reports-nav-link">
+                            <i class="fa-solid fa-dumpster reports-nav-icon"></i>
+                            Scrap
+                        </a>
+                    </li>
+
+                    <!-- Planning -->
+                    <li class="reports-nav-item {% if report_type == 'planning' %}active{% endif %}">
+                        <a href="?type=planning" class="reports-nav-link">
+                            <i class="fa-solid fa-calendar-check reports-nav-icon"></i>
+                            Planning
+                        </a>
+                    </li>
+
+                    <!-- Formulation -->
+                    <li class="reports-nav-item {% if report_type == 'formulation' %}active{% endif %}">
+                        <a href="?type=formulation" class="reports-nav-link">
+                            <i class="fa-solid fa-flask-vial reports-nav-icon"></i>
+                            Formulation
+                        </a>
+                    </li>
+
+                    <!-- Production Report -->
+                    <li class="reports-nav-item {% if report_type == 'production_new' %}active{% endif %}">
+                        <a href="?type=production_new" class="reports-nav-link">
+                            <i class="fa-solid fa-industry reports-nav-icon"></i>
+                            Production Report
+                        </a>
+                    </li>
+
+                    <!-- One Day Stock Alert -->
+                    <li class="reports-nav-item {% if report_type == 'one_day_stock_alert' %}active{% endif %}">
+                        <a href="?type=one_day_stock_alert" class="reports-nav-link">
+                            <i class="fa-solid fa-triangle-exclamation reports-nav-icon"></i>
+                            One Day Stock Alert
+                        </a>
+                    </li>
+
+                    <!-- Costing -->
+                    <li class="reports-nav-item {% if report_type == 'costing' %}active{% endif %}">
+                        <a href="?type=costing" class="reports-nav-link">
+                            <i class="fa-solid fa-calculator reports-nav-icon"></i>
+                            Costing
+                        </a>
+                    </li>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="reports-main">
+            
+            {% if report_type not in "scrap" %}
+            <div class="reports-action-bar">
+                <a href="{% url 'export_report' %}?{{ request.GET.urlencode }}" class="reports-btn reports-btn-success">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Download Report Ledger
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Production Filter -->
+            {% if report_type == "production" %}
+            <div class="reports-filter-card">
+                <form method="GET" id="reports-production-form">
+                    <input type="hidden" name="type" value="production">
+                    <input type="hidden" name="mode" value="{{ mode }}">
+
+                    {% if mode == "by_date" %}
+                        <div class="reports-form-grid">
+                            <div class="reports-field-group">
+                                <label for="reports-date">Select Target Date</label>
+                                <input id="reports-date" type="date" name="date" value="{{ request.GET.date }}">
+                            </div>
+                            <button type="submit" class="reports-btn reports-btn-primary">
+                                <i class="fa-solid fa-eye"></i> Show Report
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="reports-form-grid">
+                            <div class="reports-field-group">
+                                <label for="reports-from-date">From Date</label>
+                                <input id="reports-from-date" type="date" name="from_date" value="{{ from_date }}" required>
+                            </div>
+                            <div class="reports-field-group">
+                                <label for="reports-to-date">To Date</label>
+                                <input id="reports-to-date" type="date" name="to_date" value="{{ to_date }}" required>
+                            </div>
+                            {% if mode == "by_machine" %}
+                            <div class="reports-field-group">
+                                <label for="reports-shift">Operational Shift</label>
+                                <select id="reports-shift" name="shift">
+                                    <option value="">All shifts</option>
+                                    <option value="Day">Day</option>
+                                    <option value="Night">Night</option>
+                                </select>
+                            </div>
+                            <div class="reports-field-group">
+                                <label for="reports-machines">Floor Machines</label>
+                                <select id="reports-machines" name="machine" multiple aria-label="Machines">
+                                    {% for m in machines %}
+                                    <option value="{{ m.id }}">{{ m.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            {% if mode == "by_operator" %}
+                            <div class="reports-field-group">
+                                <label for="reports-operators">Operator</label>
+                                <select id="reports-operators" name="operator" multiple aria-label="Operators">
+                                    {% for m in operators %}
+                                    <option value="{{ m.id }}">{{ m.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            <button type="submit" class="reports-btn reports-btn-primary">
+                                <i class="fa-solid fa-gears"></i> Generate Report
+                            </button>
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Dispatch/Consumption/Production vs Consumption Filter -->
+            {% if report_type in "dispatch consumption consumption_vs_production" %}
+            <div class="reports-filter-card">
+                <form method="GET">
+                    <input type="hidden" name="type" value="{{ report_type }}">
+                    <div class="reports-form-grid">
+                        <div class="reports-field-group">
+                            <label for="from-date">From Date</label>
+                            <input type="date" id="from-date" name="from_date" value="{{ from_date }}">
+                        </div>
+                        <div class="reports-field-group">
+                            <label for="to-date">To Date</label>
+                            <input type="date" id="to-date" name="to_date" value="{{ to_date }}">
+                        </div>
+                        <button type="submit" class="reports-btn reports-btn-primary">
+                            <i class="fa-solid fa-rotate"></i> Generate
+                        </button>
+                        {% if report_type == "consumption" and data %}
+                        <a href="{% url 'export_report' %}?type=consumption&from_date={{ from_date }}&to_date={{ to_date }}" class="reports-btn reports-btn-success">
+                            <i class="fa-solid fa-file-excel"></i> Download Excel
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Raw Material Filter -->
+            {% if report_type == "raw_material" %}
+            <div class="reports-filter-card">
+                <form method="GET">
+                    <input type="hidden" name="type" value="raw_material">
+                    <div class="reports-form-grid">
+                        <div class="reports-field-group">
+                            <label for="reports-supplier">Supplier Name</label>
+                            <input type="text" id="reports-supplier" name="supplier" placeholder="Enter supplier name" value="{{ supplier_filter }}">
+                        </div>
+                        <div class="reports-field-group">
+                            <label for="reports-receiving-from">From Date</label>
+                            <input type="date" id="reports-receiving-from" name="receiving_from" value="{{ receiving_from }}">
+                        </div>
+                        <div class="reports-field-group">
+                            <label for="reports-receiving-to">To Date</label>
+                            <input type="date" id="reports-receiving-to" name="receiving_to" value="{{ receiving_to }}">
+                        </div>
+                        <button type="submit" class="reports-btn reports-btn-primary">
+                            <i class="fa-solid fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Planning Filter -->
+            {% if report_type == "planning" %}
+            <div class="reports-filter-card">
+                <form method="GET">
+                    <input type="hidden" name="type" value="planning">
+                    <div class="reports-form-grid">
+                        <div class="reports-field-group">
+                            <label for="planning-date">Date</label>
+                            <input type="date" id="planning-date" name="date" value="{{ planning_date }}">
+                        </div>
+                        <div class="reports-field-group">
+                            <label for="planning-category">Category</label>
+                            <select id="planning-category" name="category">
+                                <option value="">All Categories</option>
+                                <option value="Door" {% if planning_category == 'Door' %}selected{% endif %}>Door</option>
+                                <option value="Frame" {% if planning_category == 'Frame' %}selected{% endif %}>Frame</option>
+                                <option value="Sheet" {% if planning_category == 'Sheet' %}selected{% endif %}>Sheet</option>
+                            </select>
+                        </div>
+                        <div class="reports-field-group">
+                            <label for="planning-machine">Machine</label>
+                            <select id="planning-machine" name="machine" multiple>
+                                {% for m in machines %}
+                                <option value="{{ m.id }}" {% if m.id|stringformat:'s' in planning_machines %}selected{% endif %}>{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="reports-btn reports-btn-primary">
+                            <i class="fa-solid fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Formulation Filter -->
+            {% if report_type == "formulation" %}
+            <div class="reports-filter-card">
+                <form method="GET">
+                    <input type="hidden" name="type" value="formulation">
+                    <div class="reports-form-grid">
+                        <div class="reports-field-group">
+                            <label for="formulation-date">Date</label>
+                            <input type="date" id="formulation-date" name="date" value="{{ formulation_date }}">
+                        </div>
+                        <div class="reports-field-group">
+                            <label for="formulation-machine">Machine</label>
+                            <select id="formulation-machine" name="machine" multiple>
+                                {% for m in machines %}
+                                <option value="{{ m.id }}" {% if m.id|stringformat:'s' in formulation_machines %}selected{% endif %}>{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="reports-btn reports-btn-primary">
+                            <i class="fa-solid fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Production New Filter -->
+            {% if report_type == "production_new" %}
+            <div class="reports-filter-card">
+                <form method="GET">
+                    <input type="hidden" name="type" value="production_new">
+                    <div class="reports-form-grid">
+                        <div class="reports-field-group">
+                            <label for="production-report-date">Date</label>
+                            <input type="date" id="production-report-date" name="date" value="{{ production_report_date }}">
+                        </div>
+                        <div class="reports-field-group">
+                            <label for="production-report-machine">Machine</label>
+                            <select id="production-report-machine" name="machine" multiple>
+                                {% for m in machines %}
+                                <option value="{{ m.id }}" {% if m.id|stringformat:'s' in production_report_machines %}selected{% endif %}>{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="reports-btn reports-btn-primary">
+                            <i class="fa-solid fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Costing Filter -->
+            {% if report_type == "costing" %}
+            <div class="reports-filter-card">
+                <form method="GET">
+                    <input type="hidden" name="type" value="costing">
+                    <div class="reports-form-grid">
+                        <div class="reports-field-group">
+                            <label for="costing-date">Date</label>
+                            <input type="date" id="costing-date" name="costing_date" value="{{ costing_date }}" required>
+                        </div>
+                        <div class="reports-field-group">
+                            <label for="costing-machine">Machine</label>
+                            <select id="costing-machine" name="costing_machine">
+                                <option value="">All Machines</option>
+                                {% for m in costing_machines %}
+                                <option value="{{ m.id }}" {% if costing_machine|default_if_none:"" == m.id|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="reports-btn reports-btn-primary">
+                            <i class="fa-solid fa-filter"></i> Generate
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- One Day Stock Alert Filter -->
+            {% if report_type == "one_day_stock_alert" %}
+            <div class="reports-filter-card">
+                <form method="GET">
+                    <input type="hidden" name="type" value="one_day_stock_alert">
+                    <div class="reports-form-grid">
+                        <div class="reports-field-group">
+                            <label for="stock-alert-category">Category</label>
+                            <select id="stock-alert-category" name="stock_alert_category">
+                                <option value="">All Categories</option>
+                                {% for cat_value, cat_label in stock_alert_categories %}
+                                <option value="{{ cat_value }}" {% if stock_alert_category == cat_value %}selected{% endif %}>{{ cat_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="reports-btn reports-btn-primary">
+                            <i class="fa-solid fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if report_type not in "scrap" %}
+            <div class="reports-action-bar">
+                <a href="{% url 'export_report' %}?{{ request.GET.urlencode }}" class="reports-btn reports-btn-success">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Download Report Ledger
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Production Summary Table -->
+            {% if summary %}
+            <div class="reports-table-card">
+                <div class="reports-table-header">
+                    <span class="reports-table-title">
+                        <i class="fa-solid fa-table-list" style="margin-right: 8px;"></i>
+                        Production Summary
+                    </span>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table" id="summary-table">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                {% if mode == "by_machine" %}
+                                <th>Machine</th>
+                                <th>Shift</th>
+                                <th>Category</th>
+                                {% elif mode == "by_date" %}
+                                <th>Date</th>
+                                <th>Shift</th>
+                                {% else %}
+                                <th>Operator</th>
+                                <th>Shift</th>
+                                {% endif %}
+                                <th class="text-right">Total Qty</th>
+                                <th class="text-right">Total Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in summary %}
+                                {% for sh in s.shifts %}
+                                <tr class="reports-summary-row clickable" onclick="showDetails('{{ mode|escapejs }}', '{{ s.id|escapejs }}', '{{ sh.name|escapejs }}'{% if mode == 'by_machine' %}, '{{ sh.category|default_if_none:''|escapejs }}'{% endif %})">
+                                    <td style="color: var(--text-muted);">{{ forloop.parentloop.counter }}.{{ forloop.counter }}</td>
+                                    {% if mode == "by_machine" %}
+                                        <td style="font-weight: 600; color: var(--primary);">{{ s.name }}</td>
+                                        <td><span class="badge-shift {{ sh.name }}">{{ sh.name }}</span></td>
+                                        <td><span class="badge-category {{ sh.category }}">{{ sh.category }}</span></td>
+                                    {% elif mode == "by_date" %}
+                                        <td style="font-weight: 600;">{{ s.name }}</td>
+                                        <td><span class="badge-shift {{ sh.name }}">{{ sh.name }}</span></td>
+                                    {% else %}
+                                        <td style="font-weight: 600;">{{ s.name }}</td>
+                                        <td><span class="badge-shift {{ sh.name }}">{{ sh.name }}</span></td>
+                                    {% endif %}
+                                    <td class="text-right" style="font-weight: 600;">{{ sh.total_qty }}</td>
+                                    <td class="text-right">{{ sh.total_weight|format_decimal }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Details Container -->
+            <div class="reports-details-container" id="details-container">
+                <div class="reports-table-card">
+                    <div class="reports-table-header">
+                        <span class="reports-table-title">
+                            <i class="fa-solid fa-list-check" style="margin-right: 8px;"></i>
+                            Detailed Records
+                        </span>
+                    </div>
+                    <div class="reports-table-wrapper">
+                        <table class="reports-table" id="details-table">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Date</th>
+                                    {% if mode == "by_machine" %}
+                                    <th>Machine</th>
+                                    {% elif mode == "by_operator" %}
+                                    <th>Operator</th>
+                                    {% endif %}
+                                    <th>Shift</th>
+                                    {% if mode == "by_machine" %}
+                                    <th>Category</th>
+                                    {% endif %}
+                                    <th>Product</th>
+                                    <th class="text-right">Side Patti</th>
+                                    <th class="text-right">Line Setting</th>
+                                    <th class="text-right">Qty</th>
+                                    <th class="text-right">Actual</th>
+                                    <th class="text-right">Overall</th>
+                                </tr>
+                            </thead>
+                            <tbody id="details-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Dispatch Table -->
+            {% if report_type == "dispatch" %}
+            <div class="reports-table-card">
+                <div class="reports-table-header">
+                    <span class="reports-table-title">
+                        <i class="fa-solid fa-truck-ramp-box" style="margin-right: 8px;"></i>
+                        Dispatch Records
+                    </span>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Challan No</th>
+                                <th>Party</th>
+                                <th>Vehicle</th>
+                                <th>LR/RR No</th>
+                                <th class="text-right">Total Qty</th>
+                                <th>PDF</th>
+                                <th>Operator</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for challan in dispatches %}
+                            {% with items=challan.items.all %}
+                            {% if items %}
+                            <tr>
+                                <td>{{ challan.challan_date }}</td>
+                                <td>{{ challan.challan_no }}</td>
+                                <td style="font-weight:600;">{{ challan.party_name }}</td>
+                                <td>{{ challan.vehicle_no }}</td>
+                                <td>{{ challan.lr_rr_no|default:"-" }}</td>
+                                <td class="text-right" style="font-weight:600; color:var(--primary);">
+                                    {{ challan.total_quantity|default:"0" }}
+                                </td>
+                                <td>
+                                    <a href="{% url 'delivery_challan_pdf' challan.id %}" class="reports-btn reports-btn-primary" style="height:32px; padding:6px 12px; box-shadow:none;" target="_blank">
+                                        <i class="fa-solid fa-file-pdf"></i> PDF
+                                    </a>
+                                </td>
+                                <td>{% if challan.operator %}{{ challan.operator.full_name }}{% else %}—{% endif %}</td>
+                            </tr>
+                            {% endif %}
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Production vs Consumption Table -->
+            {% if report_type == "consumption_vs_production" %}
+            <div class="reports-table-card">
+                <div class="reports-table-header">
+                    <span class="reports-table-title">
+                        <i class="fa-solid fa-scale-balanced" style="margin-right: 8px;"></i>
+                        Production vs Consumption Analysis
+                    </span>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th class="text-right">Consumption</th>
+                                <th class="text-right">Production</th>
+                                <th class="text-right">Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in consumption_vs_production %}
+                            <tr>
+                                <td>{{ r.date }}</td>
+                                <td class="text-right">{{ r.consumption|format_decimal }}</td>
+                                <td class="text-right">{{ r.production|format_decimal }}</td>
+                                <td class="text-right" style="font-weight: 600; color: {% if '-' in r.difference %}var(--accent-red){% else %}#2e7d32{% endif %};">
+                                    {{ r.difference|format_decimal }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Consumption Table -->
+            {% if report_type == "consumption" %}
+            <div class="reports-table-card">
+                <div class="reports-table-header">
+                    <span class="reports-table-title">
+                        <i class="fa-solid fa-flask" style="margin-right: 8px;"></i>
+                        Raw Material Consumption
+                    </span>
+                </div>
+                <div class="reports-table-wrapper">
+                    {% if from_date and to_date and data %}
+                    <table class="reports-table">
+                        <thead>
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>DATE</th>
+                                    <th>CHEMICAL NAME</th>
+                                    <th class="text-right">OPENING STOCK</th>
+                                    <th class="text-right">ON DAY RECEIVED</th>
+                                    {% for col in machine_cols %}
+                                        <th class="text-right">{{ col }}</th>
+                                        <th class="text-right">{{ col }} Batch</th>
+                                        <th class="text-right">{{ col }} Total</th>
+                                    {% endfor %}
+                                    <th class="text-right">Production Loss</th>
+                                    <th class="text-right">Prod Loss Batch</th>
+                                    <th class="text-right">Prod Loss Total</th>
+                                    <th class="text-right">Total Chemical Used</th>
+                                    <th class="text-right">AVL. BALANCE</th>
+                                </tr>
+                            </thead>
+                        <tbody>
+                            {% for row in data %}
+                            <tr>
+                                <td style="color:var(--text-muted);">{{ forloop.counter }}</td>
+                                <td>{{ row.date }}</td>
+                                <td style="font-weight:600; color:var(--primary);">{{ row.name }}</td>
+                                <td class="text-right">{{ row.opening|format_decimal }}</td>
+                                <td class="text-right">{{ row.received|format_decimal }}</td>
+                                {% for col in machine_cols %}
+                                    {% with qty_key=col|add:"_qty" batch_key=col|add:"_batches" total_key=col|add:"_total" %}
+                                    <td class="text-right">{{ row|get_item:qty_key|default:0|format_decimal }}</td>
+                                    <td class="text-right">{{ row|get_item:batch_key|default:0 }}</td>
+                                    <td class="text-right">{{ row|get_item:total_key|default:0|format_decimal }}</td>
+                                    {% endwith %}
+                                {% endfor %}
+                                <td class="text-right">{{ row.production_loss_qty|format_decimal }}</td>
+                                <td class="text-right">{{ row.production_loss_batches }}</td>
+                                <td class="text-right">{{ row.production_loss_total|format_decimal }}</td>
+                                <td class="text-right" style="font-weight:600;">{{ row.total_consumed|format_decimal }}</td>
+                                <td class="text-right" style="font-weight:600; color:#2e7d32;">{{ row.balance|format_decimal }}</td>
+                            </tr>
+                            {% endfor %}
+                            
+                            <tr class="grand-total-row">
+                                <td colspan="3" style="text-align: center;">GRAND TOTAL</td>
+                                <td class="text-right">{{ column_totals.opening|format_decimal }}</td>
+                                <td class="text-right">{{ column_totals.received|format_decimal }}</td>
+                                {% for col in machine_cols %}
+                                    {% with qty_key=col|add:"_qty" total_key=col|add:"_total" %}
+                                        <td class="text-right">{{ column_totals|get_item:qty_key|default:0|format_decimal }}</td>
+                                        <td class="text-right">-</td>
+                                        <td class="text-right">{{ column_totals|get_item:total_key|default:0|format_decimal }}</td>
+                                    {% endwith %}
+                                {% endfor %}
+                                <td class="text-right">{{ column_totals.production_loss_qty|format_decimal }}</td>
+                                <td class="text-right">-</td>
+                                <td class="text-right">{{ column_totals.production_loss_total|format_decimal }}</td>
+                                <td class="text-right">{{ column_totals.total_consumed|format_decimal }}</td>
+                                <td class="text-right">{{ column_totals.balance|format_decimal }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% elif from_date or to_date %}
+                    <div class="reports-empty-state">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <p>No stock consumption metrics found for the selected timeline bounds.</p>
+                    </div>
+                    {% else %}
+                    <div class="reports-empty-state">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <p>Select custom From & To date bounds above to load matrix view logs.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Raw Material Table -->
+            {% if report_type == "raw_material" %}
+            <div class="reports-table-card">
+                <div class="reports-table-header">
+                    <span class="reports-table-title">
+                        <i class="fa-solid fa-cubes" style="margin-right: 8px;"></i>
+                        Raw Material Purchases
+                    </span>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Receiving Date</th>
+                                <th>Supplier Name</th>
+                                <th>Invoice No</th>
+                                <th>Invoice Date</th>
+                                <th>Raw Material Name</th>
+                                <th class="text-right">Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in raw_material_stocks %}
+                            <tr>
+                                <td style="color:var(--text-muted);">{{ forloop.counter }}</td>
+                                <td>{{ stock.receiving_date|date:"d M Y" }}</td>
+                                <td style="font-weight: 600;">{{ stock.supplier_name }}</td>
+                                <td><code>{{ stock.invoice_no }}</code></td>
+                                <td>{{ stock.invoice_date|date:"d M Y" }}</td>
+                                <td>{{ stock.raw_material_name }}</td>
+                                <td class="text-right" style="font-weight: 600; color: var(--primary);">{{ stock.quantity|format_decimal }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7">
+                                    <div class="reports-empty-state">
+                                        <i class="fa-solid fa-inbox"></i>
+                                        <p>No recorded procurement entries match the filters.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Scrap Report -->
+            {% if report_type == "scrap" %}
+            <div class="scrap-container-block">
+                <div class="scrap-header">
+                    <div class="scrap-title">
+                        <h2>Scrap Report</h2>
+                        <p>Overview of material waste, line metrics, and rejected quantities</p>
+                    </div>
+                    
+                    <form method="GET" action="" class="scrap-filter-bar">
+                        <label for="date-select">Filter by Date:</label>
+                        <input type="date" id="date-select" name="date" value="{{ selected_date }}">
+                        <button type="submit" class="reports-btn reports-btn-primary">Filter</button>
+                        <a href="{% url request.resolver_match.view_name %}" class="reports-btn reports-btn-secondary">Clear Filter</a>
+                        <a href="{% url 'export_scrap_report' %}?date={{ selected_date|default_if_none:'' }}" class="reports-btn reports-btn-success">
+                            <i class="fa-solid fa-file-excel"></i> Download Excel
+                        </a>
+                    </form>
+                </div>
+
+                {% if messages %}
+                <div class="reports-alert">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="reports-table-card">
+                    <div class="reports-table-header">
+                        <span class="reports-table-title">
+                            <i class="fa-solid fa-dumpster" style="margin-right: 8px;"></i>
+                            Scrap Records
+                        </span>
+                    </div>
+                    <div class="reports-table-wrapper">
+                        <table class="reports-table">
+                            <thead>
+                                <tr>
+                                    <th>Product ID</th>
+                                    <th>Date</th>
+                                    <th>Machine</th>
+                                    <th class="text-center">Shift</th>
+                                    <th class="text-center">Category</th>
+                                    <th class="text-right">Line Setting</th>
+                                    <th class="text-right">Side Patti</th>
+                                    <th class="text-right">Rejected Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in productions %}
+                                <tr>
+                                    <td><span class="badge-id">{{ p.id }}</span></td>
+                                    <td>{{ p.created_at|date:"d M Y" }}</td>
+                                    <td style="font-weight: 600;">{{ p.machine.name }}</td>
+                                    <td class="text-center"><span class="badge-shift {{ p.shift }}">{{ p.shift }}</span></td>
+                                    <td class="text-center"><span class="badge-category {{ p.category }}">{{ p.category }}</span></td>
+                                    <td class="text-right">{{ p.scrap_qty|default:0 }}</td>
+                                    <td class="text-right">{{ p.scrap_weight|default:0 }}</td>
+                                    <td class="text-right" style="color: var(--accent-red); font-weight: 700;">{{ p.rejected_quantity|default:0 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="reports-empty-state">
+                                            <p>No scrap records found matching the criteria.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Planning Table -->
+            {% if report_type == "planning" and grouped_plannings %}
+            {% for key, group in grouped_plannings.items %}
+            <div class="reports-table-card" style="margin-bottom: 24px;">
+                <div class="reports-table-header" style="cursor: pointer;" onclick='showPlanningPopup("{{ key|escapejs }}")'>
+                    <div class="costing-group" style="flex: 1;">
+                        <span class="costing-group-name">{{ key }}</span>
+                        <span class="expand-icon"><i class="fa-solid fa-eye"></i></span>
+                    </div>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Category</th>
+                                <th>Machine</th>
+                                <th class="text-right">Quantity</th>
+                                <th class="text-right">Weight</th>
+                                <th>Stamp</th>
+                                <th>Masking</th>
+                                <th>Remark</th>
+                                <th class="text-right">Group Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in group.items %}
+                            <tr>
+                                <td style="color:var(--text-muted);">{{ forloop.parentloop.counter }}.{{ forloop.counter }}</td>
+                                <td><span class="badge-category {{ plan.category|lower }}">{{ plan.category }}</span></td>
+                                <td style="font-weight:600;">{{ plan.machine.name }}</td>
+                                <td class="text-right">{{ plan.quantity }}</td>
+                                <td class="text-right">{{ plan.weight|format_decimal }}</td>
+                                <td>{{ plan.stamp|default:"-" }}</td>
+                                <td>{{ plan.masking|default:"-" }}</td>
+                                <td>{{ plan.remark|default:"-" }}</td>
+                                <td class="text-right" style="font-weight:600;">{{ plan.quantity|floatformat:0|add:" x " }}{{ plan.weight|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr style="background: #FAF9FE; font-weight: 700;">
+                                <td colspan="4" style="text-align: right; color: var(--primary);">Group Total:</td>
+                                <td class="text-right" style="color: var(--primary);">{{ group.total_weight|floatformat:2 }}</td>
+                                <td colspan="4"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not grouped_plannings %}
+            <div class="reports-table-card">
+                <div class="reports-empty-state">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <p>No planning records found matching the criteria.</p>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- Formulation Table -->
+            {% if report_type == "formulation" and formulation_data %}
+            {% for item in formulation_data %}
+            <div class="reports-table-card" style="margin-bottom: 24px;">
+                <div class="reports-table-header" style="cursor: pointer;" onclick='showFormulationPopup("{{ item.formulation.id|escapejs }}")'>
+                    <div class="costing-group" style="flex: 1;">
+                        <span class="costing-group-name">{{ item.formulation.date|date:"d M Y" }} | {{ item.formulation.machine.name }} | {{ item.formulation.name }} | {{ item.formulation.shift }} | Batches: {{ item.formulation.batches }}</span>
+                        <span class="expand-icon"><i class="fa-solid fa-eye"></i></span>
+                    </div>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Machine</th>
+                                <th class="text-center">Shift</th>
+                                <th class="text-center">Batches</th>
+                                <th class="text-center">Status</th>
+                                <th>Planning</th>
+                                <th class="text-right">Material Weight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="color:var(--text-muted);">{{ forloop.counter }}</td>
+                                <td>{{ item.formulation.date|date:"d M Y" }}</td>
+                                <td style="font-weight:600;">{{ item.formulation.name }}</td>
+                                <td style="font-weight:600;">{{ item.formulation.machine.name }}</td>
+                                <td class="text-center"><span class="badge-shift {{ item.formulation.shift }}">{{ item.formulation.shift }}</span></td>
+                                <td class="text-center">{{ item.formulation.batches|default:"-" }}</td>
+                                <td class="text-center">
+                                    {% if item.formulation.status == 'Approved' %}
+                                    <span style="color:#2e7d32; font-weight:600;">{{ item.formulation.status }}</span>
+                                    {% else %}
+                                    <span style="color:var(--accent-red); font-weight:600;">{{ item.formulation.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.formulation.planning %}
+                                        {{ item.formulation.planning.date|date:"d M Y" }} - {{ item.formulation.planning.category }} - {{ item.formulation.planning.machine.name }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-right" style="font-weight:600;">{{ item.total_material_weight|floatformat:2 }}</td>
+                            </tr>
+                            <tr style="background: #FAF9FE;">
+                                <td colspan="9" style="padding: 12px 20px;">
+                                    <strong style="color: var(--primary); font-size: 13px;">Materials Used:</strong>
+                                    <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                        {% for mat in item.materials %}
+                                        <span class="badge" style="background: var(--primary-light); color: var(--primary); padding: 6px 12px; font-size: 12px;">
+                                            {{ mat.name }}: {{ mat.weight }} kg × {{ item.formulation.batches|default:1 }} = {{ mat.total_weight|floatformat:2 }} kg
+                                        </span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% empty %}
+            <div class="reports-table-card">
+                <div class="reports-empty-state">
+                    <i class="fa-solid fa-flask-vial"></i>
+                    <p>No formulation records found matching the criteria.</p>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Production New Table -->
+            {% if report_type == "production_new" and grouped_productions_report %}
+            {% for key, group in grouped_productions_report.items %}
+            <div class="reports-table-card" style="margin-bottom: 24px;">
+                <div class="reports-table-header">
+                    <span class="reports-table-title">{{ key }}</span>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Date</th>
+                                <th>Machine</th>
+                                <th class="text-center">Shift</th>
+                                <th>Category</th>
+                                <th>Product</th>
+                                <th class="text-right">Qty</th>
+                                <th class="text-right">Weight</th>
+                                <th class="text-right">Side Patti</th>
+                                <th class="text-right">Line Setting</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in group.items %}
+                            <tr>
+                                <td style="color:var(--text-muted);">{{ forloop.parentloop.counter }}.{{ forloop.counter }}</td>
+                                <td>{{ p.created_at|date:"d M Y" }}</td>
+                                <td style="font-weight:600;">{{ p.machine.name }}</td>
+                                <td class="text-center"><span class="badge-shift {{ p.shift }}">{{ p.shift }}</span></td>
+                                <td><span class="badge-category {{ p.category|lower }}">{{ p.category }}</span></td>
+                                <td style="font-weight:600;">{{ p.product.product_name }}</td>
+                                <td class="text-right">{{ p.quantity }}</td>
+                                <td class="text-right">{{ p.quantity|floatformat:0|add:" x " }}{{ p.weight_per_piece|floatformat:2 }}</td>
+                                <td class="text-right">{{ p.sidepatti|default:0|format_decimal }}</td>
+                                <td class="text-right">{{ p.linesetting|default:0|format_decimal }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr style="background: #FAF9FE; font-weight: 700;">
+                                <td colspan="6" style="text-align: right; color: var(--primary);">Group Total:</td>
+                                <td class="text-right" style="color: var(--primary);">{{ group.total_qty|floatformat:0 }}</td>
+                                <td class="text-right" style="color: var(--primary);">{{ group.total_weight|floatformat:2 }}</td>
+                                <td class="text-right" style="color: var(--primary);">{{ group.total_sidepatti|floatformat:2 }}</td>
+                                <td class="text-right" style="color: var(--primary);">{{ group.total_linesetting|floatformat:2 }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not grouped_productions_report %}
+            <div class="reports-table-card">
+                <div class="reports-empty-state">
+                    <i class="fa-solid fa-industry"></i>
+                    <p>No production records found matching the criteria.</p>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- Costing Table -->
+            {% if report_type == "costing" and costing_data %}
+            <div class="reports-table-card">
+                <div class="reports-table-header">
+                    <span class="reports-table-title">
+                        <i class="fa-solid fa-calculator" style="margin-right: 8px;"></i>
+                        Costing Report
+                    </span>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table costing-table">
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">S.No</th>
+                                <th style="width:120px;">Date</th>
+                                <th style="width:100px;">Machine</th>
+                                <th>Planning Group Name</th>
+                                <th style="width:160px;" class="text-center">Formulation Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in costing_data %}
+                            <tr class="costing-row" onclick="showCostingPopup('{{ row.plan_ids|join:','|escapejs }}')">
+                                <td class="costing-sno">{{ forloop.counter }}</td>
+                                <td class="costing-date">{{ row.date }}</td>
+                                <td class="costing-machine">{{ row.machine }}</td>
+                                <td>
+                                    <div class="costing-group">
+                                        <span class="costing-group-name">{{ row.group_name }}</span>
+                                        <span class="expand-icon">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    {% if row.status == 'Approved' %}
+                                    <span class="badge-status badge-approved">{{ row.status }}</span>
+                                    {% elif row.status == 'Pending' %}
+                                    <span class="badge-status badge-pending">{{ row.status }}</span>
+                                    {% else %}
+                                    <span class="badge-status badge-not-created">{{ row.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% elif report_type == "costing" and not costing_data %}
+            <div class="reports-table-card">
+                <div class="reports-empty-state costing-empty">
+                    <div class="reports-empty-state" style="padding: 0;">
+                        <i class="fa-solid fa-calculator" style="font-size: 48px; margin-bottom: 16px; opacity: 0.6;"></i>
+                        <h3 style="margin: 0 0 8px 0; color: var(--primary); font-size: 20px;">Costing Report</h3>
+                        <p style="color: var(--text-muted); margin: 0;">No planning records found for the selected date. Please select a date with planning data.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- One Day Stock Alert Table -->
+            {% if report_type == "one_day_stock_alert" and stock_alert_data %}
+            <div class="reports-table-card">
+                <div class="reports-table-header">
+                    <span class="reports-table-title">
+                        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px;"></i>
+                        One Day Stock Alert
+                    </span>
+                </div>
+                <div class="reports-table-wrapper">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Raw Material Name</th>
+                                <th class="text-center">Category</th>
+                                <th class="text-right">In Stock</th>
+                                <th class="text-right">One Day Req</th>
+                                <th class="text-right">Shortage</th>
+                                <th>Last Received</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stock_alert_data %}
+                            <tr>
+                                <td style="color:var(--text-muted);">{{ forloop.counter }}</td>
+                                <td style="font-weight:600; color:var(--primary);">{{ item.name }}</td>
+                                <td class="text-center"><span class="badge-category {{ item.category|lower }}">{{ item.category }}</span></td>
+                                <td class="text-right">{{ item.current_stock|format_decimal }}</td>
+                                <td class="text-right">{{ item.one_day_requirement|format_decimal }}</td>
+                                <td class="text-right" style="font-weight:700; color:var(--accent-red);">{{ item.shortage|format_decimal }}</td>
+                                <td>{{ item.last_received|date:"d M Y"|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if report_type == "one_day_stock_alert" and not stock_alert_data %}
+            <div class="reports-table-card">
+                <div class="reports-empty-state">
+                    <i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+                    <p>No stock alerts found. All raw materials meet one day requirement.</p>
+                </div>
+            </div>
+            {% endif %}
+
+        </div><!-- /reports-main -->
+    </div><!-- /reports-layout -->
+</div>
+
+<!-- Planning Modal -->
+<div class="modal-overlay" id="planningModalOverlay" data-modal="planning">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-calendar-check"></i> Planning Details</h3>
+            <button class="modal-close" onclick="closeModal('planning')" aria-label="Close modal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="planningModalBody">
+            <div class="skeleton-loader">
+                <div class="skeleton-spinner"></div>
+                <p class="skeleton-text">Loading planning details...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulation Modal -->
+<div class="modal-overlay" id="formulationModalOverlay" data-modal="formulation">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-flask-vial"></i> Formulation Details</h3>
+            <button class="modal-close" onclick="closeModal('formulation')" aria-label="Close modal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="formulationModalBody">
+            <div class="skeleton-loader">
+                <div class="skeleton-spinner"></div>
+                <p class="skeleton-text">Loading formulation details...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Costing Modal -->
+<div class="modal-overlay" id="costingModalOverlay" data-modal="costing">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-file-invoice-dollar"></i> Formulation Costing Details</h3>
+            <button class="modal-close" onclick="closeModal('costing')" aria-label="Close modal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="costingModalBody">
+            <div class="skeleton-loader">
+                <div class="skeleton-spinner"></div>
+                <p class="skeleton-text">Loading formulation details...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+{% if productions %}
+const productions = {{ productions|json_script:"productions-data"|safe }};
+{% endif %}
+
+function formatDecimal(val) {
+    return val ? Number(val).toFixed(2) : "0.00";
+}
+
+{% if productions %}
+function showDetails(mode, id, shift, category) {
+    id = String(id);
+    shift = String(shift);
+    category = category ?? "";
+    category = String(category);
+
+    const tbody = document.getElementById("details-body");
+    const detailsContainer = document.getElementById("details-container");
+    if (!tbody || !detailsContainer) return;
+    tbody.innerHTML = "";
+    let counter = 1;
+
+    productions.forEach(p => {
+        let match = false;
+        if (mode === "by_machine") {
+            match = String(p.machine__id) === id && String(p.shift) === shift && String(p.category || "") === category;
+        } else if (mode === "by_date") {
+            const pDate = p.created_at ? String(p.created_at).split("T")[0] : "";
+            match = pDate === id && String(p.shift) === shift;
+        } else {
+            match = String(p.operator__id) === id && String(p.shift) === shift;
+        }
+
+        if (match) {
+            const dateCell = p.created_at ? String(p.created_at).split("T")[0] : "";
+            let whoCell = "";
+            if (mode === "by_machine") {
+                whoCell = `<td style="font-weight:600; color:var(--primary);">${p.machine__name ?? ""}</td>`;
+            } else if (mode === "by_date") {
+                whoCell = "";
+            } else {
+                whoCell = `<td style="font-weight:600;">${p.operator__full_name ?? ""}</td>`;
+            }
+
+            const row = `<tr>
+                <td style="color:var(--text-muted);">${counter++}</td>
+                <td>${dateCell}</td>
+                ${whoCell}
+                <td><span class="badge-shift ${p.shift}">${p.shift ?? ""}</span></td>
+                ${mode === "by_machine" ? `<td><span class="badge-category ${p.category}">${p.category ?? ""}</span></td>` : ""}
+                <td style="font-weight:600;">${p.product__product_name ?? ""}</td>
+                <td class="text-right">${p.sidepatti ?? ""}</td>
+                <td class="text-right">${p.linesetting ?? ""}</td>
+                <td class="text-right" style="font-weight:600;">${p.quantity ?? ""}</td>
+                <td class="text-right">${formatDecimal(p.actual_production)}</td>
+                <td class="text-right">${formatDecimal(p.overall_production)}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        }
+    });
+
+    detailsContainer.classList.add("visible");
+    detailsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+{% endif %}
+
+// Modal Functions
+function openModal(modalType) {
+    const overlay = document.getElementById(`${modalType}ModalOverlay`);
+    if (!overlay) return;
+    
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    
+    // Focus trap
+    const firstFocusable = overlay.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (firstFocusable) firstFocusable.focus();
+}
+
+function closeModal(modalType) {
+    const overlay = document.getElementById(`${modalType}ModalOverlay`);
+    if (!overlay) return;
+    
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function closeModalOnOverlay(event, modalType) {
+    if (event.target === event.currentTarget) {
+        closeModal(modalType);
+    }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const openModal = document.querySelector('.modal-overlay.open');
+        if (openModal) {
+            const modalType = openModal.dataset.modal;
+            closeModal(modalType);
+        }
+    }
+});
+
+// Planning Popup
+function showPlanningPopup(key) {
+    openModal('planning');
+    const body = document.getElementById("planningModalBody");
+    body.innerHTML = '<div class="skeleton-loader"><div class="skeleton-spinner"></div><p class="skeleton-text">Loading planning details...</p></div>';
+
+    fetch(`/raw-material/planning-details/?group_key=${encodeURIComponent(key)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                body.innerHTML = `<div class="skeleton-loader"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; color:var(--accent-red); margin-bottom:12px; display:block;"></i><p style="color:var(--accent-red);">${data.error}</p></div>`;
+                return;
+            }
+
+            let tableHtml = `<table>
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Machine</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Weight</th>
+                        <th>Stamp</th>
+                        <th>Masking</th>
+                        <th>Remark</th>
+                        <th class="text-right">Produced</th>
+                        <th class="text-right">Balance</th>
+                        <th class="text-right">Raw Wt</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            if (data.items && data.items.length > 0) {
+                data.items.forEach((item, idx) => {
+                    tableHtml += `<tr>
+                        <td style="color:var(--text-muted);">${idx + 1}</td>
+                        <td>${item.date}</td>
+                        <td><span class="badge-category ${item.category.toLowerCase()}">${item.category}</span></td>
+                        <td style="font-weight:600;">${item.machine_name}</td>
+                        <td class="text-right">${item.quantity}</td>
+                        <td class="text-right">${item.weight.toFixed(2)}</td>
+                        <td>${item.stamp}</td>
+                        <td>${item.masking}</td>
+                        <td>${item.remark}</td>
+                        <td class="text-right">${item.produced}</td>
+                        <td class="text-right" style="font-weight:700; color:var(--accent-red);">${item.balance}</td>
+                        <td class="text-right">${item.tweight.toFixed(2)}</td>
+                    </tr>`;
+                });
+            } else {
+                tableHtml += `<tr><td colspan="12" style="padding:30px; text-align:center; color:var(--text-muted);">No planning records found for this group.</td></tr>`;
+            }
+
+            if (data.totals) {
+                tableHtml += `<tr style="background:#FAF9FE; font-weight:700;">
+                    <td colspan="4" style="text-align:right; color:var(--primary);">GROUP TOTAL</td>
+                    <td class="text-right" style="color:var(--primary);">${data.totals.quantity}</td>
+                    <td class="text-right" style="color:var(--primary);">${data.totals.weight.toFixed(2)}</td>
+                    <td colspan="4"></td>
+                    <td class="text-right" style="color:var(--primary);">${data.totals.tweight.toFixed(2)}</td>
+                </tr>`;
+            }
+
+            tableHtml += `</tbody></table>`;
+            body.innerHTML = tableHtml;
+        })
+        .catch(() => {
+            body.innerHTML = '<div class="skeleton-loader"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; color:var(--accent-red); margin-bottom:12px; display:block;"></i><p style="color:var(--accent-red);">Error loading planning details.</p></div>';
+        });
+}
+
+// Formulation Popup
+function showFormulationPopup(formulationId) {
+    openModal('formulation');
+    const body = document.getElementById("formulationModalBody");
+    body.innerHTML = '<div class="skeleton-loader"><div class="skeleton-spinner"></div><p class="skeleton-text">Loading formulation details...</p></div>';
+
+    fetch(`/raw-material/formulation-details/?formulation_id=${formulationId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                body.innerHTML = `<div class="skeleton-loader"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; color:var(--accent-red); margin-bottom:12px; display:block;"></i><p style="color:var(--accent-red);">${data.error}</p></div>`;
+                return;
+            }
+
+            let html = `<table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="font-weight:600;">ID</td><td>${data.id}</td></tr>
+                    <tr><td style="font-weight:600;">Date</td><td>${data.date}</td></tr>
+                    <tr><td style="font-weight:600;">Machine</td><td>${data.machine_name}</td></tr>
+                    <tr><td style="font-weight:600;">Shift</td><td>${data.shift}</td></tr>
+                    <tr><td style="font-weight:600;">Batches</td><td>${data.batches}</td></tr>
+                    <tr><td style="font-weight:600;">Status</td><td>${data.status}</td></tr>`;
+
+            if (data.planning_info) {
+                html += `<tr><td style="font-weight:600;">Planning Date</td><td>${data.planning_info.date || '-'}</td></tr>`;
+                html += `<tr><td style="font-weight:600;">Planning Category</td><td>${data.planning_info.category || '-'}</td></tr>`;
+                html += `<tr><td style="font-weight:600;">Planning Machine</td><td>${data.planning_info.machine || '-'}</td></tr>`;
+            }
+
+            html += `</tbody></table>`;
+
+            if (data.materials && data.materials.length > 0) {
+                html += `<h4 style="margin-top:24px; margin-bottom:12px; color:var(--primary); font-size:16px;">Materials</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Material</th>
+                            <th class="text-right">Weight (kg)</th>
+                            <th class="text-right">Batches</th>
+                            <th class="text-right">Total Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                data.materials.forEach(m => {
+                    html += `<tr>
+                        <td style="font-weight:600; color:var(--primary);">${m.name}</td>
+                        <td class="text-right">${m.weight.toFixed(2)}</td>
+                        <td class="text-right">${m.batches}</td>
+                        <td class="text-right" style="font-weight:700;">${m.total_weight.toFixed(2)}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
+            }
+
+            body.innerHTML = html;
+        })
+        .catch(() => {
+            body.innerHTML = '<div class="skeleton-loader"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; color:var(--accent-red); margin-bottom:12px; display:block;"></i><p style="color:var(--accent-red);">Error loading formulation details.</p></div>';
+        });
+}
+
+// Costing Popup
+function showCostingPopup(planIdsStr) {
+    openModal('costing');
+    const body = document.getElementById("costingModalBody");
+    body.innerHTML = '<div class="skeleton-loader"><div class="skeleton-spinner"></div><p class="skeleton-text">Loading formulation details...</p></div>';
+
+    fetch(`/raw-material/costing-details/?plan_ids=${planIdsStr}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                body.innerHTML = `<div class="skeleton-loader"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; color:var(--accent-red); margin-bottom:12px; display:block;"></i><p style="color:var(--accent-red);">${data.error}</p></div>`;
+                return;
+            }
+
+            let tableHtml = `<table>
+                <thead>
+                    <tr>
+                        <th>Raw Material</th>
+                        <th class="text-right">Weight (kg)</th>
+                        <th class="text-right">Actual Rate (Rs.)</th>
+                        <th class="text-right">Line Total (Rs.)</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            let grandTotal = 0;
+            if (data.materials && data.materials.length > 0) {
+                data.materials.forEach((m) => {
+                    const total = m.weight * m.actual_rate;
+                    grandTotal += total;
+                    tableHtml += `<tr>
+                        <td style="font-weight:600; color:var(--primary);">${m.name}</td>
+                        <td class="text-right">${m.weight.toFixed(2)}</td>
+                        <td class="text-right">${m.actual_rate.toFixed(2)}</td>
+                        <td class="text-right" style="font-weight:700;">${total.toFixed(2)}</td>
+                    </tr>`;
+                });
+            } else {
+                tableHtml += `<tr><td colspan="4" style="padding:30px; text-align:center; color:var(--text-muted);">No formulation materials found for this planning group.</td></tr>`;
+            }
+            const ratePerKg = grandTotal > 0 && data.total_weight > 0 ? (grandTotal / data.total_weight) : 0;
+
+            tableHtml += `<tr class="modal-total-row">
+                <td style="text-align:right; color:var(--primary);">TOTAL</td>
+                <td class="text-right">${data.total_weight.toFixed(2)}</td>
+                <td class="text-right">-</td>
+                <td class="text-right">${grandTotal.toFixed(2)}</td>
+            </tr>`;
+            tableHtml += `<tr style="background:#F1F0FA; font-weight:700;">
+                <td colspan="2" style="color:var(--primary); text-align:right; font-size:13px;">Rate / Kg (Total Line Total ÷ Total Weight)</td>
+                <td class="text-right" style="color:var(--primary); font-size:15px; font-weight:800;">${ratePerKg.toFixed(2)}</td>
+                <td class="text-right" style="color:var(--primary); font-size:12px; font-weight:600;">Rs./kg</td>
+            </tr></tbody></table>`;
+
+            body.innerHTML = tableHtml;
+        })
+        .catch(() => {
+            body.innerHTML = '<div class="skeleton-loader"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; color:var(--accent-red); margin-bottom:12px; display:block;"></i><p style="color:var(--accent-red);">Error loading formulation details.</p></div>';
+        });
+}
+
+// Close modal functions for overlay click
+['planning', 'formulation', 'costing'].forEach(modalType => {
+    const overlay = document.getElementById(`${modalType}ModalOverlay`);
+    if (overlay) {
+        overlay.addEventListener('click', (e) => closeModalOnOverlay(e, modalType));
+    }
+});
+
+// Sidebar Toggle for Mobile
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarContent = document.getElementById('sidebarContent');
+    
+    if (sidebarToggle && sidebarContent) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebarToggle.classList.toggle('active');
+            sidebarContent.classList.toggle('open');
+        });
+    }
+});
+</script>
+{% endblock %}

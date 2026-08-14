@@ -1,0 +1,375 @@
+{% load static %}
+{% load pwa %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Mangalmurti Production{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/pwa/icon-192x192.png' %}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="/manifest.json">
+    {% progressive_web_app_meta %}
+    <style>
+    body {
+        position: relative;
+        background: url("{% static 'images/bg.jpeg' %}") no-repeat center center fixed;
+        background-size: cover;
+    }
+    /* blur + fade overlay */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(255,255,255,0.45);
+        backdrop-filter: blur(1px);
+        z-index: -1;
+    }
+    .content {
+        position: relative;
+        z-index: 1;
+    }
+    body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    position: relative;
+    }
+    /* MAIN WRAPPER */
+    .page-wrapper {
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;   /* THIS fixes left alignment issue */
+    }
+    
+    /* ================= MOBILE RESPONSIVE BASE STYLES ================= */
+    @media (max-width: 768px) {
+        body {
+            font-size: 14px;
+        }
+        
+        .page-wrapper {
+            padding: 0 10px;
+        }
+        
+        /* Ensure all child containers respect mobile width */
+        .page-wrapper > div,
+        .page-wrapper > section,
+        .page-wrapper > form {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Stock alert modal mobile adjustments */
+        .stock-alert-modal {
+            width: 100%;
+            border-radius: 8px;
+        }
+        
+        .stock-alert-header {
+            padding: 14px 16px;
+            flex-wrap: wrap;
+        }
+        
+        .stock-alert-header h3 {
+            font-size: 16px;
+        }
+        
+        .stock-alert-body {
+            padding: 14px 16px;
+        }
+        
+        .stock-alert-table {
+            font-size: 12px;
+        }
+        
+        .stock-alert-table th,
+        .stock-alert-table td {
+            padding: 6px 8px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        body {
+            font-size: 13px;
+        }
+        
+        .page-wrapper {
+            padding: 0 6px;
+        }
+        
+        /* Stock alert further mobile adjustments */
+        .stock-alert-overlay {
+            padding: 10px;
+        }
+        
+        .stock-alert-table {
+            font-size: 11px;
+        }
+        
+        .stock-alert-table th,
+        .stock-alert-table td {
+            padding: 4px 6px;
+        }
+    }
+
+    /* ================= MOBILE HORIZONTAL / LANDSCAPE VIEW ================= */
+    /* Optimize for mobile landscape orientation and horizontal scrolling */
+    @media (max-width: 768px) and (orientation: landscape) {
+        body {
+            font-size: 12px;
+        }
+        
+        .page-wrapper {
+            padding: 0 4px;
+        }
+        
+        /* Reduce spacing for landscape */
+        .page-wrapper > div,
+        .page-wrapper > section,
+        .page-wrapper > form {
+            margin-bottom: 8px;
+        }
+    }
+
+    /* Global horizontal scroll for tables on mobile */
+    @media (max-width: 768px) {
+        /* Ensure all table wrappers have horizontal scroll */
+        .table-wrapper,
+        div[class*="table-wrapper"],
+        div[class*="wrapper"][style*="overflow"],
+        .production-rows-wrapper,
+        .logs-table-wrapper {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            scroll-behavior: smooth;
+        }
+        
+        /* Add scroll indicator hint for tables */
+        .table-wrapper::after,
+        .production-rows-wrapper::after {
+            content: '← Scroll →';
+            display: block;
+            text-align: center;
+            font-size: 10px;
+            color: #9CA3AF;
+            padding: 4px 0;
+            background: #F3F4F6;
+        }
+        
+        .logs-table-wrapper::after {
+            content: '← Scroll →';
+            display: block;
+            text-align: center;
+            font-size: 10px;
+            color: #9CA3AF;
+            padding: 4px 0;
+            background: #F3F4F6;
+        }
+        
+        /* Prevent horizontal overflow on body */
+        body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+        
+        /* Ensure all containers respect width */
+        .container,
+        .container-box,
+        .stock-container,
+        .logs-container,
+        [class*="container"] {
+            max-width: 100% !important;
+            box-sizing: border-box;
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+        
+        /* Make buttons full width on mobile for better touch targets */
+        .add-btn,
+        button[type="submit"],
+        .submit-btn {
+            min-height: 44px;
+        }
+        
+        /* Ensure modals are scrollable on mobile */
+        .modal-content {
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        /* Better touch targets for mobile */
+        a, button, input, select, textarea {
+            touch-action: manipulation;
+        }
+    }
+
+    /* Small mobile devices */
+    @media (max-width: 480px) {
+        .table-wrapper::after,
+        .production-rows-wrapper::after,
+        .logs-table-wrapper::after {
+            font-size: 9px;
+            padding: 3px 0;
+        }
+    }
+
+    .stock-alert-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .stock-alert-overlay.active {
+        display: flex;
+    }
+
+    .stock-alert-modal {
+        width: min(760px, 100%);
+        max-height: 85vh;
+        overflow: hidden;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+        border-top: 6px solid #E1251B;
+    }
+
+    .stock-alert-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 22px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .stock-alert-header h3 {
+        margin: 0;
+        color: #b91c1c;
+        font-size: 20px;
+    }
+
+    .stock-alert-close {
+        border: none;
+        background: transparent;
+        font-size: 26px;
+        line-height: 1;
+        cursor: pointer;
+        color: #64748b;
+    }
+
+    .stock-alert-body {
+        padding: 18px 22px 22px;
+        overflow-y: auto;
+        max-height: calc(85vh - 75px);
+    }
+
+    .stock-alert-body p {
+        margin: 0 0 14px;
+        color: #334155;
+    }
+
+    .stock-alert-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .stock-alert-table th,
+    .stock-alert-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+    }
+
+    .stock-alert-table th {
+        background: #fef2f2;
+        color: #991b1b;
+        font-weight: 700;
+    }
+
+    .stock-alert-table td.num {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .stock-alert-table tr.row-red {
+        background-color: #fee2e2;
+    }
+
+    .stock-alert-table tr.row-yellow {
+        background-color: #fef3c7;
+    }
+    </style>
+</head>
+<body>
+    {% include "navbar.html" %}
+    <div class="page-wrapper">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    {% if raw_material_stock_alerts %}
+    <div id="rawMaterialStockAlert" class="stock-alert-overlay active">
+        <div class="stock-alert-modal" role="dialog" aria-modal="true" aria-labelledby="stockAlertTitle">
+            <div class="stock-alert-header">
+                <h3 id="stockAlertTitle">Raw Material Stock Alert</h3>
+                <button type="button" class="stock-alert-close" onclick="closeRawMaterialStockAlert()">x</button>
+            </div>
+            <div class="stock-alert-body">
+                <p>The following raw materials have less than 10 days of stock remaining.</p>
+                <table class="stock-alert-table">
+                    <thead>
+                        <tr>
+                            <th>Raw Material</th>
+                            <th>Category</th>
+                            <th class="num">Stock</th>
+                            <th class="num">One Day</th>
+                            <th class="num">Days Left</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in raw_material_stock_alerts %}
+                        <tr class="{% if item.days_left < 2 %}row-red{% elif item.days_left < 5 %}row-yellow{% endif %}">
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.category }}</td>
+                            <td class="num">{{ item.current_stock }} kg</td>
+                            <td class="num">{{ item.one_day_requirement }} kg</td>
+                            <td class="num">{{ item.days_left }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+    function closeRawMaterialStockAlert() {
+        const modal = document.getElementById("rawMaterialStockAlert");
+        if (modal) {
+            modal.classList.remove("active");
+        }
+    }
+    </script>
+    {% endif %}
+    {% block extra_scripts %}{% endblock %}
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/serviceworker.js')
+                .then(reg => console.log('PWA Service Worker registered successfully for scope: ', reg.scope))
+                .catch(err => console.error('PWA Service Worker registration failed: ', err));
+        });
+    }
+    </script>
+</body>
+</html>

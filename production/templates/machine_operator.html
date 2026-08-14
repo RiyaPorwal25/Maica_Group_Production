@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+{% block title %}Machine Operator Management{% endblock %}
+
+{% block content %}
+
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-dark: #2c1f6f;
+    --accent-red: #E1251B;
+    --accent-green: #27AE60;
+    --white: #ffffff;
+    --light-gray: #f7f7f7;
+}
+
+.container-box{
+    max-width:1200px;
+    margin:30px auto;
+    padding:0 15px;
+}
+
+.top-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.top-section h2 {
+    margin: 0;
+    color: var(--primary);
+    font-size: 28px;
+}
+
+.stats-box {
+    background: var(--light-gray);
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Add Form Card */
+.add-form-card {
+    background: var(--white);
+    border: 2px solid var(--primary);
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(63, 46, 151, 0.1);
+}
+
+.add-form-card h3 {
+    margin: 0 0 20px 0;
+    color: var(--primary);
+    font-size: 18px;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 10px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.form-row label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.form-row select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border 0.2s ease;
+}
+
+.form-row select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 5px rgba(63, 46, 151, 0.2);
+}
+
+.add-btn {
+    padding: 10px 20px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.add-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+/* Messages */
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Table Styles */
+.table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: var(--white);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--white);
+}
+
+.table thead {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.table th,
+.table td {
+    padding: 13px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.table th {
+    font-weight: 600;
+    text-align: center;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(63, 46, 151, 0.05);
+}
+
+.sr-col {
+    width: 50px;
+    text-align: center;
+}
+
+.machine-col {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.operator-col {
+    color: #333;
+}
+
+.action-col {
+    text-align: center;
+    width: 100px;
+}
+
+.delete-btn {
+    padding: 6px 12px;
+    background: var(--accent-red);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s ease;
+}
+
+.delete-btn:hover {
+    background: #c41809;
+}
+
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 20px;
+    padding: 20px 0;
+}
+
+.pagination a, .pagination span {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--primary);
+    transition: all 0.2s ease;
+}
+
+.pagination a:hover {
+    background: var(--light-gray);
+}
+
+.pagination .current {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .top-section {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .table {
+        font-size: 13px;
+    }
+    
+    .table th,
+    .table td {
+        padding: 8px 10px;
+    }
+}
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="container-box">
+
+        {% if messages %}
+            {% for message in messages %}
+                <div style="color: red; margin-bottom: 10px;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    
+    <!-- Top Section -->
+    <div class="top-section">
+        <h2></i> Machine-Operator Management</h2>
+        <div class="stats-box">
+             Total Assignments: <strong>{{ total_assignments }}</strong>
+        </div>
+    </div>
+
+
+    <!-- Add New Assignment Form -->
+    <div class="add-form-card">
+        <h3>Assign Operator to Machine</h3>
+        <form method="POST" action="{% url 'machine_operator_list' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            
+            <div class="form-row">
+                <div>
+                    <label for="category"> Select Category:</label>
+                    <select name="category" id="category" required>
+                        <option value="">-- Choose Category --</option>
+                        {% for key, label in categories %}
+                            <option value="{{ key }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="operator"> Select Operator:</label>
+                    <select name="operator" id="operator" required>
+                        <option value="">-- Choose Operator --</option>
+                        {% for op in operators %}
+                            <option value="{{ op.id }}">
+                                {{ op.full_name }}
+                                <!-- {{ op.full_name }} - {{ op.username }}  if wamt both full name and username show show like this -->
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <button type="submit" class="add-btn">Assign</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Assignments Table -->
+    {% if page_obj %}
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="sr-col">S.No.</th>
+                        <th > Category</th>
+                        <th> Operator</th>
+                        <th class="action-col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in page_obj %}
+                        <tr>
+                            <td class="sr-col">{{ forloop.counter }}</td>
+                            <td class="machine-col">
+                                <strong>{{ assignment.category }}</strong>
+                            </td>
+                            <td class="operator-col">
+                                <strong>{{ assignment.operator.full_name }}</strong>
+                                <br>
+                                <small>{{ assignment.operator.username }}</small>
+                            </td>
+                            <td class="action-col">
+                                <form method="POST" action="{% url 'machine_operator_list' %}" style="display: inline;" onsubmit="return confirm('Remove this assignment?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="assignment_id" value="{{ assignment.id }}">
+                                    <button type="submit" class="delete-btn">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <div class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1"><i class="fas fa-angle-double-left"></i></a>
+                    <a href="?page={{ page_obj.previous_page_number }}"><i class="fas fa-angle-left"></i></a>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="current">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}"><i class="fas fa-angle-right"></i></a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}"><i class="fas fa-angle-double-right"></i></a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        
+    {% endif %}
+
+</div>
+
+{% endblock %}

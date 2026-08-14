@@ -1,0 +1,519 @@
+{% comment %} 
+#navbar.html - This is the navigation bar template that is included in all pages for consistent navigation across the application. 
+It dynamically shows/hides links based on user permissions and highlights the active page. 
+{% endcomment %}
+
+{% load static %}
+{% load filters %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+    --primary: #3F2E97;       /* Logo purple */
+    --primary-light: #eceaff; /* Soft hover purple background */
+    --accent-red: #E1251B;    /* Logo red */
+    --accent-gold: #F4B400;   /* Warm yellow tone */
+    --text-main: #2D3748;     /* Dark charcoal text for better legibility */
+    --white: #ffffff;
+    --light-bg: #F8F9FC;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 20px rgba(63, 46, 151, 0.08);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reset / Base Elements */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.navbar {
+    width: 100%;
+    background: var(--white);
+    border-bottom: 1px solid rgba(63, 46, 151, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    box-shadow: var(--shadow-sm);
+}
+
+.navbar-container {
+    width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 75px;
+}
+
+/* LOGO */
+.logo {
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.logo a {
+    display: flex;
+    align-items: center;
+    height: 45px;
+    transition: var(--transition);
+}
+
+.logo a:hover {
+    opacity: 0.9;
+}
+
+.logo img {
+    height: 100%;
+    width: auto;
+    object-fit: contain;
+}
+
+/* NAV LINKS (Desktop Layout) */
+.nav-links {
+    list-style: none;
+    display: flex;    
+    gap: 6px;
+    align-items: center;
+}
+
+.nav-links li a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition);
+    border-radius: 6px;
+}
+
+.chevron-icon {
+    font-size: 10px;
+    transition: var(--transition);
+    opacity: 0.7;
+}
+
+/* Hover State */
+.nav-links li a:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+/* Active State */
+.nav-links li a.active {
+    background-color: var(--accent-red);
+    color: var(--white);
+}
+.nav-links li a.active .chevron-icon {
+    color: var(--white);
+}
+
+/* Dropdown Container */
+.dropdown {
+    position: relative;
+}
+
+/* Invisible bridge so the menu stays open while moving the cursor down */
+.dropdown::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    display: none;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--white);
+    list-style: none;
+    padding: 8px;
+    min-width: 210px;
+    box-shadow: var(--shadow-md);
+    border-radius: 8px;
+    border: 1px solid rgba(63, 46, 151, 0.05);
+    z-index: 1001;
+}
+
+.dropdown-menu li {
+    width: 100%;
+}
+
+.dropdown-menu li a {
+    color: var(--text-main);
+    font-weight: 500;
+    padding: 10px 14px;
+    width: 100%;
+}
+
+.dropdown-menu li a:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+/* Show Dropdown on Hover or Click (Desktop) */
+@media (min-width: 769px) {
+    .dropdown:hover::before,
+    .dropdown.open::before {
+        display: block;
+    }
+
+    .dropdown:hover .dropdown-menu,
+    .dropdown.open .dropdown-menu {
+        display: block;
+    }
+
+    .dropdown:hover .chevron-icon,
+    .dropdown.open .chevron-icon {
+        transform: rotate(180deg);
+    }
+
+    .logout-item a {
+        color: var(--accent-red);
+    }
+    .logout-item a:hover {
+        background-color: #fff0ef;
+        color: var(--accent-red);
+    }
+}
+
+/* Mobile Hamburger Button Animation styling */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.hamburger span {
+    width: 24px;
+    height: 2px;
+    background-color: var(--primary);
+    border-radius: 2px;
+    transition: var(--transition);
+}
+
+/* Hamburger X-Morph Transformation */
+.hamburger.active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+.hamburger.active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Dark Overlay Backdrop */
+.nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+    z-index: 998;
+}
+.nav-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Responsive Tablet & Mobile Media Queries */
+@media (max-width: 768px) {
+    .navbar-container {
+        height: 65px;
+        padding: 0 16px;
+    }
+
+    .nav-links {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 280px;
+        height: 100vh;
+        background: var(--white);
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 80px 20px 30px 20px;
+        gap: 10px;
+        transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 999;
+        box-shadow: var(--shadow-lg);
+        overflow-y: auto;
+    }
+
+    .nav-links.active {
+        right: 0;
+    }
+
+    .nav-links li {
+        width: 100%;
+    }
+
+    .nav-links li a {
+        width: 100%;
+        font-size: 15px;
+        padding: 12px 14px;
+        justify-content: space-between; /* Pushes the icon arrow to the right edge */
+    }
+
+    .hamburger {
+        display: flex;
+        z-index: 1000;
+    }
+
+    /* Mobile Interaction Behaviors */
+    .dropdown-menu {
+        position: static;
+        display: none;
+        box-shadow: none;
+        padding-left: 12px;
+        margin-top: 5px;
+        background: var(--light-bg);
+        border: none;
+        border-left: 2px solid var(--primary-light);
+        animation: none;
+    }
+
+    .dropdown.open .dropdown-menu {
+        display: block;
+    }
+
+    .dropdown.open .chevron-icon {
+        transform: rotate(180deg);
+    }
+}
+
+/* Minimalist drop Animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ================= NAVBAR MOBILE HORIZONTAL / LANDSCAPE ================= */
+@media (max-width: 768px) and (orientation: landscape) {
+    .navbar-container { height: 55px; padding: 0 12px; }
+    .logo a { height: 35px; }
+    
+    .nav-links { width: 240px; padding: 60px 16px 20px 16px; gap: 6px; }
+    .nav-links li a { font-size: 13px; padding: 8px 10px; }
+    .dropdown-menu li a { padding: 8px 10px; font-size: 12px; }
+    
+    .hamburger { gap: 5px; padding: 6px; }
+    .hamburger span { width: 20px; height: 2px; }
+    .hamburger.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+}
+</style>
+<nav class="navbar">
+    <div class="navbar-container">
+        <div class="logo">
+            {% if user.role|check_permission:'dashboard' %}
+            <a href="/dashboard_v2/">
+            {% elif user.role|check_permission:'production' %}
+            <a href="{% url 'production_2_0_door' %}">
+            {% else %}
+            <a href="/dashboard/">
+            {% endif %}
+                <img src="{% static 'images/new.png' %}" alt="MAICA PRODUCTION Logo" />
+            </a>
+        </div>
+        
+        <ul class="nav-links">
+            {% if user.role|check_permission:'stock' %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Stock <i class="fa-solid fa-chevron-down chevron-icon"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'stock' %}" class="{% if request.path == '/stock/' %}active{% endif %}">Products</a></li>
+                        <li><a href="{% url 'raw_material_list' %}" class="{% if request.path == '/raw-material/' %}active{% endif %}">Raw Material</a></li>
+                    </ul>
+                </li>
+            {% endif %}
+
+            {% if user.role|check_permission:'planning' %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Planning <i class="fa-solid fa-chevron-down chevron-icon"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'planning_door_sheet' %}" class="{% if request.path == '/planning/door-sheet/' %}active{% endif %}">Door / Sheet - Planning</a></li>
+                        <li><a href="{% url 'planning_frame_sheet' %}" class="{% if request.path == '/planning/frame/' %}active{% endif %}">Frame - Planning</a></li>
+                    </ul>
+                </li>
+            {% endif %}
+
+            {% if user.role|check_permission:'formulation' %}
+                <li class="dropdown">
+                    <a href="{% url 'formulation_page' %}" class="dropdown-toggle {% if request.path == '/formulation/' or request.path == '/formulation/frameline/' or request.path == '/formulation/batch-issue/' %}active{% endif %}">Formulation <i class="fa-solid fa-chevron-down chevron-icon"></i></a>
+                    <ul class="dropdown-menu">
+                        {% if user.role != 'Batcher' %}
+
+                        <li><a href="{% url 'batch_issue_page' %}" class="{% if request.path == '/formulation/batch-issue/' %}active{% endif %}">Doorline</a></li>  
+                        <li><a href="{% url 'frameline_page' %}" class="{% if request.path == '/formulation/frameline/' %}active{% endif %}">Frameline</a></li>
+                        {% endif %}
+
+                        <li><a href="{% url 'formulation_page' %}" class="{% if request.path == '/formulation/' %}active{% endif %}">Batch Issue</a></li>
+                    </ul>
+                </li>
+            {% endif %}
+        
+            {% if user.role|check_permission:'production' %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Production <i class="fa-solid fa-chevron-down chevron-icon"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'production_2_0_door' %}" class="{% if request.path == '/production-2-0/door/' %}active{% endif %}">Door/Sheet - Production</a></li>
+                        <li><a href="{% url 'production_2_0_frame' %}" class="{% if request.path == '/production-2-0/frame/' %}active{% endif %}">Frame - Production</a></li>
+                    </ul>
+                </li>
+            {% endif %}
+
+            {% if user.role|check_permission:'production' %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Pending for Approval<i class="fa-solid fa-chevron-down chevron-icon"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'production' %}?category=Door" class="{% if request.path == '/production/?category=Door' %}active{% endif %}">Door / Sheet</a></li>
+                        <li><a href="{% url 'production' %}?category=Frame" class="{% if request.path == '/production/?category=Frame' %}active{% endif %}">Frame</a></li>
+                        <!-- <li><a href="{% url 'scrap_list' %}">Scrap</a></li> -->
+                    </ul>
+                </li>
+            {% endif %}
+
+
+            {% if user.role == 'Admin' or user.role == 'Manager' or user.role == 'Dispatch' or user.role == 'Dispatch Manager' %}
+                <li><a href="{% url 'dispatch' %}" class="{% if request.path == '/dispatch/' %}active{% endif %}">Ready to Dispatch</a></li>
+            {% endif %}
+
+
+            {% if user.role|check_permission:'master' %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Master <i class="fa-solid fa-chevron-down chevron-icon"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'party_list' %}">Party</a></li>
+                        <li><a href="{% url 'product_list' %}">Product</a></li>
+                        <li><a href="{% url 'machine_list' %}">Machine</a></li>
+                        <li><a href="{% url 'machine_operator_list' %}">Machine-Operator</a></li>  
+                        <li><a href="{% url 'color_list' %}">Color</a></li>
+                        <li><a href="{% url 'density_list' %}">Density</a></li>
+                        <li><a href="{% url 'density_name_list' %}">Density Name</a></li>
+                        <li><a href="{% url 'thickness_list' %}">Thickness</a></li>
+                        <li><a href="{% url 'size_list' %}">Size</a></li>
+                        <li><a href="{% url 'length_list' %}">Length</a></li>
+                        <li><a href="{% url 'height_list' %}">Height</a></li>
+                        <li><a href="{% url 'width_list' %}">Width</a></li>
+                        <li><a href="{% url 'user_list' %}">User</a></li>
+                        {% if user.role == "Admin" %}
+                            <li><a href="{% url 'roles_responsibilities' %}">Roles and Responsibilities</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+            {% endif %}
+            
+            {% if user.role|check_permission:'reports' %}
+                <li><a href="/reports/" class="{% if request.path == '/reports/' %}active{% endif %}">Reports</a></li>
+                {% if user.role == 'Admin' %}
+                <li><a href="{% url 'power_bi_report' %}" class="{% if request.path == '/power-bi/' %}active{% endif %}">Power BI</a></li>
+                <li><a href="{% url 'logs' %}" class="{% if request.path == '/logs/' %}active{% endif %}"> Logs</a></li>
+                <li><a href="{% url 'user_sessions' %}" class="{% if request.path == '/user-sessions/' %}active{% endif %}">User Sessions</a></li>
+                {% endif %}
+            {% endif %}
+            
+            <li class="logout-item"><a href="{% url 'logout' %}" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a></li>
+        </ul>
+
+        <div class="hamburger" aria-label="Toggle navigationMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</nav>
+
+<div class="nav-overlay"></div>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const hamburger = document.querySelector('.hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    const overlay = document.querySelector('.nav-overlay');
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+
+    function isMobile() {
+        return window.innerWidth <= 768;
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown.open').forEach(item => {
+            item.classList.remove('open');
+        });
+    }
+
+    function toggleMenu() {
+        hamburger.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        overlay.classList.toggle('active');
+        if (!navLinks.classList.contains('active')) {
+            closeAllDropdowns();
+        }
+    }
+
+    hamburger.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', toggleMenu);
+
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            const parentLi = toggle.closest('.dropdown');
+            if (!parentLi || !parentLi.querySelector('.dropdown-menu')) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const isOpen = parentLi.classList.contains('open');
+
+            document.querySelectorAll('.dropdown').forEach(item => {
+                if (item !== parentLi) item.classList.remove('open');
+            });
+
+            parentLi.classList.toggle('open', !isOpen);
+        });
+    });
+
+    // Close desktop dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown')) {
+            closeAllDropdowns();
+        }
+    });
+
+    // Close open dropdowns when resizing between mobile/desktop
+    window.addEventListener('resize', () => {
+        if (!isMobile()) {
+            closeAllDropdowns();
+        }
+    });
+});
+</script>

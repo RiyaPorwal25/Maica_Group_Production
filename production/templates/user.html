@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+{% block title %}User{% endblock %}
+{% block content %}
+
+
+<style>
+:root {
+    --primary: #3F2E97;       /* Logo Purple */
+    --primary-dark: #2c1f6f;
+    --accent-red: #E1251B;    /* Logo Red */
+    --white: #ffffff;
+    --light-bg: #f4f5ff;
+    --border-soft: rgba(63,46,151,0.08);
+}
+
+/* Page Background */
+/* body {
+    background: linear-gradient(135deg, #ffffff, #f3f4ff);
+} */
+
+/* Container */
+.user-container {
+    max-width: 1150px;
+    margin: 50px auto;
+    padding: 30px;
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.06);
+}
+
+.user-container h1 {
+    color: var(--primary);
+    margin-bottom: 25px;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .user-container {
+        max-width: 98%;
+        margin: 20px auto;
+        padding: 20px 16px;
+        border-radius: 12px;
+    }
+    
+    .user-container h1 {
+        font-size: 22px;
+        margin-bottom: 20px;
+    }
+    
+    .user-table th,
+    .user-table td {
+        padding: 10px 6px;
+        font-size: 12px;
+    }
+    
+    .btn {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+        margin: 10% auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-container {
+        padding: 16px 12px;
+    }
+    
+    .user-container h1 {
+        font-size: 20px;
+    }
+}
+
+/* Table */
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: 14px;
+    overflow: hidden;
+    table-layout: fixed;
+}
+
+.user-table thead {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+}
+
+.user-table th {
+    padding: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-align:center;
+
+}
+
+.user-table td {
+    padding: 14px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 14px;
+    text-align:center;
+
+}
+
+.user-table tbody tr {
+    transition: all 0.25s ease;
+}
+
+.user-table tbody tr:hover {
+    background: rgba(63,46,151,0.05);
+    /* transform: scale(1.002); */
+}
+
+/* Buttons */
+.btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s ease;
+    font-weight: 500;
+}
+
+.edit-btn {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+}
+
+.edit-btn:hover {
+    box-shadow: 0 6px 18px rgba(63,46,151,0.3);
+}
+
+.delete-btn {
+    border: 1.5px solid var(--accent-red);
+    color: var(--accent-red);
+    background: transparent;
+}
+
+.delete-btn:hover {
+    background: var(--accent-red);
+    color: var(--white);
+}
+
+.add-btn {
+    margin-bottom: 25px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 2px solid var(--primary);
+    background: transparent;
+    color: var(--primary);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.add-btn:hover {
+    background: var(--primary);
+    color: var(--white);
+    box-shadow: 0 6px 20px rgba(63,46,151,0.25);
+}
+
+/* Modal Overlay */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+}
+
+/* Modal Box */
+.modal-content {
+    background: var(--white);
+    width: 460px;
+    max-height: 85vh;
+    overflow-y: auto;
+    margin: 6% auto;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    animation: fadeIn 0.25s ease-in-out;
+}
+
+.modal-content h3 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Form */
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--primary);
+}
+
+/* Inputs */
+.form-group input,
+.form-group select,
+.modal-content input,
+.modal-content select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    transition: all 0.25s ease;
+    background: #fafafa;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.modal-content input:focus,
+.modal-content select:focus {
+    border-color: var(--primary);
+    background: var(--white);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(63,46,151,0.15);
+}
+
+.help-text {
+    font-size: 12px;
+    color: #777;
+}
+
+.error-text {
+    font-size: 12px;
+    color: var(--accent-red);
+}
+
+/* Modal Button */
+.modal-content button {
+    padding: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+
+    
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-content button:hover {
+    box-shadow: 0 6px 20px rgba(63,46,151,0.3);
+}
+
+/* blinking line */
+/* Only show cursor in editable fields */
+input, textarea, select {
+    caret-color: auto;
+}
+
+/* Remove cursor from normal text */
+body, td, th, span, div, p {
+    caret-color: transparent;
+}
+
+/* Optional: prevent selecting table text */
+td, th {
+    user-select: none;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+
+<div class="user-container">
+    <h1>User Details</h1>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div style="color: red; margin-bottom: 10px;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+    <button class="add-btn" onclick="openModal('addModal')">Add User</button>
+
+    <table class="user-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.role }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    <button class="btn edit-btn" onclick="openEditModal( '{{ user.id }}', '{{ user.username }}', '{{ user.full_name }}', '{{ user.email }}', '{{ user.contact }}',
+                    '{{ user.role }}', '{{ user.dob|date:"Y-m-d" }}')">Edit</button>
+                    <button class="btn delete-btn" onclick="openDeleteModal( '{{ user.id }}')">Delete</button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ADD MODAL -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <h3>Add User</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <!-- {{ create_form.as_p }} -->
+            {% for field in create_form %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="help-text">{{ field.help_text }}</small>
+                    {% endif %}
+                    <div class="error-text">
+                        {{ field.errors }}
+                    </div>
+                </div>
+            {% endfor %}
+            <button type="submit">Save</button>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT MODAL -->
+<!-- <div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>Edit User</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="user_id" id="edit_user_id">
+            <input type="text" name="username" id="edit_username" required>
+            <input type="text" name="full_name" id="edit_full_name" required>
+            <input type="email" name="email" id="edit_email" required>
+            <input type="text" name="contact" id="edit_contact">
+            <select name="role" id="edit_role">
+                <option value="Admin">Admin</option>
+                <option value="Operator">Operator</option>
+            </select>
+            <input type="date" name="dob" id="edit_dob">
+            <button type="submit">Update</button>
+        </form>
+    </div>
+</div> -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>Edit User</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="user_id" id="edit_user_id">
+
+            <label>Username</label>
+            <input type="text" name="username" id="edit_username" required>
+
+            <label>Full Name</label>
+            <input type="text" name="full_name" id="edit_full_name" required>
+
+            <label>Email</label>
+            <input type="email" name="email" id="edit_email" required>
+
+            <label>Contact</label>
+            <input type="text" name="contact" id="edit_contact">
+
+            <!-- <label>Role</label>
+            <select name="role" id="edit_role">
+                <option value="Admin">Admin</option>
+                <option value="Operator">Operator</option>
+            </select> -->
+            <label>Role</label>
+            <select name="role" id="edit_role">
+                {% for value, label in roles %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Date of Birth</label>
+            <input type="date" name="dob" id="edit_dob">
+
+            <label>Reset Password (optional)</label>
+            <input type="password" name="new_password" placeholder="Leave blank to keep current password">
+
+            <button type="submit">Update</button>
+        </form>
+    </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h3>Are you sure you want to delete this user?</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="user_id" id="delete_user_id">
+            <button type="submit">Yes, Delete</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function openModal(id) {
+    document.getElementById(id).style.display = "block";
+}
+
+function openEditModal(id, username, full_name, email, contact, role, dob) {
+    document.getElementById("edit_user_id").value = id;
+    document.getElementById("edit_username").value = username;
+    document.getElementById("edit_full_name").value = full_name;
+    document.getElementById("edit_email").value = email;
+    document.getElementById("edit_contact").value = contact;
+    document.getElementById("edit_role").value = role;
+    document.getElementById("edit_dob").value = dob;
+    openModal("editModal");
+}
+
+function openDeleteModal(id) {
+    document.getElementById("delete_user_id").value = id;
+    openModal("deleteModal");
+}
+
+window.onclick = function(e) {
+    if (e.target.classList.contains("modal")) {
+        e.target.style.display = "none";
+    }
+}
+</script>
+
+{% endblock %}

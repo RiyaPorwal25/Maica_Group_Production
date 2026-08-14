@@ -1,0 +1,855 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}User Sessions{% endblock %}
+{% block content %}
+<style>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css');
+
+:root {
+    --primary: #3F2E97;
+    --primary-light: #eceaff;
+    --primary-dark: #2a1d6e;
+    --accent-red: #E1251B;
+    --accent-green: #059669;
+    --accent-amber: #d97706;
+    --accent-blue: #2563eb;
+    --bg-card: #ffffff;
+    --bg-soft: #f8f9fc;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+    --border: #e2e8f0;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(63,46,151,0.08);
+    --shadow-lg: 0 8px 30px rgba(63,46,151,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+}
+
+.sessions-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* HEADER */
+.sessions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.sessions-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.sessions-header-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    box-shadow: 0 4px 10px rgba(63,46,151,0.25);
+}
+
+.sessions-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+.sessions-header h1 small {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0;
+}
+
+/* STATS CARDS */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.25s;
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.stat-icon.sessions {
+    background: #dbeafe;
+    color: var(--accent-blue);
+}
+
+.stat-icon.active {
+    background: #ecfdf5;
+    color: var(--accent-green);
+}
+
+.stat-icon.users {
+    background: #f3e8ff;
+    color: #9333ea;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* FILTER BAR */
+.filter-bar {
+    display: flex;
+    gap: 14px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+}
+
+.filter-bar:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-group label i {
+    font-size: 12px;
+    color: var(--primary);
+}
+
+.filter-group input[type="date"],
+.filter-group select {
+    padding: 9px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    background: var(--bg-soft);
+    min-width: 170px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.filter-group input[type="date"]:hover,
+.filter-group select:hover {
+    border-color: #cbd5e1;
+    background: white;
+}
+
+.filter-group input[type="date"]:focus,
+.filter-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.filter-group select {
+    min-width: 200px;
+    max-height: 200px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.filter-group select option {
+    padding: 8px;
+    font-weight: 500;
+}
+
+.clear-filter-btn {
+    padding: 9px 18px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: fit-content;
+    align-self: flex-end;
+}
+
+.clear-filter-btn:hover {
+    background: #fef2f2;
+    color: var(--accent-red);
+    border-color: var(--accent-red);
+    transform: translateY(-1px);
+}
+
+/* TABLE */
+.sessions-table-wrapper {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.sessions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.sessions-table thead {
+    background: linear-gradient(180deg, #f8f9fc 0%, #f1f5f9 100%);
+    border-bottom: 2px solid var(--border);
+}
+
+.sessions-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.sessions-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text-main);
+    vertical-align: middle;
+    transition: background 0.15s;
+}
+
+.sessions-table tbody tr {
+    transition: all 0.15s ease;
+}
+
+.sessions-table tbody tr:hover {
+    background: #f8faff;
+    transform: scale(1.002);
+    box-shadow: 0 2px 8px rgba(63,46,151,0.05);
+}
+
+.sessions-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Row fade-in animation */
+@keyframes rowFadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.sessions-table tbody tr {
+    animation: rowFadeIn 0.3s ease forwards;
+}
+
+.col-date {
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--text-main);
+    font-variant-numeric: tabular-nums;
+}
+
+.col-time {
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+}
+
+.col-user {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.col-status {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 4px;
+}
+
+.status-active {
+    color: var(--accent-green);
+    background: #ecfdf5;
+}
+
+.status-closed {
+    color: var(--text-muted);
+    background: #f1f5f9;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--text-light);
+}
+
+.empty-state i {
+    font-size: 52px;
+    margin-bottom: 18px;
+    opacity: 0.4;
+    display: block;
+}
+
+.empty-state p {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .sessions-container {
+        padding: 12px;
+    }
+    
+    .sessions-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .sessions-header-left {
+        width: 100%;
+    }
+    
+    .sessions-header h1 {
+        font-size: 20px;
+    }
+    
+    .sessions-header h1 small {
+        display: block;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    
+    .stats-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 14px;
+        gap: 10px;
+    }
+    
+    .stat-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
+    }
+    
+    .stat-value {
+        font-size: 22px;
+    }
+    
+    .stat-label {
+        font-size: 11px;
+    }
+    
+    /* Stack filter bar items */
+    .filter-bar {
+        padding: 12px;
+        gap: 10px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-group {
+        width: 100%;
+        flex: 1 1 100%;
+    }
+    
+    .filter-group input[type="date"],
+    .filter-group select {
+        width: 100%;
+        min-width: auto;
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+    
+    .clear-filter-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 10px;
+        font-size: 13px;
+    }
+    
+    /* Hide table on mobile, show card view */
+    .sessions-table-wrapper {
+        display: none;
+    }
+    
+    /* Mobile card view */
+    .mobile-sessions-list {
+        display: flex !important;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .mobile-session-card {
+        background: white;
+        border-radius: 10px;
+        padding: 14px;
+        box-shadow: 0 2px 8px rgba(63,46,151,0.08);
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+    }
+    
+    .mobile-session-card:hover {
+        box-shadow: 0 4px 12px rgba(63,46,151,0.12);
+        transform: translateY(-1px);
+    }
+    
+    .mobile-session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .mobile-session-user {
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 14px;
+    }
+    
+    .mobile-session-date {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+    
+    .mobile-session-details {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .mobile-session-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+    }
+    
+    .mobile-session-label {
+        color: var(--text-muted);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .mobile-session-label i {
+        font-size: 11px;
+        color: var(--primary);
+        width: 14px;
+        text-align: center;
+    }
+    
+    .mobile-session-value {
+        color: var(--text-main);
+        font-weight: 600;
+        text-align: right;
+        max-width: 60%;
+        word-break: break-word;
+    }
+    
+    .mobile-session-duration {
+        color: var(--accent-green);
+        font-weight: 700;
+    }
+    
+    .mobile-empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: var(--text-light);
+    }
+    
+    .mobile-empty-state i {
+        font-size: 48px;
+        margin-bottom: 14px;
+        opacity: 0.4;
+        display: block;
+    }
+    
+    .mobile-empty-state p {
+        font-size: 14px;
+        margin: 0;
+        font-weight: 500;
+    }
+}
+
+@media (max-width: 480px) {
+    .sessions-container {
+        padding: 8px;
+    }
+    
+    .sessions-header-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+    
+    .sessions-header h1 {
+        font-size: 18px;
+    }
+    
+    .stat-card {
+        padding: 12px;
+        gap: 8px;
+    }
+    
+    .stat-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+    
+    .mobile-session-card {
+        padding: 12px;
+    }
+    
+    .mobile-session-user {
+        font-size: 13px;
+    }
+    
+    .mobile-session-row {
+        font-size: 11px;
+    }
+    
+    .mobile-session-value {
+        max-width: 55%;
+    }
+}
+</style>
+
+<div class="sessions-container">
+    <div class="sessions-header">
+        <div class="sessions-header-left">
+            <div class="sessions-header-icon">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+                <h1>User Sessions <small>/ Login & Logout Tracking</small></h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon sessions">
+                <i class="fa-solid fa-list"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ sessions|length }}</div>
+                <div class="stat-label">Total Sessions</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon active">
+                <i class="fa-solid fa-sign-in-alt"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ active_sessions_count }}</div>
+                <div class="stat-label">Active Sessions</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon users">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ users|length }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar" id="filterBar">
+        <div class="filter-group" id="dateFilterGroup">
+            <label><i class="fa-solid fa-calendar-days"></i> Date</label>
+            <input type="date" id="dateFilter" value="{{ selected_date }}" onchange="applyFilters()" />
+        </div>
+        <div class="filter-group" id="userFilterGroup">
+            <label><i class="fa-solid fa-user-pen"></i> User</label>
+            <select id="userFilter" onchange="applyFilters()">
+                <option value="">All Users</option>
+                {% for u in users %}
+                    <option value="{{ u.id }}" {% if selected_user|stringformat:"s" == u.id|stringformat:"s" %}selected{% endif %}>
+                        {{ u.username }} - {{ u.full_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="clear-filter-btn" onclick="clearFilters()">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+        </button>
+    </div>
+
+<!-- Mobile Card View (hidden on desktop) -->
+<div class="mobile-sessions-list" id="mobileSessionsList" style="display: none;">
+    {% if sessions %}
+        {% for session in sessions %}
+            <div class="mobile-session-card">
+                <div class="mobile-session-header">
+                    <div class="mobile-session-user">
+                        <i class="fa-solid fa-user" style="font-size: 11px; margin-right: 4px;"></i>
+                        {{ session.user.username }}
+                    </div>
+                    <div class="mobile-session-date">{{ session.date|date:"d M Y" }}</div>
+                </div>
+                <div class="mobile-session-details">
+                    <div class="mobile-session-row">
+                        <span class="mobile-session-label">
+                            <i class="fa-solid fa-sign-in-alt"></i> Login
+                        </span>
+                        <span class="mobile-session-value">{{ session.login_time|date:"d M, h:i A" }}</span>
+                    </div>
+                    <div class="mobile-session-row">
+                        <span class="mobile-session-label">
+                            <i class="fa-solid fa-sign-out-alt"></i> Logout
+                        </span>
+                        <span class="mobile-session-value">
+                            {% if session.logout_time %}
+                                {{ session.logout_time|date:"d M, h:i A" }}
+                            {% else %}
+                                <span style="color: var(--accent-green);">Active</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="mobile-session-row">
+                        <span class="mobile-session-label">
+                            <i class="fa-solid fa-clock"></i> Duration
+                        </span>
+                        <span class="mobile-session-value">
+                            {% if session.logout_time %}
+                                {% with duration=session.logout_time|timesince:session.login_time %}
+                                    {{ duration }}
+                                {% endwith %}
+                            {% else %}
+                                <span class="mobile-session-duration">Active</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="mobile-session-row">
+                        <span class="mobile-session-label">
+                            <i class="fa-solid fa-circle-check"></i> Status
+                        </span>
+                        <span class="mobile-session-value">
+                            {% if session.logout_time %}
+                                <span class="col-status status-closed">Closed</span>
+                            {% else %}
+                                <span class="col-status status-active">Active</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="mobile-empty-state">
+            <i class="fa-solid fa-inbox"></i>
+            <p>No sessions found</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Desktop Table View (hidden on mobile) -->
+<div class="sessions-table-wrapper">
+    <table class="sessions-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Login Time</th>
+                    <th>Logout Time</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="sessionsBody">
+                {% if sessions %}
+                    {% for session in sessions %}
+                        <tr>
+                            <td class="col-date">{{ session.date|date:"d M Y" }}</td>
+                            <td class="col-user">{{ session.user.username }}</td>
+                            <td class="col-time">{{ session.login_time|date:"d M Y, h:i A" }}</td>
+                            <td class="col-time">
+                                {% if session.logout_time %}
+                                    {{ session.logout_time|date:"d M Y, h:i A" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="col-time">
+                                {% if session.logout_time %}
+                                    {% with duration=session.logout_time|timesince:session.login_time %}
+                                        {{ duration }}
+                                    {% endwith %}
+                                {% else %}
+                                    <span style="color: var(--accent-green); font-weight: 600;">Active</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if session.logout_time %}
+                                    <span class="col-status status-closed">Closed</span>
+                                {% else %}
+                                    <span class="col-status status-active">Active</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-inbox"></i>
+                                <p>No sessions found</p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function applyFilters() {
+    const dateVal = document.getElementById('dateFilter').value;
+    const userVal = document.getElementById('userFilter').value;
+    
+    // Build URL with query parameters
+    const params = new URLSearchParams();
+    if (dateVal) params.set('date', dateVal);
+    if (userVal) params.set('user', userVal);
+    
+    // Redirect to filtered URL
+    window.location.href = '?' + params.toString();
+}
+
+function clearFilters() {
+    window.location.href = '{% url "user_sessions" %}';
+}
+
+// Mobile view toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileList = document.getElementById('mobileSessionsList');
+    const desktopTable = document.querySelector('.sessions-table-wrapper');
+    
+    function toggleView() {
+        if (window.innerWidth <= 768) {
+            // Mobile: show cards, hide table
+            if (mobileList) mobileList.style.display = 'flex';
+            if (desktopTable) desktopTable.style.display = 'none';
+        } else {
+            // Desktop: show table, hide cards
+            if (mobileList) mobileList.style.display = 'none';
+            if (desktopTable) desktopTable.style.display = '';
+        }
+    }
+    
+    // Initial check
+    toggleView();
+    
+    // Listen for resize
+    window.addEventListener('resize', toggleView);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}Machines{% endblock %}
+
+{% block content %}
+
+<style>
+:root {
+    --primary: #3F2E97;
+    --accent: #E1251B;
+    --bg-light: #F8F9FC;
+    --white: #ffffff;
+    --table-bg: #ffffff;
+    --hover-light: rgba(63, 46, 151, 0.08);
+}
+
+.stock-container {
+    max-width: 1100px;
+    margin: 40px auto;
+}
+
+.stock-container h1 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.stock-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--table-bg);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .stock-container {
+        width: 98%;
+        margin: 20px auto;
+        padding: 0 8px;
+    }
+    
+    .stock-container h1 {
+        font-size: 22px;
+        margin-bottom: 15px;
+    }
+    
+    .stock-table th,
+    .stock-table td {
+        padding: 10px 6px;
+        font-size: 12px;
+    }
+    
+    .add-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+        margin: 10% auto;
+    }
+}
+
+.stock-table thead {
+    background: linear-gradient(90deg, var(--primary), #2c1f6f);
+    color: var(--white);
+}
+
+.stock-table th,
+.stock-table td {
+    padding: 13px 15px;
+    text-align: center;
+}
+
+.stock-table tbody tr {
+    border-bottom: 1px solid #eee;
+}
+
+.stock-table tbody tr:hover {
+    background-color: var(--hover-light);
+}
+
+.add-btn {
+    display: inline-block;
+    margin: 10px 5px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    background-color: var(--primary);
+    color: var(--white);
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+.add-btn:hover {
+    background-color: var(--accent);
+}
+
+.edit-btn {
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.delete-btn {
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.delete-btn:hover {
+    background-color: var(--accent);
+    color: var(--white);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.55);
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 8% auto;
+    padding: 25px;
+    width: 420px;
+    border-radius: 10px;
+    border-top: 5px solid var(--primary);
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--accent);
+}
+/* blinking line */
+/* Only show cursor in editable fields */
+input, textarea, select {
+    caret-color: auto;
+}
+
+/* Remove cursor from normal text */
+body, td, th, span, div, p {
+    caret-color: transparent;
+}
+
+/* Optional: prevent selecting table text */
+td, th {
+    user-select: none;
+}
+
+
+
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content label {
+    margin-top: 12px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.modal-content input,
+.modal-content select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+</style>
+
+<div class="stock-container">
+    <h1>Machine List</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="color: red; margin-bottom: 10px;">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <button class="add-btn" onclick="openModal()">+ Add Machine</button>
+
+    <table class="stock-table">
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>ID</th>
+                <th>Machine Name</th>
+                <th>Category</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for machine in page_obj %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ machine.id }}</td>
+                <td>{{ machine.name }}</td>
+                <td>{{ machine.category }}</td>
+                <td>
+                    <button class="edit-btn"
+                        onclick="editMachine('{{ machine.id }}','{{ machine.name }}','{{ machine.category }}')">
+                        Edit
+                    </button>
+
+                    <a href="{% url 'delete_machine' machine.id %}"
+                       class="delete-btn"
+                       onclick="return confirm('Are you sure you want to delete this machine?');">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No machines available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if page_obj.has_other_pages %}
+    <div style="margin-top:20px;">
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <strong>{{ num }}</strong>
+            {% else %}
+                <a href="?page={{ num }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal -->
+<div id="machineModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 id="modalTitle">Add Machine</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="machine_id" id="machine_id">
+
+            <label>Machine Name:</label>
+            <input type="text" name="name" id="machine_name" required>
+
+            <label for="category">Category:</label>
+            <select name="category" id="category" required>
+                {% for key, value in form.fields.category.choices %}
+                    <option value="{{ key }}">{{ value }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="add-btn">Save Machine</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function openModal() {
+    document.getElementById("modalTitle").innerText = "Add Machine";
+    document.getElementById("machine_id").value = "";
+    document.getElementById("machine_name").value = "";
+    document.getElementById("machineModal").style.display = "block";
+}
+
+function editMachine(id, name) {
+    document.getElementById("modalTitle").innerText = "Edit Machine";
+    document.getElementById("machine_id").value = id;
+    document.getElementById("machine_name").value = name;
+    document.getElementById("machineModal").style.display = "block";
+}
+
+function closeModal() {
+    document.getElementById("machineModal").style.display = "none";
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById("machineModal");
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+</script>
+
+{% endblock %}

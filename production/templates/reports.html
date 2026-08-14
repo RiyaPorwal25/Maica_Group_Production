@@ -1,0 +1,2517 @@
+{% extends "base.html" %}
+{% load filters %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-light: rgba(63, 46, 151, 0.05);
+    --primary-dark: #2c1f6f;
+    --accent-red: #E1251B;
+    --accent-red-light: rgba(225, 37, 27, 0.06);
+    --text-main: #2D3748;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --border-soft: rgba(63, 46, 151, 0.08);
+    --white: #ffffff;
+    --light-bg: #F8F9FC;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.02);
+    --shadow-md: 0 10px 30px rgba(63, 46, 151, 0.05);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --success: #107C41;
+}
+
+/* Master Layout Container */
+.reports-page {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-main);
+}
+
+/* Page Header Panel Styling */
+.reports-head {
+    margin-bottom: 24px;
+}
+
+.reports-head h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+
+/* Navigation Toolbar (Modern Chip-Style) */
+.reports-toolbar {
+    padding: 0;
+    margin-bottom: 28px;
+    background: transparent;
+    border: none;
+}
+
+.reports-type-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.reports-type-nav li {
+    position: relative;
+}
+
+/* Universal Nav Items Blueprint */
+.reports-dd > a,
+.reports-type-nav > li:not(.reports-dd) > a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    color: #475569; /* Slate 600 */
+    background: var(--white);
+    border-radius: 30px; /* Fully rounded pill */
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.reports-type-nav > li:not(.reports-dd):hover > a,
+.reports-dd:hover > a {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(63, 46, 151, 0.05);
+}
+
+.reports-type-nav li.active > a {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+    color: var(--white) !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px rgba(63, 46, 151, 0.25) !important;
+}
+
+.reports-type-nav li.active > a i {
+    opacity: 1 !important;
+}
+
+/* Interactive Dropdown Caret */
+.caret-icon {
+    font-size: 11px;
+    transition: transform 0.2s ease;
+    opacity: 0.7;
+}
+.reports-dd:hover .caret-icon {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Menu Mechanics */
+.reports-dd-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px); /* Add slight gap */
+    left: 0;
+    min-width: 220px;
+    margin: 0;
+    padding: 8px;
+    list-style: none;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-soft);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.reports-dd:hover .reports-dd-menu {
+    display: block;
+}
+
+.reports-dd-menu li a {
+    display: block;
+    padding: 10px 14px;
+    color: var(--text-main);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 13.5px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+}
+
+.reports-dd-menu li a:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding-left: 18px;
+}
+
+.reports-dd-menu a.active-sub {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Enhanced Buttons & Containers */
+.export-container {
+    margin-bottom: 24px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    background: var(--success);
+    color: var(--white);
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 13.5px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(16, 124, 65, 0.15);
+}
+
+.add-btn:hover {
+    background: #0b592e;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(16, 124, 65, 0.25);
+}
+
+/* Master Data Grid Framework Cards */
+.table-responsive-card {
+    background: var(--white);
+    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.table-container {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.reports-page table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+}
+
+{% comment %} .reports-page table th {
+    background: #FAF9FE;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 20px;
+    border-bottom: 2px solid #000;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    white-space: nowrap;
+} {% endcomment %}
+
+.reports-page table th {
+    background: #FAF9FE;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
+}
+
+.reports-page table td {
+    padding: 14px 20px;
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 500;
+    {% comment %} border-bottom: 1px solid #000;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000; {% endcomment %}
+    border-bottom: 1px solid #EDF2F7;
+    white-space: nowrap;
+}
+
+.reports-page table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.reports-page table tbody tr:hover {
+    background: rgba(63, 46, 151, 0.01);
+}
+
+/* Raw Material Stock Table - Black Borders */
+.raw-material-stock-table th {
+    border-top: 1px solid #000;
+    border-bottom: 2px solid #000;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+}
+
+.raw-material-stock-table td {
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+}
+
+.raw-material-stock-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Summary Table Customizations */
+.reports-page .summary-row {
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.reports-page .summary-row:hover {
+    background: var(--primary-light);
+}
+
+/* Highlighted Data Elements Layout */
+.grand-total-row {
+    font-weight: 700 !important;
+    background-color: #FAF9FE !important;
+    border-top: 2px solid var(--primary) !important;
+}
+
+.grand-total-row td {
+    color: var(--primary) !important;
+    font-weight: 700 !important;
+}
+
+/* Uniform Semantic Badges */
+.badge-id {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 13px;
+    font-family: "SF Mono", "Fira Code", Consolas, monospace;
+}
+
+.badge-shift {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+}
+
+.badge-shift.day, .badge-shift.Day {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-shift.night, .badge-shift.Night {
+    background: #1e3a5f;
+    color: #e0f2fe;
+}
+
+.badge-category {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.badge-category.door, .badge-category.Door {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.badge-category.frame, .badge-category.Frame {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.badge-category.sheet, .badge-category.Sheet {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Alignment Utilities */
+.num-col {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", "Fira Code", Consolas, monospace;
+}
+
+.center-col {
+    text-align: center !important;
+}
+
+/* Enhanced Form Controls */
+.reports-filter {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    background: var(--white);
+    padding: 20px 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.reports-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.reports-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.reports-field input:not([type="checkbox"]):not([type="radio"]),
+.reports-field select {
+    padding: 10px 14px;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    color: var(--text-main);
+    background-color: var(--white);
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.reports-field input:not([type="checkbox"]):not([type="radio"]):focus,
+.reports-field select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.reports-submit {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    border: none;
+    padding: 10px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(63, 46, 151, 0.2);
+    height: fit-content;
+}
+
+.reports-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(63, 46, 151, 0.3);
+}
+
+/* Horizontal Machine Button Filters */
+.machine-btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.machine-btn-group input[type="checkbox"],
+.machine-btn-group input[type="radio"] {
+    display: none;
+}
+
+.machine-btn-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    min-width: 60px;
+}
+
+.machine-btn-group input[type="checkbox"]:checked + .machine-btn-label,
+.machine-btn-group input[type="radio"]:checked + .machine-btn-label {
+    background-color: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.machine-btn-label:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Scrap Module Explicit Styles */
+.scrap-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.scrap-title-area h2 {
+    margin: 0 0 4px 0;
+    color: var(--primary);
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scrap-title-area h2::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 22px;
+    background: var(--accent-red);
+    border-radius: 2px;
+}
+
+.scrap-title-area p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.filter-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8fafc;
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.filter-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.filter-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    outline: none;
+}
+
+.btn-filter {
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-filter:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-clear {
+    background-color: #64748b;
+    color: var(--white);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.btn-clear:hover {
+    background-color: #475569;
+}
+
+/* Alert Styling */
+.alert-messages {
+    margin-bottom: 20px;
+}
+
+.alert-item {
+    padding: 14px 18px;
+    background-color: var(--accent-red-light);
+    border-left: 4px solid var(--accent-red);
+    color: #b91c1c;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* ================= COSTING UI ================= */
+.costing-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.costing-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.costing-row:hover {
+    background: rgba(63, 46, 151, 0.04) !important;
+    border-left-color: var(--primary);
+}
+
+.costing-row td {
+    padding: 14px 16px;
+}
+
+.costing-sno {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 13px;
+    width: 60px;
+}
+
+.costing-date {
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 14px;
+}
+
+.costing-machine {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 14px;
+}
+
+.costing-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.costing-group-text {
+    font-size: 13px;
+    color: var(--text-main);
+    font-family: "SF Mono", "Fira Code", Consolas, monospace;
+    background: #F8F9FC;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+}
+
+.costing-expand-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-light);
+    border-radius: 50%;
+    color: var(--primary);
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.costing-row:hover .costing-expand-icon {
+    transform: rotate(180deg);
+    background: var(--primary);
+    color: white;
+}
+
+/* Badges */
+.costing-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.costing-badge-approved {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    box-shadow: 0 1px 3px rgba(6, 95, 70, 0.15);
+}
+
+.costing-badge-pending {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    box-shadow: 0 1px 3px rgba(146, 64, 14, 0.15);
+}
+
+.costing-badge-not-created {
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    color: #6b7280;
+    box-shadow: 0 1px 3px rgba(107, 114, 128, 0.15);
+}
+
+/* Details expand row */
+.costing-details-row {
+    display: none;
+    background: #FAF9FE;
+}
+
+.costing-details-row td {
+    padding: 0;
+    border: none;
+}
+
+.costing-details-content {
+    padding: 20px 24px;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.costing-details-content table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.costing-details-content thead th {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.costing-details-content tbody td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 14px;
+}
+
+.costing-details-content tbody tr:hover {
+    background: rgba(63, 46, 151, 0.03);
+}
+
+.costing-details-content tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Empty state */
+.costing-empty {
+    padding: 40px;
+}
+
+.costing-empty-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, var(--primary-light), rgba(63, 46, 151, 0.12));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--primary);
+}
+
+/* ================= COSTING POPUP MODAL ================= */
+.costing-modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.65);
+    backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+}
+
+.costing-modal-box {
+    background: var(--white);
+    width: 700px;
+    max-width: 94%;
+    max-height: 85vh;
+    border-radius: 16px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+    animation: modalFadeIn 0.25s ease-out;
+}
+
+.costing-modal-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.costing-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.costing-modal-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.costing-modal-close:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+.costing-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(85vh - 70px);
+}
+
+.costing-modal-body table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+
+.costing-modal-body thead th {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.costing-modal-body tbody td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 14px;
+}
+
+.costing-modal-body tbody tr:hover {
+    background: rgba(63, 46, 151, 0.03);
+}
+
+.costing-modal-body .costing-modal-total-row {
+    background: #FAF9FE;
+    font-weight: 700;
+}
+
+.costing-modal-body .costing-modal-total-row td {
+    color: var(--primary);
+    font-size: 15px;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Consumption Sticky Headers */
+.reports-page .consumption-table {
+    max-height: 550px;
+    overflow-y: auto;
+}
+.reports-page .consumption-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    box-shadow: inset 0 -1px 0 var(--border-soft);
+}
+
+/* Responsive Adaptive Framework */
+@media (max-width: 992px) {
+    .reports-toolbar {
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+    .reports-type-nav {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+    .reports-type-nav li, 
+    .reports-dd > a,
+    .reports-type-nav > li:not(.reports-dd) > a {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .reports-dd-menu {
+        position: static;
+        box-shadow: none;
+        border: none;
+        border-left: 2px solid var(--border-soft);
+        background: #fafafa;
+        margin-top: 4px;
+        padding-left: 12px;
+    }
+    .scrap-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .filter-form {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* ===================================================
+   PERFECT MOBILE VIEW (320px - 768px)
+=================================================== */
+@media (max-width:768px){
+body{overflow-x:hidden;}
+.reports-page{padding:12px;}
+.reports-head h1{font-size:22px;text-align:center;margin-bottom:15px;}
+.reports-toolbar{margin-bottom:18px;}
+.reports-type-nav{display:flex;flex-direction:column;gap:8px;}
+.reports-type-nav li{width:100%;}
+.reports-type-nav li a{width:100%;padding:14px 16px;font-size:14px;justify-content:space-between;}
+.reports-dd-menu{position:static;display:block;margin-top:6px;border-radius:10px;background:#fafafa;border:1px solid #eee;}
+.reports-dd-menu li a{padding:12px;font-size:14px;}
+.reports-filter{display:flex;flex-direction:column;gap:15px;padding:15px;}
+.reports-field{width:100%;min-width:100%;}
+.reports-field input,.reports-field select{width:100%;height:45px;font-size:15px;}
+.reports-submit{width:100%;justify-content:center;height:46px;}
+.machine-btn-group{display:flex;flex-wrap:wrap;gap:8px;}
+.machine-btn-label{flex:1 1 calc(50% - 8px);text-align:center;padding:10px;min-width:auto;font-size:13px;}
+.export-container{justify-content:stretch;}
+.export-container .add-btn{width:100%;justify-content:center;}
+.table-responsive-card{border-radius:12px;overflow:hidden;}
+.table-container{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{min-width:700px;}
+th{font-size:12px!important;padding:12px 10px!important;}
+td{font-size:13px!important;padding:10px!important;}
+.badge-id,.badge-shift,.badge-category{font-size:11px;}
+.costing-modal-box{width:95%;max-height:90vh;}
+.costing-modal-body{padding:15px;}
+.scrap-toolbar{display:flex;flex-direction:column;align-items:stretch;gap:15px;}
+.filter-form{width:100%;}
+.btn-filter,.btn-clear{width:100%;text-align:center;}
+}
+@media (max-width:480px){
+.reports-page{padding:10px;}
+.reports-head h1{font-size:20px;}
+.machine-btn-label{flex:100%;}
+.reports-submit,.add-btn{font-size:14px;}
+table{min-width:650px;}
+}
+
+</style>
+
+<div class="reports-page">
+
+    <div class="reports-head">
+        <h1>Reports Control Panel</h1>
+    </div>
+
+    <div class="reports-toolbar">
+        <ul class="reports-type-nav">
+            <li class="reports-dd {% if report_type == 'production' %}active{% endif %}">
+                 <a href="?type=production">
+                    <span>
+                        <i class="fa-solid fa-industry" style="margin-right: 6px; opacity:0.8;"></i> Production 
+                        {% if mode == "by_operator" %} (Operator)
+                        {% elif mode == "by_machine" %} (Machine)
+                        {% elif mode == "by_date" %} (Date)
+                        {% endif %}
+                    </span>
+                    <i class="fa-solid fa-chevron-down caret-icon"></i>
+                </a>
+                <ul class="reports-dd-menu">
+                    <li><a href="?type=production&mode=by_operator" class="{% if mode == 'by_operator' %}active-sub{% endif %}">By operator</a></li>
+                    <li><a href="?type=production&mode=by_machine" class="{% if mode == 'by_machine' %}active-sub{% endif %}">By machine</a></li>
+                    <li><a href="?type=production&mode=by_date" class="{% if mode == 'by_date' %}active-sub{% endif %}">By date</a></li>
+                </ul>
+            </li>
+            <li class="{% if report_type == 'dispatch' %}active{% endif %}">
+                <a href="?type=dispatch"><i class="fa-solid fa-truck-ramp-box" style="opacity:0.8;"></i> Dispatch</a>
+            </li>
+            <li class="{% if report_type == 'consumption' %}active{% endif %}">
+                <a href="?type=consumption"><i class="fa-solid fa-flask" style="opacity:0.8;"></i> Consumption</a>
+            </li>
+            <li class="{% if report_type == 'consumption_vs_production' %}active{% endif %}">
+                <a href="?type=consumption_vs_production"><i class="fa-solid fa-scale-balanced" style="opacity:0.8;"></i> Production vs Consumption</a>
+            </li>
+            <li class="{% if report_type == 'raw_material' %}active{% endif %}">
+                <a href="?type=raw_material"><i class="fa-solid fa-cubes" style="opacity:0.8;"></i> Raw Material</a>
+            </li>
+            <li class="{% if report_type == 'scrap' %}active{% endif %}">
+                <a href="?type=scrap"><i class="fa-solid fa-dumpster" style="opacity:0.8;"></i> Scrap</a>
+            </li>
+            <li class="{% if report_type == 'planning' %}active{% endif %}">
+                <a href="?type=planning"><i class="fa-solid fa-calendar-check" style="opacity:0.8;"></i> Planning</a>
+            </li>
+            <li class="{% if report_type == 'formulation' %}active{% endif %}">
+                <a href="?type=formulation"><i class="fa-solid fa-flask-vial" style="opacity:0.8;"></i> Formulation</a>
+            </li>
+            <li class="{% if report_type == 'production_new' %}active{% endif %}">
+                <a href="?type=production_new"><i class="fa-solid fa-industry" style="opacity:0.8;"></i> Production Report</a>
+            </li>
+            <li class="{% if report_type == 'one_day_stock_alert' %}active{% endif %}">
+                <a href="?type=one_day_stock_alert">
+                    <i class="fa-solid fa-triangle-exclamation" style="opacity:0.8;"></i> One Day Stock Alert
+                </a>
+            </li>
+            <li class="{% if report_type == 'raw_material_stock' %}active{% endif %}">
+                <a href="?type=raw_material_stock">
+                    <i class="fa-solid fa-cubes" style="opacity:0.8;"></i> Raw Material Stock
+                </a>
+            </li>
+            {% if request.user.role == 'Admin' %}
+            <li class="{% if report_type == 'costing' %}active{% endif %}">
+                <a href="?type=costing">
+                    <i class="fa-solid fa-calculator" style="opacity:0.8;"></i> Costing
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+
+    {% if report_type == "production" %}
+    <form class="reports-filter" method="GET" id="reports-production-form">
+        <input type="hidden" name="type" value="production">
+        <input type="hidden" name="mode" value="{{ mode }}">
+
+        {% if mode == "by_date" %}
+            <div class="reports-field">
+                <label for="reports-date">Select Target Date</label>
+                <input id="reports-date" type="date" name="date" value="{{ request.GET.date }}">
+            </div>
+        {% else %}
+            <div class="reports-field">
+                <label for="reports-from-date">From date</label>
+                <input id="reports-from-date" type="date" name="from_date" value="{{ from_date }}" required>
+            </div>
+            <div class="reports-field">
+                <label for="reports-to-date">To date</label>
+                <input id="reports-to-date" type="date" name="to_date" value="{{ to_date }}" required>
+            </div>
+        {% endif %}
+
+        {% if mode == "by_machine" %}
+            <div class="reports-field">
+                <label for="reports-shift">Operational Shift</label>
+                <select id="reports-shift" name="shift">
+                    <option value="">All shifts</option>
+                    <option value="Day">Day</option>
+                    <option value="Night">Night</option>
+                </select>
+            </div>
+            <div class="reports-field">
+                <label for="reports-machines">Floor Machines</label>
+                <select id="reports-machines" name="machine" multiple aria-label="Machines">
+                    {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+
+        <button type="submit" class="reports-submit">
+            <i class="fa-solid fa-gears" style="margin-right: 8px;"></i>
+            {% if mode == "by_date" %}Show Report{% else %}Generate Report{% endif %}
+        </button>
+    </form>
+    {% endif %}
+
+    {% if report_type == "dispatch" or report_type == "consumption" or report_type == "consumption_vs_production" %}
+    <form class="reports-filter" method="GET">
+        <input type="hidden" name="type" value="{{ report_type }}">
+
+        <div class="reports-field">
+            <label>From date</label>
+            <input type="date" name="from_date" value="{{ from_date }}">
+        </div>
+
+        <div class="reports-field">
+            <label>To date</label>
+            <input type="date" name="to_date" value="{{ to_date }}">
+        </div>
+
+        <button type="submit" class="reports-submit">
+            <i class="fa-solid fa-rotate" style="margin-right: 8px;"></i> Generate
+        </button>
+
+        {% if report_type == "consumption" and data %}
+        <a href="{% url 'export_report' %}?type=consumption&from_date={{ from_date }}&to_date={{ to_date }}" class="add-btn">
+            <i class="fa-solid fa-file-excel"></i> Download Excel
+        </a>
+        {% endif %}
+    </form>
+    {% endif %}
+
+    {% if report_type == "raw_material" %}
+    <form class="reports-filter" method="GET" id="reports-raw-material-form">
+        <input type="hidden" name="type" value="raw_material">
+
+        <div class="reports-field">
+            <label for="reports-supplier">Supplier Name</label>
+            <input id="reports-supplier" type="text" name="supplier" placeholder="Enter supplier name" value="{{ supplier_filter }}">
+        </div>
+
+        <div class="reports-field">
+            <label for="reports-receiving-from">From Date</label>
+            <input id="reports-receiving-from" type="date" name="receiving_from" value="{{ receiving_from }}">
+        </div>
+
+        <div class="reports-field">
+            <label Mechanisms for="reports-receiving-to">To Date</label>
+            <input id="reports-receiving-to" type="date" name="receiving_to" value="{{ receiving_to }}">
+        </div>
+
+        <button type="submit" class="reports-submit"><i class="fa-solid fa-filter" style="margin-right:8px;"></i> Filter</button>
+    </form>
+    {% endif %}
+
+    {% if report_type == "planning" %}
+    <form class="reports-filter" method="GET">
+        <input type="hidden" name="type" value="planning">
+
+        <div class="reports-field">
+            <label for="planning-date">Date</label>
+            <input id="planning-date" type="date" name="date" value="{{ planning_date }}">
+        </div>
+
+        <div class="reports-field">
+            <label for="planning-category">Category</label>
+            <select id="planning-category" name="category">
+                <option value="">All Categories</option>
+                <option value="Door" {% if planning_category == 'Door' %}selected{% endif %}>Door</option>
+                <option value="Frame" {% if planning_category == 'Frame' %}selected{% endif %}>Frame</option>
+                <option value="Sheet" {% if planning_category == 'Sheet' %}selected{% endif %}>Sheet</option>
+            </select>
+        </div>
+
+        <div class="reports-field" style="flex: 2;">
+            <label>Machine Filters</label>
+            <div class="machine-btn-group">
+                {% for m in machines %}
+                <input type="checkbox" id="plan-mach-{{ m.id }}" name="machine" value="{{ m.id }}" {% if m.id|stringformat:'s' in planning_machines %}checked{% endif %}>
+                <label for="plan-mach-{{ m.id }}" class="machine-btn-label">{{ m.name }}</label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="reports-submit"><i class="fa-solid fa-filter" style="margin-right:8px;"></i> Filter</button>
+    </form>
+    {% endif %}
+
+    {% if report_type == "formulation" %}
+    <form class="reports-filter" method="GET">
+        <input type="hidden" name="type" value="formulation">
+
+        <div class="reports-field">
+            <label for="formulation-date">Date</label>
+            <input id="formulation-date" type="date" name="date" value="{{ formulation_date }}">
+        </div>
+
+        <div class="reports-field" style="flex: 2;">
+            <label>Machine Filters</label>
+            <div class="machine-btn-group">
+                {% for m in machines %}
+                <input type="checkbox" id="form-mach-{{ m.id }}" name="machine" value="{{ m.id }}" {% if m.id|stringformat:'s' in formulation_machines %}checked{% endif %}>
+                <label for="form-mach-{{ m.id }}" class="machine-btn-label">{{ m.name }}</label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="reports-submit"><i class="fa-solid fa-filter" style="margin-right:8px;"></i> Filter</button>
+    </form>
+    {% endif %}
+
+    {% if report_type == "production_new" %}
+    <form class="reports-filter" method="GET">
+        <input type="hidden" name="type" value="production_new">
+
+        <div class="reports-field">
+            <label for="production-report-date">Date</label>
+            <input id="production-report-date" type="date" name="date" value="{{ production_report_date }}">
+        </div>
+
+        <div class="reports-field" style="flex: 2;">
+            <label>Machine Filters</label>
+            <div class="machine-btn-group">
+                {% for m in machines %}
+                <input type="checkbox" id="prod-new-mach-{{ m.id }}" name="machine" value="{{ m.id }}" {% if m.id|stringformat:'s' in production_report_machines %}checked{% endif %}>
+                <label for="prod-new-mach-{{ m.id }}" class="machine-btn-label">{{ m.name }}</label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="reports-submit"><i class="fa-solid fa-filter" style="margin-right:8px;"></i> Filter</button>
+    </form>
+    {% endif %}
+
+    {% if report_type == "costing" %}
+    <form class="reports-filter" method="GET">
+        <input type="hidden" name="type" value="costing">
+
+        <div class="reports-field">
+            <label for="costing-date">Date</label>
+            <input id="costing-date" type="date" name="costing_date" value="{{ costing_date }}" required>
+        </div>
+
+        <div class="reports-field" style="flex: 2;">
+            <label>Machine Filter</label>
+            <div class="machine-btn-group">
+                <input type="radio" id="cost-mach-all" name="costing_machine" value="" {% if not costing_machine %}checked{% endif %}>
+                <label for="cost-mach-all" class="machine-btn-label">All</label>
+                {% for m in costing_machines %}
+                <input type="radio" id="cost-mach-{{ m.id }}" name="costing_machine" value="{{ m.id }}" {% if costing_machine|default_if_none:"" == m.id|stringformat:"s" %}checked{% endif %}>
+                <label for="cost-mach-{{ m.id }}" class="machine-btn-label">{{ m.name }}</label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="reports-submit">
+            <i class="fa-solid fa-filter" style="margin-right:8px;"></i> Generate
+        </button>
+    </form>
+    {% endif %}
+
+    {% if report_type == "one_day_stock_alert" %}
+    <form class="reports-filter" method="GET">
+        <input type="hidden" name="type" value="one_day_stock_alert">
+
+        <div class="reports-field">
+            <label for="stock-alert-category">Category</label>
+            <select id="stock-alert-category" name="stock_alert_category">
+                <option value="">All Categories</option>
+                {% for cat_value, cat_label in stock_alert_categories %}
+                <option value="{{ cat_value }}" {% if stock_alert_category == cat_value %}selected{% endif %}>{{ cat_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="reports-submit">
+            <i class="fa-solid fa-filter" style="margin-right:8px;"></i> Filter
+        </button>
+    </form>
+    {% endif %}
+
+    {% if report_type != "scrap" %}
+    <div class="export-container">
+        <a href="{% url 'export_report' %}?{{ request.GET.urlencode }}" class="add-btn">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Download Report Ledger
+        </a>
+    </div>
+    {% endif %}
+
+    {% if summary %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table id="summary-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        {% if mode == "by_machine" %}
+                        <th>Machine</th>
+                        <th>Shift</th>
+                        <th>Category</th>
+                        {% elif mode == "by_date" %}
+                        <th>Date</th>
+                        <th>Shift</th>
+                        {% else %}
+                        <th>Operator</th>
+                        <th>Shift</th>
+                        {% endif %}
+                        <th class="num-col">Total Qty</th>
+                        <th class="num-col">Total Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in summary %}
+                        {% for sh in s.shifts %}
+                        <tr class="summary-row" onclick="showDetails('{{ mode|escapejs }}', '{{ s.id|escapejs }}', '{{ sh.name|escapejs }}'{% if mode == 'by_machine' %}, '{{ sh.category|default_if_none:''|escapejs }}'{% endif %})">
+                            <td style="color: var(--text-muted);">{{ forloop.parentloop.counter }} . {{ forloop.counter }}</td>
+                            {% if mode == "by_machine" %}
+                                <td style="font-weight: 600; color: var(--primary);">{{ s.name }}</td>
+                                <td><span class="badge-shift {{ sh.name }}">{{ sh.name }}</span></td>
+                                <td><span class="badge-category {{ sh.category }}">{{ sh.category }}</span></td>
+                            {% elif mode == "by_date" %}
+                                <td style="font-weight: 600;">{{ s.name }}</td>
+                                <td><span class="badge-shift {{ sh.name }}">{{ sh.name }}</span></td>
+                            {% else %}
+                                <td style="font-weight: 600;">{{ s.name }}</td>
+                                <td><span class="badge-shift {{ sh.name }}">{{ sh.name }}</span></td>
+                            {% endif %}
+                            <td class="num-col" style="font-weight: 600;">{{ sh.total_qty }}</td>
+                            <td class="num-col">{{ sh.total_weight|format_decimal }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-responsive-card" id="details-container" style="display:none;">
+        <div class="table-container">
+            <table id="details-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Date</th>
+                        {% if mode == "by_machine" %}
+                        <th>Machine</th>
+                        {% elif mode == "by_operator" %}
+                        <th>Operator</th>
+                        {% endif %}
+                        <th>Shift</th>
+                        {% if mode == "by_machine" %}
+                        <th>Category</th>
+                        {% endif %}
+                        <th>Product</th>
+                        <th class="num-col">Side Patti</th>
+                        <th class="num-col">Line Setting</th>
+                        <th class="num-col">Qty</th>
+                        <th class="num-col">Actual</th>
+                        <th class="num-col">Overall</th>
+                    </tr>
+                </thead>
+                <tbody id="details-body"></tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "dispatch" %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Challan No</th>
+                        <th>Party</th>
+                        <th>Vehicle</th>
+                        <th>LR/RR No</th>
+                        {% comment %} <th>Products</th> {% endcomment %}
+                        <th class="num-col">Total Qty</th>
+                        <th>PDF</th>
+                        <th>Edit</th>
+                        <th>Operator</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for challan in dispatches %}
+                    {% with items=challan.items.all %}
+                    {% if items %}
+                    <tr>
+                        <td>{{ challan.challan_date }}</td>
+                        <td>{{ challan.challan_no }}</td>
+                        <td style="font-weight:600;">{{ challan.party_name }}</td>
+                        <td>{{ challan.vehicle_no }}</td>
+                        <td>{{ challan.lr_rr_no|default:"-" }}</td>
+                        {% comment %} <td style="text-align:left;">
+                            {% for item in items %}
+                                {{ item.product.product_name }} ({{ item.quantity }}){% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td> {% endcomment %}
+                        <td class="num-col" style="font-weight:600; color:var(--primary);">
+                            {{ challan.total_quantity|default:"0" }}
+                        </td>
+                        <td>
+                            <a href="{% url 'delivery_challan_pdf' challan.id %}" class="add-btn" style="height:32px; padding:6px 12px; box-shadow:none;" target="_blank">
+                                <i class="fa-solid fa-file-pdf"></i> PDF
+                            </a>
+                        </td>
+                        <td>
+                            {% if request.user.role == 'Admin' or request.user.role == 'Dispatch Manager' %}
+                            <a href="{% url 'dispatch_edit' challan.id %}" class="add-btn" style="height:32px; padding:6px 12px; box-shadow:none; background:#3F2E97;" target="_blank">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if request.user.role == 'Admin' or request.user.role == 'Dispatch Manager' %}
+                            <a href="{% url 'dispatch_edit_qty' challan.id %}" class="add-btn" style="height:32px; padding:6px 12px; box-shadow:none; background:#107C41;" target="_blank">
+                                <i class="fa-solid fa-list-ol"></i> Qty
+                            </a>
+                            {% endif %}
+                        </td>
+                        <td>{% if challan.operator %}{{ challan.operator.full_name }}{% else %}—{% endif %}</td>
+                    </tr>
+                    {% endif %}
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "consumption_vs_production" %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th class="num-col">Consumption</th>
+                        <th class="num-col">Production</th>
+                        <th class="num-col">Difference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in consumption_vs_production %}
+                    <tr>
+                        <td>{{ r.date }}</td>
+                        <td class="num-col">{{ r.consumption|format_decimal }}</td>
+                        <td class="num-col">{{ r.production|format_decimal }}</td>
+                        <td class="num-col" style="font-weight: 600; color: {% if '-' in r.difference %}var(--accent-red){% else %}#2e7d32{% endif %};">
+                            {{ r.difference|format_decimal }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "consumption" %}
+    <div class="table-responsive-card consumption-table">
+        <div class="table-container">
+            {% if from_date and to_date and data %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>DATE</th>
+                        <th>CHEMICAL NAME</th>
+                        <th class="num-col">OPENING STOCK</th>
+                        <th class="num-col">ON DAY RECEIVED</th>
+                        {% for col in machine_cols %}
+                            <th class="num-col">{{ col }}</th>
+                            <th class="num-col">{{ col }} Batch</th>
+                            <th class="num-col">{{ col }} Total</th>
+                        {% endfor %}
+                        <th class="num-col">Production Loss</th>
+                        <th class="num-col">Prod Loss Batch</th>
+                        <th class="num-col">Prod Loss Total</th>
+                        <th class="num-col">Total Chemical Used</th>
+                        <th class="num-col">AVL. BALANCE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr>
+                        <td style="color:var(--text-muted);">{{ forloop.counter }}</td>
+                        <td>{{ row.date }}</td>
+                        <td style="font-weight:600; color:var(--primary);">{{ row.name }}</td>
+                        <td class="num-col">{{ row.opening|format_decimal }}</td>
+                        <td class="num-col">{{ row.received|format_decimal }}</td>
+                        {% for col in machine_cols %}
+                            {% with qty_key=col|add:"_qty" batch_key=col|add:"_batches" total_key=col|add:"_total" %}
+                            <td class="num-col">{{ row|get_item:qty_key|default:0|format_decimal }}</td>
+                            <td class="num-col">{{ row|get_item:batch_key|default:0 }}</td>
+                            <td class="num-col">{{ row|get_item:total_key|default:0|format_decimal }}</td>
+                            {% endwith %}
+                        {% endfor %}
+                        <td class="num-col">{{ row.production_loss_qty|format_decimal }}</td>
+                        <td class="num-col">{{ row.production_loss_batches }}</td>
+                        <td class="num-col">{{ row.production_loss_total|format_decimal }}</td>
+                        <td class="num-col" style="font-weight:600;">{{ row.total_consumed|format_decimal }}</td>
+                        <td class="num-col" style="font-weight:600; color:#2e7d32;">{{ row.balance|format_decimal }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <tr class="grand-total-row">
+                        <td colspan="3" style="text-align: center;">GRAND TOTAL</td>
+                        <td class="num-col">{{ column_totals.opening|format_decimal }}</td>
+                        <td class="num-col">{{ column_totals.received|format_decimal }}</td>
+                        {% for col in machine_cols %}
+                            {% with qty_key=col|add:"_qty" total_key=col|add:"_total" %}
+                                <td class="num-col">{{ column_totals|get_item:qty_key|default:0|format_decimal }}</td>
+                                <td class="num-col">-</td>
+                                <td class="num-col">{{ column_totals|get_item:total_key|default:0|format_decimal }}</td>
+                            {% endwith %}
+                        {% endfor %}
+                        <td class="num-col">{{ column_totals.production_loss_qty|format_decimal }}</td>
+                        <td class="num-col">-</td>
+                        <td class="num-col">{{ column_totals.production_loss_total|format_decimal }}</td>
+                        <td class="num-col">{{ column_totals.total_consumed|format_decimal }}</td>
+                        <td class="num-col">{{ column_totals.balance|format_decimal }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% elif from_date or to_date %}
+            <div style="padding:32px; text-align:center; color:var(--text-muted); font-weight:500;">
+                <i class="fa-solid fa-triangle-exclamation" style="display:block; font-size:24px; margin-bottom:8px; color:var(--accent-red);"></i>
+                No stock consumption metrics found for the selected timeline bounds.
+            </div>
+            {% else %}
+            <div style="padding:32px; text-align:center; color:var(--text-muted); font-weight:500;">
+                <i class="fa-solid fa-calendar-days" style="display:block; font-size:24px; margin-bottom:8px; color:var(--primary);"></i>
+                Select custom From & To date bounds above to load matrix view logs.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "raw_material" %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Receiving Date</th>
+                        <th>Supplier Name</th>
+                        <th>Invoice No</th>
+                        <th>Invoice Date</th>
+                        <th>Raw Material Name</th>
+                        <th class="num-col">Quantity</th>
+                        <th class="center-col">Bill</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% regroup raw_material_stocks by group_key as grouped_stocks %}
+                    {% for group in grouped_stocks %}
+                        {% for stock in group.list %}
+                        <tr onclick="showRawMaterialBill('{{ stock.group_key }}')" style="cursor:pointer;">
+                            <td style="color:var(--text-muted);">{{ forloop.parentloop.counter }}.{{ forloop.counter }}</td>
+                            <td>{{ stock.receiving_date|date:"d M Y" }}</td>
+                            <td style="font-weight: 600;">{{ stock.supplier_name }}</td>
+                            <td><code>{{ stock.invoice_no }}</code></td>
+                            <td>{{ stock.invoice_date|date:"d M Y" }}</td>
+                            <td>{{ stock.raw_material_name }}</td>
+                            <td class="num-col" style="font-weight: 600; color: var(--primary);">{{ stock.quantity|format_decimal }}</td>
+                            <td class="center-col">
+                                <button onclick="event.stopPropagation(); showRawMaterialBill('{{ stock.group_key }}')" class="add-btn" style="height:30px; padding:4px 10px; box-shadow:none; font-size:11px;">
+                                    <i class="fa-solid fa-file-invoice"></i> Bill
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted); font-weight:500;">
+                            <i class="fa-solid fa-inbox" style="display:block; font-size:24px; margin-bottom:8px; opacity:0.5;"></i>
+                            No recorded procurement entries match the filters.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "scrap" %}
+    <div class="scrap-container-block">
+        <div class="scrap-toolbar">
+            <div class="scrap-title-area">
+                <h2>Scrap Report</h2>
+                <p>Overview of material waste, line metrics, and rejected quantities</p>
+            </div>
+            
+            <form method="GET" action="" class="filter-form">
+                <label for="date-select" class="filter-label">Filter by Date:</label>
+                <input 
+                    type="date" 
+                    id="date-select" 
+                    name="date" 
+                    class="filter-input" 
+                    value="{{ selected_date }}"
+                >
+                <button type="submit" class="btn-filter">Filter</button>
+                <a href="{% url request.resolver_match.view_name %}" class="btn-clear">Clear Filter</a>
+                <a href="{% url 'export_scrap_report' %}?date={{ selected_date|default_if_none:'' }}" class="add-btn" style="box-shadow: none;">
+                    <i class="fa-solid fa-file-excel"></i> Download Excel
+                </a>
+            </form>
+        </div>
+
+        {% if messages %}
+            <div class="alert-messages">
+                {% for message in messages %}
+                    <div class="alert-item">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="table-responsive-card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ProductID</th>
+                            <th>Date</th>
+                            <th>Machine</th>
+                            <th class="center-col">Shift</th>
+                            <th class="center-col">Category</th>
+                            <th class="num-col">Line Setting</th>
+                            <th class="num-col">Side Patti</th>
+                            <th class="num-col">Rejected Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in productions %}
+                        <tr>
+                            <td><span class="badge-id">{{ p.id }}</span></td>
+                            <td>{{ p.created_at|date:"d M Y" }}</td>
+                            <td style="font-weight: 600;">{{ p.machine.name }}</td>
+                            <td class="center-col"><span class="badge-shift {{ p.shift }}">{{ p.shift }}</span></td>
+                            <td class="center-col"><span class="badge-category {{ p.category }}">{{ p.category }}</span></td>
+                            <td class="num-col">{{ p.scrap_qty|default:0 }}</td>
+                            <td class="num-col">{{ p.scrap_weight|default:0 }}</td>
+                            <td class="num-col" style="color: var(--accent-red); font-weight: 700;">{{ p.rejected_quantity|default:0 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <p>No scrap records found matching the criteria.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "planning" and grouped_plannings %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table class="costing-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">S.No</th>
+                        <th>Planning Group</th>
+                        <th class="num-col">Total Weight (kg)</th>
+                        <th style="width:80px;" class="center-col">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, group in grouped_plannings.items %}
+                    <tr class="costing-row" onclick="showPlanningPopup('plan-tmpl-{{ forloop.counter }}')">
+                        <td class="costing-sno">{{ forloop.counter }}</td>
+                        <td class="costing-machine" style="color:var(--text-main); font-weight:700;">{{ key }}</td>
+                        <td class="num-col" style="font-weight:700; color:var(--primary);">{{ group.total_weight|floatformat:2 }}</td>
+                        <td class="center-col">
+                            <span class="costing-expand-icon"><i class="fa-solid fa-eye"></i></span>
+                        </td>
+                    </tr>
+                    
+                    <!-- Hidden details template injected into modal -->
+                    <template id="plan-tmpl-{{ forloop.counter }}">
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color:var(--primary); margin-top:0; margin-bottom:12px; font-size: 16px;">{{ key }}</h4>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06);">
+                            {% if group.items.0.category == "Frame" %}
+                                <!-- FRAME TABLE -->
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">S.No</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Machine</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Category</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Size</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Length</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Color</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Quantity</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Production</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Balance</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Wt.sheet/kg</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Total Wt.</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Remark</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for plan in group.items %}
+                                    <tr>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); color:var(--text-muted);">{{ forloop.counter }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">{{ plan.machine.name|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);"><span class="badge-category {{ plan.category|lower }}">{{ plan.category }}</span></td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.size.size|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.length.length|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.color.color|default:"-" }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.quantity }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.produced|default:"0" }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.balance|default:plan.quantity }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.weight|format_decimal }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">{{ plan.quantity|floatformat:0|add:" x " }}{{ plan.weight|floatformat:2 }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.remark|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            {% else %}
+                                <!-- DOOR & SHEET TABLE -->
+                                <thead>
+                                    <tr style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">S.No</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Thick</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Width</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Height</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Color</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Density</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Quantity</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Production</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Balance</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Wt.sheet/kg</th>
+                                        <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Total Wt.</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Stamp</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Masking</th>
+                                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Remark</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for plan in group.items %}
+                                    <tr>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); color:var(--text-muted);">{{ forloop.counter }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.thickness.thickness|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.width.width|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.height.height|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.color.color|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.density.density|default:"-" }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.quantity }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.produced|default:"0" }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.balance|default:plan.quantity }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.weight|format_decimal }}</td>
+                                        <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">{{ plan.quantity|floatformat:0|add:" x " }}{{ plan.weight|floatformat:2 }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.stamp|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.masking|default:"-" }}</td>
+                                        <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ plan.remark|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            {% endif %}
+                            
+                            <!-- COMMON FOOTER -->
+                            <tfoot>
+                                <tr style="background: #FAF9FE; font-weight: 700;">
+                                    <td colspan="10" style="padding: 11px 16px; text-align: right; color: var(--primary);">Group Total Weight:</td>
+                                    <td class="num-col" style="padding: 11px 16px; color: var(--primary);">{{ group.total_weight|floatformat:2 }}</td>
+                                    <td colspan="{% if group.items.0.category == 'Frame' %}1{% else %}3{% endif %}"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </template>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif report_type == "planning" and not grouped_plannings %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <div class="empty-state costing-empty">
+                <div class="costing-empty-icon"><i class="fa-solid fa-calendar-check"></i></div>
+                <h3 style="margin: 0 0 8px 0; color: var(--primary); font-size: 18px;">Planning Report</h3>
+                <p style="color: var(--text-muted); margin: 0;">No planning records found matching the criteria.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "formulation" and formulation_data %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table class="costing-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">S.No</th>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Machine</th>
+                        <th class="center-col">Shift</th>
+                        <th class="center-col">Batches</th>
+                        <th class="center-col">Status</th>
+                        <th>Planning Ref</th>
+                        <th class="num-col">Total Weight (kg)</th>
+                        <th style="width:80px;" class="center-col">Materials</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in formulation_data %}
+                    <tr class="costing-row" onclick="showFormulationPopup('form-tmpl-{{ forloop.counter }}')">
+                        <td class="costing-sno">{{ forloop.counter }}</td>
+                        <td>{{ item.formulation.date|date:"d M Y" }}</td>
+                        <td style="font-weight:600; color:var(--primary);">{{ item.formulation.name }}</td>
+                        <td style="font-weight:600;">{{ item.formulation.machine.name }}</td>
+                        <td class="center-col"><span class="badge-shift {{ item.formulation.shift }}">{{ item.formulation.shift }}</span></td>
+                        <td class="center-col">{{ item.formulation.batches|default:"-" }}</td>
+                        <td class="center-col">
+                            {% if item.formulation.status == 'Approved' %}
+                            <span class="costing-badge costing-badge-approved">{{ item.formulation.status }}</span>
+                            {% else %}
+                            <span class="costing-badge costing-badge-pending">{{ item.formulation.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:13px; color:var(--text-muted);">
+                            {% if item.formulation.planning %}
+                                {{ item.formulation.planning.date|date:"d M Y" }} - <span class="badge-category {{ item.formulation.planning.category|lower }}">{{ item.formulation.planning.category }}</span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="num-col" style="font-weight:700;">{{ item.total_material_weight|floatformat:2 }}</td>
+                        <td class="center-col">
+                            <span class="costing-expand-icon"><i class="fa-solid fa-flask-vial"></i></span>
+                        </td>
+                    </tr>
+                    
+                    <!-- Hidden details template injected into modal -->
+                    <template id="form-tmpl-{{ forloop.counter }}">
+                        <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-soft); padding-bottom: 12px;">
+                            <div>
+                                <h4 style="color:var(--primary); margin:0 0 4px 0; font-size:16px;">{{ item.formulation.name }}</h4>
+                                <span style="font-size:13px; color:var(--text-muted);">{{ item.formulation.date|date:"d M Y" }} | Machine: {{ item.formulation.machine.name }} | Batches: {{ item.formulation.batches|default:1 }}</span>
+                            </div>
+                            <div style="text-align:right;">
+                                <span style="font-weight:700; font-size:16px; color:var(--primary);">Total: {{ item.total_material_weight|floatformat:2 }} kg</span>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06);">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Material Name</th>
+                                    <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Base Weight (kg)</th>
+                                    <th class="center-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Multiplier (Batches)</th>
+                                    <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Total Weight (kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mat in item.materials %}
+                                <tr>
+                                    <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">{{ mat.name }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ mat.weight|floatformat:2 }}</td>
+                                    <td class="center-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">× {{ item.formulation.batches|default:1 }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); font-weight:700; color:var(--primary);">{{ mat.total_weight|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not item.materials %}
+                                <tr>
+                                    <td colspan="4" style="text-align:center; padding:24px; color:var(--text-muted);">No materials found for this formulation.</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </template>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif report_type == "formulation" and not formulation_data %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <div class="empty-state costing-empty">
+                <div class="costing-empty-icon"><i class="fa-solid fa-flask-vial"></i></div>
+                <h3 style="margin: 0 0 8px 0; color: var(--primary); font-size: 18px;">Formulation Report</h3>
+                <p style="color: var(--text-muted); margin: 0;">No formulation records found matching the criteria.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "production_new" and grouped_productions_report %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table class="costing-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">S.No</th>
+                        <th>Production Group</th>
+                        <th class="num-col">Total Qty</th>
+                        <th class="num-col">Total Weight (kg)</th>
+                        <th style="width:80px;" class="center-col">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, group in grouped_productions_report.items %}
+                    <tr class="costing-row" onclick="showPlanningPopup('prod-tmpl-{{ forloop.counter }}')">
+                        <td class="costing-sno">{{ forloop.counter }}</td>
+                        <td class="costing-machine" style="color:var(--text-main); font-weight:700;">{{ key }}</td>
+                        <td class="num-col" style="font-weight:600;">{{ group.total_qty|floatformat:0 }}</td>
+                        <td class="num-col" style="font-weight:700; color:var(--primary);">{{ group.total_weight|floatformat:2 }}</td>
+                        <td class="center-col">
+                            <span class="costing-expand-icon"><i class="fa-solid fa-eye"></i></span>
+                        </td>
+                    </tr>
+                    
+                    <!-- Hidden details template injected into modal -->
+                    <template id="prod-tmpl-{{ forloop.counter }}">
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color:var(--primary); margin-top:0; margin-bottom:12px; font-size: 16px;">{{ key }}</h4>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,0,0,0.06);">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white;">
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">S.No</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Date</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Machine</th>
+                                    <th class="center-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Shift</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Category</th>
+                                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; font-size: 13px;">Product</th>
+                                    <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Qty</th>
+                                    <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Weight</th>
+                                    <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Side Patti</th>
+                                    <th class="num-col" style="padding: 12px 16px; font-weight: 600; font-size: 13px;">Line Setting</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in group.items %}
+                                <tr>
+                                    <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); color:var(--text-muted);">{{ forloop.parentloop.counter }}.{{ forloop.counter }}</td>
+                                    <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ p.created_at|date:"d M Y" }}</td>
+                                    <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">{{ p.machine.name }}</td>
+                                    <td class="center-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);"><span class="badge-shift {{ p.shift }}">{{ p.shift }}</span></td>
+                                    <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);"><span class="badge-category {{ p.category|lower }}">{{ p.category }}</span></td>
+                                    <td style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">{{ p.product.product_name }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ p.quantity }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ p.quantity|floatformat:0|add:" x " }}{{ p.weight_per_piece|floatformat:2 }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ p.sidepatti|default:0|format_decimal }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; border-bottom: 1px solid var(--border-soft);">{{ p.linesetting|default:0|format_decimal }}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr style="background: #FAF9FE; font-weight: 700;">
+                                    <td colspan="6" style="padding: 11px 16px; text-align: right; color: var(--primary);">Group Total:</td>
+                                    <td class="num-col" style="padding: 11px 16px; color: var(--primary);">{{ group.total_qty|floatformat:0 }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; color: var(--primary);">{{ group.total_weight|floatformat:2 }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; color: var(--primary);">{{ group.total_sidepatti|floatformat:2 }}</td>
+                                    <td class="num-col" style="padding: 11px 16px; color: var(--primary);">{{ group.total_linesetting|floatformat:2 }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </template>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif report_type == "production_new" and not grouped_productions_report %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <div class="empty-state costing-empty">
+                <div class="costing-empty-icon"><i class="fa-solid fa-industry"></i></div>
+                <h3 style="margin: 0 0 8px 0; color: var(--primary); font-size: 18px;">Production Report</h3>
+                <p style="color: var(--text-muted); margin: 0;">No production records found matching the criteria.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "costing" and costing_data %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table class="costing-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">S.No</th>
+                        <th style="width:120px;">Date</th>
+                        <th style="width:100px;">Machine</th>
+                        <th>Planning Group Name</th>
+                        <th style="width:160px;" class="center-col">Formulation Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in costing_data %}
+                    <tr class="costing-row" onclick="showCostingPopup('{{ row.plan_ids|join:','|escapejs }}')">
+                        <td class="costing-sno">{{ forloop.counter }}</td>
+                        <td class="costing-date">{{ row.date }}</td>
+                        <td class="costing-machine">{{ row.machine }}</td>
+                        <td class="costing-group">
+                            <span class="costing-group-text">{{ row.group_name }}</span>
+                            <span class="costing-expand-icon">
+                                <i class="fa-solid fa-eye"></i>
+                            </span>
+                        </td>
+                        <td class="center-col">
+                            {% if row.status == 'Approved' %}
+                            <span class="costing-badge costing-badge-approved">{{ row.status }}</span>
+                            {% elif row.status == 'Pending' %}
+                            <span class="costing-badge costing-badge-pending">{{ row.status }}</span>
+                            {% else %}
+                            <span class="costing-badge costing-badge-not-created">{{ row.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif report_type == "costing" and not costing_data %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <div class="empty-state costing-empty">
+                <div class="costing-empty-icon">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+                <h3 style="margin: 0 0 8px 0; color: var(--primary); font-size: 18px;">Costing Report</h3>
+                <p style="color: var(--text-muted); margin: 0;">No planning records found for the selected date. Please select a date with planning data.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "one_day_stock_alert" and stock_alert_data %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Raw Material Name</th>
+                        <th class="center-col">Category</th>
+                        <th class="num-col">In Stock</th>
+                        <th class="num-col">One Day Req</th>
+                        <th class="num-col">Shortage</th>
+                        <th>Last Received</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in stock_alert_data %}
+                    <tr>
+                        <td style="color:var(--text-muted);">{{ forloop.counter }}</td>
+                        <td style="font-weight:600; color:var(--primary);">{{ item.name }}</td>
+                        <td class="center-col"><span class="badge-category {{ item.category|lower }}">{{ item.category }}</span></td>
+                        <td class="num-col">{{ item.current_stock|format_decimal }}</td>
+                        <td class="num-col">{{ item.one_day_requirement|format_decimal }}</td>
+                        <td class="num-col" style="font-weight:700; color:var(--accent-red);">{{ item.shortage|format_decimal }}</td>
+                        <td>{{ item.last_received|date:"d M Y"|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "one_day_stock_alert" and not stock_alert_data %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <div class="empty-state">
+                <i class="fa-solid fa-circle-check" style="display:block; font-size:24px; margin-bottom:8px; color:var(--success);"></i>
+                <p>No stock alerts found. All raw materials meet one day requirement.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if report_type == "raw_material_stock" and raw_material_stock_report %}
+    <div class="export-container">
+        <a href="{% url 'reports' %}?type=raw_material_stock&export=excel" class="add-btn">
+            <i class="fa-solid fa-file-excel"></i> Download Excel
+        </a>
+        <a href="{% url 'reports' %}?type=raw_material_stock&export=csv" class="add-btn" style="background:#2e7d32;">
+            <i class="fa-solid fa-file-csv"></i> Download CSV
+        </a>
+    </div>
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <table class="raw-material-stock-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;">S.No</th>
+                        <th>Category</th>
+                        <th>Raw Material</th>
+                        <th class="num-col">Stock</th>
+                        <th class="num-col">Category Stock</th>
+                        <th class="num-col">Min Stock Level</th>
+                        <th class="num-col">Days Remaining</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat_group in raw_material_stock_report %}
+                        {% if cat_group.materials %}
+                            {% for material in cat_group.materials %}
+                                <tr style="background: {% if cat_group.category_days < 3 %}#ff3333{% elif cat_group.category_days < 7 %}#f1c40f{% elif cat_group.category_days < 10 %}#ff8c00{% else %}#ffffff{% endif %}; color:#000; border-bottom: 1px solid #000;">
+                                    {% if forloop.counter == 1 %}
+                                        <td rowspan="{{ cat_group.materials|length }}" style="color:#000; font-weight:600;">{{ forloop.parentloop.counter }}</td>
+                                        <td rowspan="{{ cat_group.materials|length }}" style="font-weight:700; color:#000;">{{ cat_group.category }}</td>
+                                    {% endif %}
+                                    <td style="font-weight:500; color:#000;">{{ material.name }}</td>
+                                    <td class="num-col" style="font-weight:600; color:#000;">{{ material.stock|format_decimal }}</td>
+                                    {% if forloop.counter == 1 %}
+                                        <td rowspan="{{ cat_group.materials|length }}" class="num-col" style="font-weight:700; color:#000;">{{ cat_group.category_stock|format_decimal }}</td>
+                                        <td rowspan="{{ cat_group.materials|length }}" class="num-col" style="font-weight:600; color:#000;">{{ cat_group.min_stock_level|format_decimal }}</td>
+                                        <td rowspan="{{ cat_group.materials|length }}" class="num-col" style="font-weight:700; color:#000;">
+                                            {{ cat_group.category_days }} days
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr style="background: #f5f5f5; color:#000; border-bottom: 1px solid #000;">
+                                <td style="color:#000; font-weight:600;">{{ forloop.parentloop.counter }}</td>
+                                <td style="font-weight:700; color:#000;">{{ cat_group.category }}</td>
+                                <td colspan="5" style="color:#666; font-style:italic;">No materials in this category</td>
+                            </tr>
+                        {% endif %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted); font-weight:500;">
+                            <i class="fa-solid fa-inbox" style="display:block; font-size:24px; margin-bottom:8px; opacity:0.5;"></i>
+                            No raw materials found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif report_type == "raw_material_stock" and not raw_material_stock_report %}
+    <div class="table-responsive-card">
+        <div class="table-container">
+            <div class="empty-state">
+                <i class="fa-solid fa-cubes" style="display:block; font-size:24px; margin-bottom:8px; color:var(--primary);"></i>
+                <p>No raw materials found in stock.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{{ raw_material_stocks|json_script:"raw-material-stocks-data" }}
+
+<!-- Raw Material Bill Popup Modal -->
+<div class="costing-modal-overlay" id="rawMaterialBillOverlay" onclick="closeRawMaterialBill(event)">
+    <div class="costing-modal-box" style="width: 800px;">
+        <div class="costing-modal-header" style="background: linear-gradient(135deg, var(--success), #0b592e);">
+            <h3><i class="fa-solid fa-file-invoice"></i> Raw Material Bill</h3>
+            <button class="costing-modal-close" onclick="closeRawMaterialBill(event)">✕</button>
+        </div>
+        <div class="costing-modal-body" id="rawMaterialBillBody">
+            <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:24px; margin-bottom:12px; display:block;"></i>
+                Loading bill details...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Costing Popup Modal -->
+<div class="costing-modal-overlay" id="costingModalOverlay" onclick="closeCostingPopup(event)">
+    <div class="costing-modal-box">
+        <div class="costing-modal-header">
+            <h3><i class="fa-solid fa-file-invoice-dollar"></i> Formulation Costing Details</h3>
+            <button class="costing-modal-close" onclick="closeCostingPopup(event)">✕</button>
+        </div>
+        <div class="costing-modal-body" id="costingModalBody">
+            <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:24px; margin-bottom:12px; display:block;"></i>
+                Loading formulation details...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Planning / Production Popup Modal -->
+<div class="costing-modal-overlay" id="planningModalOverlay" onclick="closePlanningPopup(event)">
+    <div class="costing-modal-box" style="width: 900px;">
+        <div class="costing-modal-header">
+            <h3><i class="fa-solid fa-table-list"></i> Group Details</h3>
+            <button class="costing-modal-close" onclick="closePlanningPopup(event)">✕</button>
+        </div>
+        <div class="costing-modal-body" id="planningModalBody">
+        </div>
+    </div>
+</div>
+
+<!-- Formulation Popup Modal -->
+<div class="costing-modal-overlay" id="formulationModalOverlay" onclick="closeFormulationPopup(event)">
+    <div class="costing-modal-box" style="width: 800px;">
+        <div class="costing-modal-header">
+            <h3><i class="fa-solid fa-flask-vial"></i> Formulation Materials</h3>
+            <button class="costing-modal-close" onclick="closeFormulationPopup(event)">✕</button>
+        </div>
+        <div class="costing-modal-body" id="formulationModalBody">
+        </div>
+    </div>
+</div>
+
+
+{{ productions|json_script:"productions-data" }}
+<script>
+function formatDecimal(val) {
+    return val ? Number(val).toFixed(2) : "0.00";
+}
+
+const productions = JSON.parse(document.getElementById("productions-data").textContent);
+
+function showDetails(mode, id, shift, category) {
+    id = String(id);
+    shift = String(shift);
+    category = category ?? "";
+    category = String(category);
+
+    const tbody = document.getElementById("details-body");
+    const detailsContainer = document.getElementById("details-container");
+    if (!tbody || !detailsContainer) return;
+    tbody.innerHTML = "";
+    let counter = 1;
+
+    productions.forEach(p => {
+        let match = false;
+        if (mode === "by_machine") {
+            match = String(p.machine__id) === id && String(p.shift) === shift && String(p.category || "") === category;
+        } else if (mode === "by_date") {
+            const pDate = p.created_at ? String(p.created_at).split("T")[0] : "";
+            match = pDate === id && String(p.shift) === shift;
+        } else {
+            match = String(p.operator__id) === id && String(p.shift) === shift;
+        }
+
+        if (match) {
+            const dateCell = p.created_at ? String(p.created_at).split("T")[0] : "";
+            let whoCell = "";
+            if (mode === "by_machine") {
+                whoCell = `<td style="font-weight:600; color:var(--primary);">${p.machine__name ?? ""}</td>`;
+            } else if (mode === "by_date") {
+                whoCell = "";
+            } else {
+                whoCell = `<td style="font-weight:600;">${p.operator__full_name ?? ""}</td>`;
+            }
+
+            const row = `<tr>
+                <td style="color:var(--text-muted);">${counter++}</td>
+                <td>${dateCell}</td>
+                ${whoCell}
+                <td><span class="badge-shift ${p.shift}">${p.shift ?? ""}</span></td>
+                ${mode === "by_machine" ? `<td><span class="badge-category ${p.category}">${p.category ?? ""}</span></td>` : ""}
+                <td style="font-weight:600;">${p.product__product_name ?? ""}</td>
+                <td class="num-col">${p.sidepatti ?? ""}</td>
+                <td class="num-col">${p.linesetting ?? ""}</td>
+                <td class="num-col" style="font-weight:600;">${p.quantity ?? ""}</td>
+                <td class="num-col">${formatDecimal(p.actual_production)}</td>
+                <td class="num-col">${formatDecimal(p.overall_production)}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        }
+    });
+
+    detailsContainer.style.display = "block";
+    detailsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ================= COSTING POPUP =================
+function showCostingPopup(planIdsStr) {
+    const overlay = document.getElementById("costingModalOverlay");
+    const body = document.getElementById("costingModalBody");
+    if (!overlay || !body) return;
+
+    overlay.style.display = "flex";
+
+    body.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px; margin-bottom:12px; display:block;"></i>Loading formulation details...</div>';
+
+    fetch(`/raw-material/costing-details/?plan_ids=${planIdsStr}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                body.innerHTML = `<div style="text-align:center; padding:40px; color:var(--accent-red);"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; margin-bottom:12px; display:block;"></i>${data.error}</div>`;
+                return;
+            }
+
+            let tableHtml = `<table>
+                <thead>
+                    <tr>
+                        <th>Raw Material</th>
+                        <th class="num-col">Weight (kg)</th>
+                        <th class="num-col">Actual Rate (Rs.)</th>
+                        <th class="num-col">Line Total (Rs.)</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            let grandTotal = 0;
+            if (data.materials && data.materials.length > 0) {
+                data.materials.forEach((m) => {
+                    const total = m.weight * m.actual_rate;
+                    grandTotal += total;
+                    tableHtml += `<tr>
+                        <td style="font-weight:600; color:var(--primary);">${m.name}</td>
+                        <td class="num-col">${m.weight.toFixed(2)}</td>
+                        <td class="num-col">${m.actual_rate.toFixed(2)}</td>
+                        <td class="num-col" style="font-weight:700;">${total.toFixed(2)}</td>
+                    </tr>`;
+                });
+            } else {
+                tableHtml += `<tr><td colspan="4" style="padding:30px; text-align:center; color:var(--text-muted);">No formulation materials found for this planning group.</td></tr>`;
+            }
+            const ratePerKg = grandTotal > 0 && data.total_weight > 0 ? (grandTotal / data.total_weight) : 0;
+
+            tableHtml += `<tr class="costing-modal-total-row">
+                <td style="text-align:right; color:var(--primary);">TOTAL</td>
+                <td class="num-col">${data.total_weight.toFixed(2)}</td>
+                <td class="num-col">-</td>
+                <td class="num-col">${grandTotal.toFixed(2)}</td>
+            </tr>`;
+            tableHtml += `<tr style="background:#F1F0FA; font-weight:700;">
+                <td colspan="2" style="color:var(--primary); text-align:right; font-size:13px;">Rate / Kg (Total Line Total ÷ Total Weight)</td>
+                <td class="num-col" style="color:var(--primary); font-size:15px; font-weight:800;">${ratePerKg.toFixed(2)}</td>
+                <td class="num-col" style="color:var(--primary); font-size:12px; font-weight:600;">Rs./kg</td>
+            </tr></tbody></table>`;
+
+            body.innerHTML = tableHtml;
+        })
+        .catch(() => {
+            body.innerHTML = '<div style="text-align:center; padding:40px; color:var(--accent-red);"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; margin-bottom:12px; display:block;"></i>Error loading formulation details.</div>';
+        });
+}
+
+function closeCostingPopup(event) {
+    const overlay = document.getElementById("costingModalOverlay");
+    if (!overlay) return;
+    if (event && event.target !== event.currentTarget) return;
+    overlay.style.display = "none";
+}
+
+
+// ================= PLANNING / PRODUCTION POPUPS =================
+function showPlanningPopup(templateId) {
+    const overlay = document.getElementById("planningModalOverlay");
+    const body = document.getElementById("planningModalBody");
+    const tmpl = document.getElementById(templateId);
+    if (!overlay || !body || !tmpl) return;
+
+    body.innerHTML = tmpl.innerHTML;
+    overlay.style.display = "flex";
+}
+
+function closePlanningPopup(event) {
+    const overlay = document.getElementById("planningModalOverlay");
+    if (!overlay) return;
+    if (event && event.target !== event.currentTarget) return;
+    overlay.style.display = "none";
+}
+
+function showFormulationPopup(templateId) {
+    const overlay = document.getElementById("formulationModalOverlay");
+    const body = document.getElementById("formulationModalBody");
+    const tmpl = document.getElementById(templateId);
+    if (!overlay || !body || !tmpl) return;
+
+    body.innerHTML = tmpl.innerHTML;
+    overlay.style.display = "flex";
+}
+
+function closeFormulationPopup(event) {
+    const overlay = document.getElementById("formulationModalOverlay");
+    if (!overlay) return;
+    if (event && event.target !== event.currentTarget) return;
+    overlay.style.display = "none";
+}
+
+
+// ================= RAW MATERIAL BILL POPUP =================
+const rawMaterialStocks = JSON.parse(document.getElementById("raw-material-stocks-data").textContent);
+
+function showRawMaterialBill(groupKey) {
+    const overlay = document.getElementById("rawMaterialBillOverlay");
+    const body = document.getElementById("rawMaterialBillBody");
+    if (!overlay || !body) return;
+
+    groupKey = String(groupKey);
+    
+    // Get all stocks with same group_key
+    const stocks = rawMaterialStocks.filter(s => String(s.group_key) === groupKey);
+    if (!stocks || stocks.length === 0) {
+        body.innerHTML = '<div style="text-align:center; padding:40px; color:var(--accent-red);"><i class="fa-solid fa-circle-exclamation" style="font-size:24px; margin-bottom:12px; display:block;"></i>Bill data not found.</div>';
+        overlay.style.display = "flex";
+        return;
+    }
+
+    overlay.style.display = "flex";
+
+    // Use first stock for header info
+    const first = stocks[0];
+    let contactInfo = "";
+    if (first.supplier_contact || first.supplier_phone) {
+        contactInfo = `<span style="color:var(--text-muted);">${first.supplier_contact || ""}${first.supplier_contact && first.supplier_phone ? " - " : ""}${first.supplier_phone || ""}</span>`;
+    }
+
+    // Build rows table
+    let rowsHtml = "";
+    let groupSubtotal = 0;
+
+    // Transportation is same for all rows in this group (same supplier + invoice)
+    const groupTransport = Number(first.transportation_rate) || 0;
+
+    stocks.forEach((stock, idx) => {
+        const qty = Number(stock.quantity) || 0;
+        const ratePerKg = Number(stock.rate_per_kg) || 0;
+        const subtotal = qty * ratePerKg;
+        groupSubtotal += subtotal;
+
+        rowsHtml += `<tr>
+            <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+            <td style="font-weight:600; color:var(--primary);">${stock.raw_material_name}</td>
+            <td style="text-align: center;"><span class="badge-category" style="font-size:11px;">${stock.raw_material_category || "-"}</span></td>
+            <td class="num-col">${qty.toFixed(2)}</td>
+            <td class="num-col">${ratePerKg.toFixed(2)}</td>
+            <td class="num-col" style="font-weight:700;">${subtotal.toFixed(2)}</td>
+        </tr>`;
+    });
+
+    const groupGst = (groupSubtotal + groupTransport) * 0.18;
+    const groupGrandTotal = groupSubtotal + groupTransport + groupGst;
+
+    const billHtml = `
+        <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 2px dashed var(--border-soft);">
+                <div>
+                    <div style="font-weight: 700; color: var(--primary); font-size: 15px;">${first.supplier_name}</div>
+                    ${contactInfo ? `<div style="font-size: 13px; margin-top: 4px;">${contactInfo}</div>` : ""}
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 13px; color: var(--text-muted);">Invoice: <strong>${first.invoice_no}</strong></div>
+                    <div style="font-size: 13px; color: var(--text-muted);">Invoice Date: <strong>${first.invoice_date || "-"}</strong></div>
+                    <div style="font-size: 13px; color: var(--text-muted);">Receiving Date: <strong>${first.receiving_date || "-"}</strong></div>
+                    <div style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Transportation: <strong>₹ ${groupTransport.toFixed(2)}</strong></div>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align: center;">#</th>
+                        <th>Material</th>
+                        <th style="text-align: center;">Category</th>
+                        <th class="num-col">Qty (kg)</th>
+                        <th class="num-col">Rate/kg</th>
+                        <th class="num-col">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+
+            <div style="margin-top: 16px;">
+                <table style="width: 100%; box-shadow: none; border-radius: 8px; overflow: hidden;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">Subtotal (Qty × Rate/kg)</td>
+                            <td class="num-col" style="padding: 8px 16px; border-bottom: 1px solid var(--border-soft);">₹ ${groupSubtotal.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">Transportation</td>
+                            <td class="num-col" style="padding: 8px 16px; border-bottom: 1px solid var(--border-soft);">₹ ${groupTransport.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 16px; border-bottom: 1px solid var(--border-soft); font-weight:600;">GST @ 18%</td>
+                            <td class="num-col" style="padding: 8px 16px; border-bottom: 1px solid var(--border-soft);">₹ ${groupGst.toFixed(2)}</td>
+                        </tr>
+                        <tr style="background: #F1F0FA; font-weight: 800;">
+                            <td style="padding: 10px 16px; color: var(--primary); font-size: 15px;">GRAND TOTAL</td>
+                            <td class="num-col" style="padding: 10px 16px; color: var(--primary); font-size: 16px;">₹ ${groupGrandTotal.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    body.innerHTML = billHtml;
+}
+
+function closeRawMaterialBill(event) {
+    const overlay = document.getElementById("rawMaterialBillOverlay");
+    if (!overlay) return;
+    if (event && event.target !== event.currentTarget) return;
+    overlay.style.display = "none";
+}
+</script>
+
+{% endblock %}

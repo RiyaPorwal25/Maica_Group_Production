@@ -1,0 +1,28 @@
+<h3>Weight Sheet - {{ prod.product }}</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div id="weight-container">
+        <input type="number" step="0.01" name="weights" placeholder="Enter weight">
+    </div>
+
+    <button type="button" onclick="addWeight()">+ Add More</button>
+
+    <hr>
+
+    <button type="submit">Save Average Weight</button>
+</form>
+
+<script>
+function addWeight() {
+    let container = document.getElementById("weight-container");
+    let input = document.createElement("input");
+    input.type = "number";
+    input.step = "0.01";
+    input.name = "weights";
+    input.placeholder = "Enter weight";
+    container.appendChild(document.createElement("br"));
+    container.appendChild(input);
+}
+</script>

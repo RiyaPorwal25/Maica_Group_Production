@@ -1,0 +1,590 @@
+{% extends "base.html" %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+
+
+
+<style>
+:root {
+    --primary: #3F2E97;       /* Brand Purple */
+    --accent: #E1251B;        /* Brand Red */
+    --bg-light: #F8F9FC;      /* Light Background */
+    --white: #ffffff;
+    --table-bg: #ffffff;
+    --hover-light: rgba(63, 46, 151, 0.08);
+}
+
+/* Container */
+.stock-container {
+    max-width: 1100px;
+    margin: 40px auto;
+}
+
+.stock-container h1 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+/* TABLE */
+.stock-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--table-bg);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.stock-table thead {
+    background: linear-gradient(90deg, var(--primary), #2c1f6f);
+    color: var(--white);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.stock-table th,
+.stock-table td {
+    padding: 13px 15px;
+    text-align: center;
+}
+
+.stock-table tbody tr {
+    border-bottom: 1px solid #eee;
+    transition: all 0.2s ease;
+}
+
+.stock-table tbody tr:hover {
+    background-color: var(--hover-light);
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .stock-container {
+        width: 98%;
+        margin: 20px auto;
+        padding: 0 8px;
+    }
+    
+    .stock-container h1 {
+        font-size: 22px;
+        margin-bottom: 15px;
+    }
+    
+    .stock-table th,
+    .stock-table td {
+        padding: 10px 6px;
+        font-size: 11px;
+    }
+    
+    .add-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+        margin: 10% auto;
+    }
+}
+
+/* BUTTONS */
+.add-btn {
+    display: inline-block;
+    margin: 10px 5px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    background-color: var(--primary);
+    color: var(--white);
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.add-btn:hover {
+    background-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+/* Edit & Delete (Stock Page if needed later) */
+.edit-btn {
+    background-color: var(--primary);
+    color: var(--white);
+}
+/* 
+
+
+/* PAGINATION */
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    list-style: none;
+    padding: 0;
+    gap: 6px;
+}
+
+.pagination li a,
+.pagination li span {
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+}
+
+.pagination li a:hover {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+.pagination .current {
+    background-color: var(--accent);
+    color: var(--white);
+    border-color: var(--accent);
+}
+
+/* MODAL */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.55);
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 8% auto;
+    padding: 25px;
+    width: 550px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    border-top: 5px solid var(--primary);
+}
+
+.modal h3 {
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+/* FORM GRID */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+    gap: 15px;
+    width: 100%;
+}
+/* spacing handled by grid */
+.form-grid div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* FULL WIDTH FIELD */
+.full-width {
+    grid-column: span 2;
+}
+
+.modal form select,
+.modal form input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    box-sizing: border-box;   /* 🔥 VERY IMPORTANT */
+    font-size: 14px;
+}
+/* remove unwanted spacing */
+.form-grid select,
+.form-grid input {
+    margin: 0 !important;
+}
+
+
+/* LABEL FIX */
+.modal form label {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.modal form select:focus,
+.modal form input:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--accent);
+}
+
+.close:hover {
+    transform: scale(1.1);
+}
+/* Only show cursor in editable fields */
+input, textarea, select {
+    caret-color: auto;
+}
+
+/* Remove cursor from normal text */
+body, td, th, span, div, p {
+    caret-color: transparent;
+}
+
+/* Optional: prevent selecting table text */
+td, th {
+    user-select: none;
+}
+/* FILTER BAR */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.filter-bar select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background-color: var(--white);
+    font-size: 14px;
+    min-width: 140px;
+}
+
+.clear-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    background-color: var(--accent);
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.clear-btn:hover {
+    background-color: #c41f16;
+    transform: translateY(-2px);
+}
+
+/* tabs css */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tabs a {
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    transition: 0.2s;
+}
+
+.tabs a:hover {
+    background-color: var(--primary);
+    color: var(--white);
+}
+
+.tabs a.active {
+    background-color: var(--accent);
+    color: var(--white);
+    border-color: var(--accent);
+}
+</style>
+
+<div class="stock-container">
+    <h1>Product List</h1>
+    
+         {% if messages %}
+            {% for message in messages %}
+                <div style="color: red; margin-bottom: 10px;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+
+    <form class="filter-bar" method="GET">
+        <select name="color" onchange="this.form.submit()">
+            <option value="">All Colors</option>
+            {% for c in all_colors %}
+                <option value="{{ c.id }}" {% if selected_color == c.id|stringformat:"i" %}selected{% endif %}>{{ c.color|upper }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="thickness" onchange="this.form.submit()">
+            <option value="">All Thicknesses</option>
+            {% for t in all_thicknesses %}
+                <option value="{{ t.id }}" {% if selected_thickness == t.id|stringformat:"i" %}selected{% endif %}>{{ t.thickness }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="length" onchange="this.form.submit()">
+            <option value="">All Lengths</option>
+            {% for l in all_lengths %}
+                <option value="{{ l.id }}" {% if selected_length == l.id|stringformat:"i" %}selected{% endif %}>{{ l.length|floatformat:2 }} {{ l.unit|upper }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="stamp" onchange="this.form.submit()">
+            <option value="">All Stamps</option>
+            {% for val, label in all_stamps %}
+                <option value="{{ val }}" {% if selected_stamp == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <a href="?" class="clear-btn">Clear Filters</a>
+    </form>
+
+    <div class="tabs">
+        <a href="?category=" class="{% if not selected_category %}active{% endif %}">All</a>
+
+        <a href="?category=DoorSheet{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_thickness %}&thickness={{ selected_thickness }}{% endif %}{% if selected_length %}&length={{ selected_length }}{% endif %}{% if selected_stamp %}&stamp={{ selected_stamp }}{% endif %}" 
+        class="{% if selected_category == 'DoorSheet' %}active{% endif %}">
+        Door / Sheet
+        </a>
+
+        <a href="?category=Frame{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_thickness %}&thickness={{ selected_thickness }}{% endif %}{% if selected_length %}&length={{ selected_length }}{% endif %}{% if selected_stamp %}&stamp={{ selected_stamp }}{% endif %}" 
+        class="{% if selected_category == 'Frame' %}active{% endif %}">
+        Frame
+        </a>
+    </div>
+        <button class="add-btn" onclick="openModal()">+ Add Product</button>
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in page_obj %}
+                <tr>
+                    <td>{{ forloop.counter0|add:start_serial|add:1 }}</td>
+                    <td>{{ product.product_name }}</td>
+                    <td>{{ product.category }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No products available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+  
+
+    <!-- Pagination -->
+
+    {% if page_obj.has_other_pages %}
+        <ul class="pagination">
+
+            {% with active_filters=selected_category|add:selected_color|add:selected_thickness|add:selected_length|add:selected_stamp %}
+            <!-- First page -->
+            {% if page_obj.number > 1 %}
+                <li><a href="?page=1{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_thickness %}&thickness={{ selected_thickness }}{% endif %}{% if selected_length %}&length={{ selected_length }}{% endif %}{% if selected_stamp %}&stamp={{ selected_stamp }}{% endif %}">First</a></li>
+            {% else %}
+                <li><span>First</span></li>
+            {% endif %}
+
+            <!-- Page numbers -->
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li><span class="current">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+                    <li><a href="?page={{ num }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_thickness %}&thickness={{ selected_thickness }}{% endif %}{% if selected_length %}&length={{ selected_length }}{% endif %}{% if selected_stamp %}&stamp={{ selected_stamp }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Last page -->
+            {% if page_obj.number < page_obj.paginator.num_pages %}
+                <li><a href="?page={{ page_obj.paginator.num_pages }}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_color %}&color={{ selected_color }}{% endif %}{% if selected_thickness %}&thickness={{ selected_thickness }}{% endif %}{% if selected_length %}&length={{ selected_length }}{% endif %}{% if selected_stamp %}&stamp={{ selected_stamp }}{% endif %}">Last</a></li>
+            {% else %}
+                <li><span>Last</span></li>
+            {% endif %}
+            {% endwith %}
+
+        </ul>
+    {% endif %}
+</div>
+
+<!-- Modal -->
+
+
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3>Add Product</h3>
+
+       
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-grid">
+
+                <!-- CATEGORY -->
+                <div>
+                    <label>Category:</label>
+                    {{ form.category }}
+                </div>
+
+                <!-- COLOR -->
+                <div>
+                    <label>Color:</label>
+                    {{ form.color }}
+                </div>
+
+                <!-- PRODUCT NAME FULL WIDTH -->
+                <div class="full-width">
+                    <label>Product Name:</label>
+                    <input type="text" id="product_name_preview" readonly>
+                </div>
+
+            </div>
+
+            <!-- FRAME -->
+            <div id="frameFields" class="form-grid" style="display:none;">
+                <div>
+                    <label>Size:</label>
+                    {{ form.size }}
+                </div>
+
+                <div>
+                    <label>Length:</label>
+                    {{ form.length }}
+                </div>
+            </div>
+
+            <!-- DOOR / SHEET -->
+            <div id="doorFields" class="form-grid" style="display:none;">
+                <div>
+                    <label>Thickness:</label>
+                    {{ form.thickness }}
+                </div>
+
+                <div>
+                    <label>Height:</label>
+                    {{ form.height }}
+                </div>
+
+                <div>
+                    <label>Width:</label>
+                    {{ form.width }}
+                </div>
+
+                <div>
+                    <label>Density:</label>
+                    {{ form.density }}
+                </div>
+
+                <div>
+                    <label>Stamp:</label>
+                    {{ form.stamp }}
+                </div>
+            </div>
+
+            <button type="submit" class="add-btn full-width">Save Product</button>
+        </form>
+    </div>
+</div>
+<script>
+function openModal() {
+    document.getElementById("productModal").style.display = "block";
+}
+
+function closeModal() {
+    document.getElementById("productModal").style.display = "none";
+}
+
+// Close when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById("productModal");
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+//  js for hide/show form category wise
+document.addEventListener("DOMContentLoaded", function () {
+    const categoryField = document.getElementById("id_category");
+
+    const frameFields = document.getElementById("frameFields");
+    const doorFields = document.getElementById("doorFields");
+
+    const preview = document.getElementById("product_name_preview");
+
+    function toggleFields() {
+        const value = categoryField.value;
+
+        frameFields.style.display = "none";
+        doorFields.style.display = "none";
+
+        if (value === "Frame") {
+            frameFields.style.display = "block";
+        } else if (value === "Door" || value === "Sheet") {
+            doorFields.style.display = "block";
+        }
+
+        generatePreview();
+    }
+
+    function generatePreview() {
+        const category = categoryField.value;
+
+        const thickness = document.getElementById("id_thickness")?.selectedOptions[0]?.text || "";
+        // Extract just the number from height/width (remove units like "inch")
+        const height = (document.getElementById("id_height")?.selectedOptions[0]?.text || "").split(" ")[0];
+        const width = (document.getElementById("id_width")?.selectedOptions[0]?.text || "").split(" ")[0];
+        const stampValue = document.getElementById("id_stamp")?.value || "";
+        const stamp = stampValue ? (document.getElementById("id_stamp")?.selectedOptions[0]?.text || "") : "";
+        // Color __str__ returns uppercase, so lowercase it
+        const color = (document.getElementById("id_color")?.selectedOptions[0]?.text || "").toLowerCase();
+
+        const size = document.getElementById("id_size")?.selectedOptions[0]?.text || "";
+        const length = document.getElementById("id_length")?.selectedOptions[0]?.text || "";
+        let name = "";
+
+        if (category === "Frame") {
+            name = `WPC Frame ${size} -${length}Feet ${color}`;
+        } 
+        else if (category === "Door" || category === "Sheet") {
+            name = `WPC Door ${thickness}mm ${width}x${height} ${stamp} ${color}`;
+        }
+
+        preview.value = name;
+    }
+
+    // Trigger on change
+    categoryField.addEventListener("change", toggleFields);
+
+    document.querySelectorAll("select").forEach(el => {
+        el.addEventListener("change", generatePreview);
+    });
+
+    toggleFields(); // initial call
+});
+
+{% if messages %}
+<script>
+    openModal();
+</script>
+{% endif %}
+
+</script>
+{% endblock %}

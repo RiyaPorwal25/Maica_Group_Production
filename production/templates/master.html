@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+{% load filters %}
+{% block title %}{{ title }}{% endblock %}
+{% load static %}
+
+{% block content %}
+
+
+<style>
+:root {
+    --primary: #3F2E97;
+    --accent: #E1251B;
+    --bg-light: #F8F9FC;
+    --white: #ffffff;
+    --table-bg: #ffffff;
+    --hover-light: rgba(63, 46, 151, 0.08);
+}
+
+
+.stock-container {
+    max-width: 1100px;
+    margin: 40px auto;
+}
+
+.stock-container h1 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .stock-container {
+        max-width: 98%;
+        margin: 20px auto;
+        padding: 0 8px;
+    }
+    
+    .stock-container h1 {
+        font-size: 22px;
+        margin-bottom: 15px;
+    }
+    
+    .stock-table th,
+    .stock-table td {
+        padding: 10px 6px;
+        font-size: 12px;
+    }
+    
+    .add-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+        margin: 10% auto;
+    }
+}
+
+.stock-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--table-bg);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.stock-table thead {
+    background: linear-gradient(90deg, var(--primary), #2c1f6f);
+    color: var(--white);
+}
+
+.stock-table th,
+.stock-table td {
+    padding: 13px 15px;
+    text-align: center;
+}
+
+.stock-table tbody tr {
+    border-bottom: 1px solid #eee;
+}
+
+.stock-table tbody tr:hover {
+    background-color: var(--hover-light);
+}
+
+.add-btn {
+    display: inline-block;
+    margin: 10px 5px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    background-color: var(--primary);
+    color: var(--white);
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+.add-btn:hover {
+    background-color: var(--accent);
+}
+
+.edit-btn {
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.delete-btn {
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.delete-btn:hover {
+    background-color: var(--accent);
+    color: var(--white);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.55);
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 8% auto;
+    padding: 25px;
+    width: 420px;
+    border-radius: 10px;
+    border-top: 5px solid var(--primary);
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--accent);
+}
+/* blinking line */
+/* Only show cursor in editable fields */
+input, textarea, select {
+    caret-color: auto;
+}
+
+/* Remove cursor from normal text */
+body, td, th, span, div, p {
+    caret-color: transparent;
+}
+
+/* Optional: prevent selecting table text */
+td, th {
+    user-select: none;
+}
+
+/* Force label+input block layout in master modal */
+#masterModal .modal-content form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+#masterModal .modal-content form label {
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+#masterModal .modal-content form input,
+#masterModal .modal-content form select {
+    width: 100%;
+    box-sizing: border-box;
+}
+</style>
+<div class="stock-container">
+    <h1>{{ title }} List</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div style="color: red; margin-bottom: 10px;">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <button class="add-btn" onclick="openModal()">+ Add {{ title }}</button>
+
+    <table class="stock-table">
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>ID</th>
+                <th>{{ title }}</th>
+                {% if title == "Size" %}
+                <th>Standard Weight</th>
+                <th>Rate</th>
+                {% endif %}
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for obj in page_obj %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ obj.id }}</td>
+                <td>{{ obj }}</td>
+                {% if title == "Size" %}
+                <td>{{ obj.standard_weight|format_decimal }}</td>
+                <td>{{ obj.rate|format_decimal }}</td>
+                {% endif %}
+
+                <td>
+                    <!-- <button class="edit-btn"
+                        onclick="editItem('{{ obj.id }}','{{ obj }}')">
+                        Edit
+                    </button> -->
+
+                    {% if title == "Size" %}
+                    <button class="edit-btn"
+                        onclick="editSize('{{ obj.id }}','{{ obj }}','{{ obj.standard_weight }}','{{ obj.rate }}')">
+                    {% elif title == "Party" %}
+                    <button class="edit-btn"
+                        onclick="editParty('{{ obj.id }}','{{ obj.c_name }}','{{ obj.address }}','{{ obj.gst }}','{{ obj.state }}','{{ obj.psft }}')">
+                    {% elif title == "Density" %}
+                    <button class="edit-btn"
+                        onclick="editItem('{{ obj.id }}','{{ obj }}','{{ obj.density_name }}')">
+                    {% elif title == "Length" %}
+                    <button class="edit-btn"
+                        onclick="editItem('{{ obj.id }}','{{ obj.original_value }}','{{ obj.unit }}')">
+                    {% elif title == "Height" %}
+                    <button class="edit-btn"
+                        onclick="editItem('{{ obj.id }}','{{ obj.original_value }}','{{ obj.unit }}')">
+                    {% elif title == "Width" %}
+                    <button class="edit-btn"
+                        onclick="editItem('{{ obj.id }}','{{ obj.original_value }}','{{ obj.unit }}')">
+                    {% else %}
+                    <button class="edit-btn"
+                        onclick="editItem('{{ obj.id }}','{{ obj }}')">
+                    {% endif %}
+                        Edit
+                    </button>
+
+                    <a href="{% url delete_url obj.id %}"
+                       class="delete-btn"
+                       onclick="return confirm('Delete this item?');">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No {{ title }} available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" style="text-align: center; margin-top: 20px;">
+        {% if page_obj.has_previous %}
+            <a href="?page=1" class="add-btn" style="margin: 0 5px;">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="add-btn" style="margin: 0 5px;">Previous</a>
+        {% endif %}
+
+        <span style="margin: 0 10px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="add-btn" style="margin: 0 5px;">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="add-btn" style="margin: 0 5px;">Last</a>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- Modal -->
+
+<div id="masterModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+
+        <h3 id="modalTitle">Add {{ title }}</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <input type="hidden" name="obj_id" id="obj_id">
+
+            <label>{{ title }}:</label>
+            <input type="text" name="value" id="value" {% if title == "Party" %}style="display:none;"{% else %}required{% endif %}>
+
+            {% if title == "Length" %}
+            <label>Unit:</label>
+            <select name="unit" id="unit" style="width: 100%; box-sizing: border-box;">
+                <option value="ft">Feet</option>
+                <option value="mm">Millimeter</option>
+            </select>
+            {% elif title == "Height" %}
+            <label>Unit:</label>
+            <select name="unit" id="unit" style="width: 100%; box-sizing: border-box;">
+                <option value="inch">Inch</option>
+                <option value="mm">Millimeter</option>
+            </select>
+            {% elif title == "Width" %}
+            <label>Unit:</label>
+            <select name="unit" id="unit" style="width: 100%; box-sizing: border-box;">
+                <option value="inch">Inch</option>
+                <option value="mm">Millimeter</option>
+            </select>
+            {% endif %}
+
+            <!-- for size -->
+            {% if title == "Size" %}
+            <label>Standard Weight:</label>
+            <input type="number" step="0.01" name="standard_weight" id="standard_weight">
+            <label>Rate:</label>
+            <input type="number" step="0.01" name="rate" id="rate">
+            {% elif title == "Density" %}
+            <label>Density Name:</label>
+            <input type="text" name="density_name" id="density_name" required>
+            {% elif title == "Party" %}
+            <label>Company / Party Name:</label>
+            <input type="text" name="c_name" id="c_name" required>
+            <label>Address:</label>
+            <textarea name="address" id="address" rows="2" required></textarea>
+            <label>GST No:</label>
+            <input type="text" name="gst" id="gst" required>
+            <label>State:</label>
+            <input type="text" name="state" id="state" required>
+            <label>PSFT (Price per sq ft):</label>
+            <input type="text" name="psft" id="psft" required>
+            {% endif %}
+
+            <button type="submit" class="add-btn">Save</button>
+        </form>
+    </div>
+</div>
+
+
+<script>
+
+function openModal(){
+    document.getElementById("modalTitle").innerText = "Add {{ title }}";
+    document.getElementById("obj_id").value = "";
+    document.getElementById("value").value = "";
+
+    {% if title == "Size" %}
+    document.getElementById("standard_weight").value = "";
+    document.getElementById("rate").value = "";
+    {% elif title == "Density" %}
+    document.getElementById("density_name").value = "";
+    {% elif title == "Party" %}
+    document.getElementById("c_name").value = "";
+    document.getElementById("address").value = "";
+    document.getElementById("gst").value = "";
+    document.getElementById("state").value = "";
+    document.getElementById("psft").value = "";
+    {% elif title == "Length" %}
+    document.getElementById("unit").value = "ft";
+    {% elif title == "Height" %}
+    document.getElementById("unit").value = "inch";
+    {% elif title == "Width" %}
+    document.getElementById("unit").value = "inch";
+    {% endif %}
+
+    document.getElementById("masterModal").style.display = "block";
+    
+}
+
+function editItem(id,name,extra=""){
+    document.getElementById("modalTitle").innerText = "Edit {{ title }}";
+    document.getElementById("obj_id").value = id;
+    document.getElementById("value").value = name;
+
+    {% if title == "Density" %}
+    document.getElementById("density_name").value = extra || "";
+    {% elif title == "Length" %}
+    document.getElementById("unit").value = extra || "ft";
+    {% elif title == "Height" %}
+    document.getElementById("unit").value = extra || "inch";
+    {% elif title == "Width" %}
+    document.getElementById("unit").value = extra || "inch";
+    {% endif %}
+
+    document.getElementById("masterModal").style.display = "block";
+}
+
+function editSize(id, name, standard_weight, rate){
+    document.getElementById("modalTitle").innerText = "Edit Size";
+    document.getElementById("obj_id").value = id;
+    document.getElementById("value").value = name;
+    document.getElementById("standard_weight").value = standard_weight || "";
+    document.getElementById("rate").value = rate || "";
+    document.getElementById("masterModal").style.display = "block";
+}
+
+function editParty(id, c_name, address, gst, state, psft){
+    document.getElementById("modalTitle").innerText = "Edit Party";
+    document.getElementById("obj_id").value = id;
+    document.getElementById("c_name").value = c_name;
+    document.getElementById("address").value = address;
+    document.getElementById("gst").value = gst;
+    document.getElementById("state").value = state;
+    document.getElementById("psft").value = psft;
+    document.getElementById("value").value = c_name;
+    document.getElementById("masterModal").style.display = "block";
+}
+
+function closeModal(){
+    document.getElementById("masterModal").style.display = "none";
+}
+
+window.onclick = function(event){
+    const modal = document.getElementById("masterModal");
+    if(event.target == modal){
+        modal.style.display = "none";
+    }
+}
+
+</script>
+
+{% endblock %}

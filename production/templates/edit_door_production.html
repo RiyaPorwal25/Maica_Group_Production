@@ -1,0 +1,1909 @@
+{% extends "base.html" %}
+{% load filters %}
+{% block title %}Edit Door Production{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-dark: #2c1f6f;
+    --primary-light: rgba(63, 46, 151, 0.05);
+    --accent: #E1251B;
+    --accent-dark: #b91c1c;
+    --text-main: #2d3748;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --white: #ffffff;
+}
+
+.container-box{
+    max-width:1400px;
+    margin:30px auto;
+}
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.add-btn{
+    padding:8px 16px;
+    border:none;
+    background:var(--primary);
+    color:#fff;
+    cursor:pointer;
+    border-radius:6px;
+}
+
+/* Modal Styles */
+.modal{
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.85);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal.active { display: flex !important; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    width:98%;
+    max-width:1400px;
+    max-height:90vh;
+    overflow-y:auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position:relative;
+    z-index:1001;
+}
+
+.modal-content h3 {
+    margin:0 0 20px 0;
+    color:var(--primary);
+    font-size:24px;
+    border-bottom:3px solid var(--primary);
+    padding-bottom:10px;
+}
+
+.form-grid { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 12px 20px; 
+    background:#f7f7f7; 
+    padding:15px; 
+    border-radius:8px; 
+    margin-bottom:15px; 
+}
+
+.form-grid > label {
+    align-self: center;
+    font-weight: 600;
+    color:#333;
+}
+
+.form-grid > input, .form-grid > select {
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-grid > input:focus, .form-grid > select:focus {
+    outline:none;
+    border-color:var(--primary);
+    box-shadow:0 0 5px rgba(63, 46, 151, 0.2);
+}
+
+/* ================= CARD-BASED PRODUCTION ROWS ================= */
+.production-rows-header { display: none; }
+
+.production-rows-wrapper {
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+/* Read-only fields styling */
+.production-row .field-group.read-only-field {
+    opacity: 1;
+}
+
+.production-row .field-group.read-only-field select,
+.production-row .field-group.read-only-field input {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+    border-color: #cbd5e1;
+    color: #000000;
+}
+
+.production-row .field-group.read-only-field select:disabled,
+.production-row .field-group.read-only-field input:disabled {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+    color: #000000;
+    opacity: 1;
+}
+
+.production-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    min-width: 0; 
+}
+.production-row:last-child { margin-bottom: 0; }
+
+.row-inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.field-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.field-group input, .field-group select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.height-container, .width-container {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+.height-container select, .height-container input,
+.width-container select, .width-container input {
+    flex: 1;
+    min-width: 0;
+}
+
+.width-mm-input,
+.height-mm-input {
+    display: none;
+}
+.width-mm-input.show-mm,
+.height-mm-input.show-mm {
+    display: block;
+}
+
+.row-calculations-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+    background: #f8fafc;
+    border-radius: 0 0 8px 8px;
+    margin: 0 -16px -16px -16px;
+    padding: 12px 16px;
+}
+
+.calc-badges {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.calc-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.calc-item span.calc-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.calc-item div {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.row-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+.icon-btn:hover { transform: translateY(-1px); }
+.btn-blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.btn-blue:hover { background: #dbeafe; }
+.btn-green { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.btn-green:hover { background: #a7f3d0; }
+.btn-red { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+.btn-red:hover { background: #fca5a5; }
+
+.summary-row {
+    display: grid; 
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 15px; 
+    padding:15px; 
+    background:#f7f7f7; 
+    border-radius:8px; 
+    margin-top:20px;
+}
+
+.summary-row > div {
+    font-weight: 600;
+    display:flex;
+    flex-direction:column;
+}
+
+.summary-row > div > label {
+    font-size:13px;
+    color:#666;
+    margin-bottom:6px;
+}
+
+.summary-row input, .summary-row select {
+    padding: 10px;
+    width: 100%;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+    background:#fff;
+}
+
+/* Weight Sheet Modal */
+#weightSheetModal .modal-content, #pktSheetModal .modal-content {
+    width: min(600px, 95vw);
+    padding: 28px;
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.pkt-summary-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 14px; 
+    margin-bottom: 20px; 
+}
+
+.pkt-summary-card { 
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 100%); 
+    border: 2px solid var(--border-color); 
+    padding: 16px; 
+    border-radius: 14px; 
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.pkt-summary-card span {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.pkt-summary-card strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.pkt-rows-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    margin-bottom: 16px; 
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.pkt-row { 
+    display: grid; 
+    grid-template-columns: 36px 90px 1fr auto; 
+    gap: 12px; 
+    align-items: center; 
+    padding: 14px; 
+    background: #fff;
+    border: 2px solid #e2e8f0; 
+    border-radius: 14px;
+}
+
+.pkt-sno {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.pkt-count-input, .pkt-weight-input {
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    background: #f8fafc;
+    text-align: center;
+}
+
+.pkt-row button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.ws-summary-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 14px; 
+    margin-bottom: 20px; 
+}
+
+.ws-summary-card { 
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 100%); 
+    border: 2px solid var(--border-color); 
+    padding: 16px; 
+    border-radius: 14px; 
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ws-summary-card span {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.ws-summary-card strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.ws-rows-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    margin-bottom: 16px; 
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.ws-row { 
+    display: grid; 
+    grid-template-columns: 36px 1fr 100px auto; 
+    gap: 12px; 
+    align-items: center; 
+    padding: 14px; 
+    background: #fff;
+    border: 2px solid #e2e8f0; 
+    border-radius: 14px;
+}
+
+.ws-sno {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.ws-weight {
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    background: #f8fafc;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+}
+
+.ws-row button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* ================= MOBILE OPTIMIZATIONS ================= */
+@media (max-width: 768px) {
+    .container-box {
+        margin: 15px auto;
+        padding: 0 10px;
+    }
+
+    .form-grid, .summary-row, .row-inputs-grid { 
+        grid-template-columns: 1fr; 
+    }
+
+    .form-grid > label, .form-grid > input, .form-grid > select {
+        font-size: 14px;
+    }
+
+    .modal-content {
+        padding: 16px;
+        width: 96%;
+        max-height: 90vh;
+        border-radius: 14px;
+    }
+
+    .ws-summary-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .ws-summary-card {
+        padding: 10px;
+    }
+
+    .ws-summary-card strong {
+        font-size: 18px;
+    }
+
+    .ws-row, .pkt-row {
+        grid-template-columns: 28px 1fr 70px auto;
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .pkt-row {
+        grid-template-columns: 28px 60px 1fr auto;
+    }
+
+    .pkt-summary-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .pkt-summary-card {
+        padding: 10px;
+    }
+
+    .pkt-summary-card strong {
+        font-size: 18px;
+    }
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="container-box">
+    <div class="top-bar">
+        <h2>Edit Door Production</h2>
+    </div>
+
+    <!-- Modal Form -->
+    <div class="modal active" id="editModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()" style="float:right; cursor:pointer; font-size:24px;">&times;</span>
+            <h3>Edit Door Production</h3>
+
+            <form id="editForm" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="category" value="{{ current_category }}">
+
+                <div class="form-grid">
+                    <label for="prod-date">Date:</label>
+                    <input type="date" id="prod-date" name="date" required tabindex="1" data-nav-group="header-fields" data-nav-index="0" value="{{ today|date:'Y-m-d' }}">
+
+                    <label for="machine">Machine:</label>
+                    <select name="machine" id="machine" onchange="setCategory(); filterOperators()" required tabindex="2" data-nav-group="header-fields" data-nav-index="1">
+                        <option value="">Select Machine</option>
+                        {% for m in machines %}
+                        <option value="{{ m.id }}" data-category="{{ m.category }}" {% if production_batch.first.machine.id == m.id %}selected{% endif %}>{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="shift">Shift:</label>
+                    <select id="shift" name="shift" required tabindex="3" data-nav-group="header-fields" data-nav-index="2">
+                        <option value="">Select Shift</option>
+                        {% for sh in shifts %}
+                        <option value="{{ sh }}" {% if production_batch.first.shift == sh %}selected{% endif %}>{{ sh }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="operator">Operator Name:</label>
+                    {% if user.role == "Admin" or user.role == "Manager" or user.role == "operator_manager" or user.role == "Operator_incharge" %}
+                        <select id="operator" name="operator" required tabindex="4" data-nav-group="header-fields" data-nav-index="3">
+                            <option value="">Select Operator</option>
+                            {% for op in operators %}
+                            <option value="{{ op.id }}" {% if production_batch.first.operator.id == op.id %}selected{% endif %}>{{ op.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        <input type="text" value="{{ user.full_name }}" readonly tabindex="4" data-nav-group="header-fields" data-nav-index="3">
+                        <input type="hidden" name="operator" value="{{ user.id }}">
+                    {% endif %}
+
+                    <label for="category">Category:</label>
+                    <select id="category" name="category" required tabindex="5" data-nav-group="header-fields" data-nav-index="4">
+                        <option value="">Select Type</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label>Stamp:</label>
+                    <select name="stamp" id="stamp_input" required tabindex="27" data-nav-group="summary-fields" data-nav-index="5">
+                        <option value="">Select Stamp</option>
+                        <option value="Star" {% if production_batch.first.product.stamp == "Star" %}selected{% endif %}>Star</option>
+                        <option value="Royal" {% if production_batch.first.product.stamp == "Royal" %}selected{% endif %}>Royal</option>
+                        <option value="Gold" {% if production_batch.first.product.stamp == "Gold" %}selected{% endif %}>Gold</option>
+                        <option value="Diamonds" {% if production_batch.first.product.stamp == "Diamonds" %}selected{% endif %}>Diamonds</option>
+                        <option value="Platinum" {% if production_batch.first.product.stamp == "Platinum" %}selected{% endif %}>Platinum</option>
+                        <option value="Premium" {% if production_batch.first.product.stamp == "Premium" %}selected{% endif %}>Premium</option>
+                    </select>
+                </div>
+
+                <div class="production-rows-wrapper">
+                    <div id="production-rows-container">
+                        {% for prod in production_batch %}
+                        <div class="production-row" data-production-id="{{ prod.id }}">
+                            <!-- Top section: Editable inputs -->
+                            <div class="row-inputs-grid">
+                                <div class="field-group read-only-field">
+                                    <label>Thickness</label>
+                                    <select name="thickness" class="thickness-input" tabindex="6" data-nav-group="row-fields" data-nav-col="0" onchange="handleAddNewOption(this, 'thickness')" required>
+                                        <option value="">Thickness</option>
+                                        {% for t in thicknesses %}
+                                        <option value="{{ t.id }}" data-value="{{ t.thickness }}" {% if prod.thickness and prod.thickness.id == t.id %}selected{% endif %}>{{ t.thickness }}</option>
+                                        {% endfor %}
+                                        <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                    </select>
+                                </div>
+
+                                <div class="field-group read-only-field">
+                                    <label>Width</label>
+                                    <div class="width-container">
+                                        <select name="width_unit" class="unit-select" tabindex="7" data-nav-group="row-fields" data-nav-col="1" onchange="toggleWidthField(this)">
+                                            <option value="inch" {% if not prod.width or prod.width.unit == 'inch' %}selected{% endif %}>Inch</option>
+                                            <option value="mm" {% if prod.width and prod.width.unit == 'mm' %}selected{% endif %}>MM</option>
+                                        </select>
+                                        <select name="width" class="width-select" tabindex="8" data-nav-group="row-fields" data-nav-col="2" onchange="handleAddNewOption(this, 'width')" required>
+                                            <option value="">Width</option>
+                                            {% for w in widths %}
+                                            <option value="{{ w.id }}" data-width="{{ w.width }}" data-unit="{{ w.unit }}" data-original="{{ w.original_value }}" {% if prod.width and prod.width.id == w.id %}selected{% endif %}>{{ w.width|format_decimal }}</option>
+                                            {% endfor %}
+                                            <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                        </select>
+                                        <input type="number" name="width_mm" step="0.01" class="width-mm-input {% if prod.width and prod.width.unit == 'mm' %}show-mm{% endif %}" placeholder="Enter MM" value="{% if prod.width and prod.width.unit == 'mm' %}{{ prod.width.original_value }}{% endif %}">
+                                    </div>
+                                </div>
+
+                                <div class="field-group read-only-field">
+                                    <label>Height</label>
+                                    <div class="height-container">
+                                        <select name="height_unit" class="unit-select" tabindex="9" data-nav-group="row-fields" data-nav-col="3" onchange="toggleHeightField(this)">
+                                            <option value="inch" {% if not prod.height or prod.height.unit == 'inch' %}selected{% endif %}>Inch</option>
+                                            <option value="mm" {% if prod.height and prod.height.unit == 'mm' %}selected{% endif %}>MM</option>
+                                        </select>
+                                        <select name="height" class="height-select" tabindex="10" data-nav-group="row-fields" data-nav-col="4" onchange="handleAddNewOption(this, 'height')" required>
+                                            <option value="">Height</option>
+                                            {% for h in heights %}
+                                            <option value="{{ h.id }}" data-height="{{ h.height }}" data-unit="{{ h.unit }}" data-original="{{ h.original_value }}" {% if prod.height and prod.height.id == h.id %}selected{% endif %}>{{ h.height|format_decimal }}</option>
+                                            {% endfor %}
+                                            <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                        </select>
+                                        <input type="number" name="height_mm" step="0.01" class="height-mm-input {% if prod.height and prod.height.unit == 'mm' %}show-mm{% endif %}" placeholder="Enter MM" value="{% if prod.height and prod.height.unit == 'mm' %}{{ prod.height.original_value }}{% endif %}">
+                                    </div>
+                                </div>
+
+                                <div class="field-group read-only-field">
+                                    <label>Density (ord)</label>
+                                    <select name="density" class="density-input" tabindex="11" data-nav-group="row-fields" data-nav-col="5" onchange="handleAddNewOption(this, 'density')" required>
+                                        <option value="">Density</option>
+                                        {% for d in densities %}
+                                        <option value="{{ d.id }}" data-value="{{ d.density }}" {% if prod.density and prod.density.id == d.id %}selected{% endif %}>{{ d.density }}</option>
+                                        {% endfor %}
+                                        <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                    </select>
+                                </div>
+
+                                <div class="field-group read-only-field">
+                                    <label>Color</label>
+                                    <select name="color" class="color-input" tabindex="13" data-nav-group="row-fields" data-nav-col="7" onchange="handleAddNewOption(this, 'color')" required>
+                                        <option value="">Color</option>
+                                        {% for c in colors %}
+                                        <option value="{{ c.id }}" {% if prod.color and prod.color.id == c.id %}selected{% endif %}>{{ c.color }}</option>
+                                        {% endfor %}
+                                        <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                    </select>
+                                </div>
+
+                                <div class="field-group">
+                                    <label>Qty</label>
+                                    <input type="number" name="quantity" class="quantity-input" tabindex="14" data-nav-group="row-fields" data-nav-col="8" value="{{ prod.quantity }}" required>
+                                </div>
+
+                                <div class="field-group">
+                                    <label>Weight</label>
+                                    <input type="number" name="weight" step="0.0001" class="weight-input" tabindex="15" data-nav-group="row-fields" data-nav-col="9" value="{{ prod.weight_per_piece }}" required>
+                                </div>
+
+                                <div class="field-group">
+                                    <label>Rejection</label>
+                                    <select name="rejection" class="rejection-input" tabindex="16" data-nav-group="row-fields" data-nav-col="10" onchange="handleRejection(this)">
+                                        <option value="ok" {% if prod.rejection_status != 'Scrap' and prod.rejection_status != 'Unfinished' %}selected{% endif %}>OK</option>
+                                        <option value="unfinished" {% if prod.rejection_status == 'Unfinished' %}selected{% endif %}>Unfinished</option>
+                                        <option value="scrap" {% if prod.rejection_status == 'Scrap' %}selected{% endif %}>Scrap</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Bottom section: Read-only calculations & actions -->
+                            <div class="row-calculations-bar">
+                                <div class="calc-badges">
+                                    <div class="calc-item">
+                                        <span class="calc-label">Density (pro)</span>
+                                        <div class="density-prod-display" tabindex="12" data-nav-group="row-fields" data-nav-col="6">{{ prod.density_production|format_decimal }}</div>
+                                    </div>
+                                    <div class="calc-item">
+                                        <span class="calc-label">Std Wt</span>
+                                        <div class="std-display" tabindex="18" data-nav-group="row-fields" data-nav-col="12">{{ prod.door_std_weight|format_decimal }}</div>
+                                    </div>
+                                    <div class="calc-item">
+                                        <span class="calc-label">Total Wt</span>
+                                        <div class="total-weight-display" tabindex="17" data-nav-group="row-fields" data-nav-col="11">{{ prod.total_weight|format_decimal }}</div>
+                                    </div>
+                                    <div class="calc-item">
+                                        <span class="calc-label">Norm Wt</span>
+                                        <div class="total-norm-weight-display" tabindex="19" data-nav-group="row-fields" data-nav-col="13">{{ prod.door_total_norm|format_decimal }}</div>
+                                    </div>
+                                    <div class="calc-item">
+                                        <span class="calc-label">Excess/Less</span>
+                                        <div class="excess-display" tabindex="20" data-nav-group="row-fields" data-nav-col="14">{{ prod.door_excess|format_decimal }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="row-actions">
+                                    <button type="button" class="icon-btn btn-blue weight-sheet-btn" tabindex="16" data-nav-group="row-fields" data-nav-col="10" onclick="openWeightSheetModal(this)" title="Weight Sheet"><i class="fa-solid fa-scale-balanced"></i></button>
+                                    <button type="button" class="icon-btn btn-green pkt-sheet-btn" tabindex="17" data-nav-group="row-fields" data-nav-col="11" onclick="openPktSheetModal(this)" title="PKT Sheet"><i class="fa-solid fa-box"></i></button>
+                                    <button type="button" class="icon-btn btn-red remove-row-btn" tabindex="21" data-nav-group="row-fields" data-nav-col="15" onclick="removeProductionRow(this)" title="Remove Row"><i class="fa fa-trash"></i></button>
+                                </div>
+
+                                <input type="hidden" name="sidepatti" class="sidepatti-input" value="{% if forloop.first %}{{ sidepatti_value }}{% else %}0{% endif %}">
+                                <input type="hidden" name="linesetting" class="line-setting-input" value="{% if forloop.first %}{{ linesetting_value }}{% else %}0{% endif %}">
+                                <input type="hidden" name="unfinished_qty" class="unfinished-qty-input" value="{% if prod.rejection_status == 'Unfinished' %}{{ prod.rejected_quantity|default:0 }}{% else %}0{% endif %}">
+                                <input type="hidden" name="scrap_qty" class="scrap-qty-input" value="{% if prod.rejection_status == 'Scrap' %}{{ prod.rejected_quantity|default:0 }}{% else %}0{% endif %}">
+                                {% if prod.weight_sheet %}
+                                <input type="hidden" class="weightsheet-id" value="{{ prod.weight_sheet.id }}">
+                                <input type="hidden" class="weights-data" value="[{% for r in prod.weight_sheet.rows.all %}{{ r.weight_per_piece }}{% if not forloop.last %}, {% endif %}{% endfor %}]">
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="summary-row">
+                    <div>
+                        <label>Side Patti:</label>
+                        <input type="number" step="0.01" name="sidepatti_summary" id="side_patti_input" value="{{ sidepatti_value|default:0 }}" tabindex="22" data-nav-group="summary-fields" data-nav-index="0">
+                    </div>
+                    <div>
+                        <label>Line Setting:</label>
+                        <input type="number" step="0.01" name="linesetting_summary" id="line_setting_input" value="{{ linesetting_value|default:0 }}" tabindex="23" data-nav-group="summary-fields" data-nav-index="1">
+                    </div>
+                    <div>
+                        <label>Actual Production:</label>
+                        <input type="text" id="actual_production" readonly value="0.00" tabindex="24" data-nav-group="summary-fields" data-nav-index="2">
+                    </div>
+                    <div>
+                        <label>Overall Production:</label>
+                        <input type="text" id="overall_production" readonly value="0.00" tabindex="25" data-nav-group="summary-fields" data-nav-index="3">
+                    </div>
+                    <div>
+                        <label>Remark:</label>
+                        <input type="text" name="remark" id="remark_input" placeholder="Enter remark..." value="{% if production_batch %}{{ production_batch.first.remark }}{% endif %}" tabindex="26" data-nav-group="summary-fields" data-nav-index="4">
+                    </div>
+                </div>
+
+                <button type="submit" class="add-btn" tabindex="28" data-nav-group="modal-actions" data-nav-index="0" style="margin-top: 20px; width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:6px; font-weight:600;">Update Production</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Weight Sheet Modal -->
+<div class="modal" id="weightSheetModal" onclick="closeWeightSheetModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="closeWeightSheetModal()" style="float:right; cursor:pointer; font-size:24px;">&times;</span>
+        <h3>Weight Sheet</h3>
+        <div class="ws-summary-grid">
+            <div class="ws-summary-card"><span>Total</span><strong id="ws-total">0</strong></div>
+            <div class="ws-summary-card"><span>Average</span><strong id="ws-avg">0</strong></div>
+        </div>
+        <div id="weightSheetRows" class="ws-rows-list"></div>
+        <button type="button" onclick="addWeightRow()" class="ws-add-btn" style="width:100%; padding:10px; border:1px dashed var(--primary); border-radius:10px; background:rgba(63,46,151,0.06); color:var(--primary); font-weight:700; cursor:pointer;"><i class="fa fa-plus"></i> Add Weight</button>
+        <button type="button" onclick="saveWeightSheet()" style="width: 100%; margin-top: 12px; padding: 14px 16px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold;"><i class="fa fa-save"></i> Save</button>
+    </div>
+</div>
+
+<!-- PKT Sheet Modal -->
+<div class="modal" id="pktSheetModal" onclick="closePktSheetModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="closePktSheetModal()" style="float:right; cursor:pointer; font-size:24px;">&times;</span>
+        <h3>PKT Sheet</h3>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; padding:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px;">
+            <span style="font-weight:600; color:#166534;">Size:</span>
+            <strong id="pkt-locked-size" style="color:#15803d;">-</strong>
+        </div>
+        <div class="pkt-summary-grid">
+            <div class="pkt-summary-card"><span>Total Pieces</span><strong id="pkt-total">0</strong></div>
+            <div class="pkt-summary-card"><span>Avg Weight/pkt</span><strong id="pkt-avg">0.0000</strong></div>
+            <div class="pkt-summary-card"><span>Count</span><strong id="pkt-count">0</strong></div>
+        </div>
+        <div id="pktSheetRows" class="pkt-rows-list"></div>
+        <button type="button" onclick="addPktRow(currentPktDefaultCount)" class="pkt-add-btn" style="width:100%; padding:10px; border:1px dashed var(--primary); border-radius:10px; background:rgba(63,46,151,0.06); color:var(--primary); font-weight:700; cursor:pointer;"><i class="fa fa-plus"></i> Add Pkt</button>
+        <button type="button" onclick="savePktSheet()" style="width:100%; margin-top:12px; padding:14px 16px; background:var(--primary); border:none; color:white; font-weight:bold; border-radius:10px;"><i class="fa fa-save"></i> Save</button>
+    </div>
+</div>
+
+<!-- Modal for adding new values -->
+<div class="modal" id="addNewThicknessModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" onclick="closeAddNewModal('thickness')">&times;</span>
+        <h3>Add New Thickness</h3>
+        <form onsubmit="submitAddNewValue(event, 'thickness')">
+            {% csrf_token %}
+            <input type="number" id="new-thickness-value" step="0.01" placeholder="Thickness (mm)" required>
+            <button type="submit">Add Thickness</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="addNewColorModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" onclick="closeAddNewModal('color')">&times;</span>
+        <h3>Add New Color</h3>
+        <form onsubmit="submitAddNewValue(event, 'color')">
+            {% csrf_token %}
+            <input type="text" id="new-color-value" placeholder="Color" required>
+            <button type="submit">Add Color</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="addNewHeightModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" onclick="closeAddNewModal('height')">&times;</span>
+        <h3>Add New Height</h3>
+        <form onsubmit="submitAddNewValue(event, 'height')">
+            {% csrf_token %}
+            <input type="number" id="new-height-value" step="0.01" placeholder="Height" required>
+            <select id="new-height-unit">
+                <option value="inch">Inch</option>
+                <option value="mm">MM</option>
+            </select>
+            <button type="submit">Add Height</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="addNewWidthModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" onclick="closeAddNewModal('width')">&times;</span>
+        <h3>Add New Width</h3>
+        <form onsubmit="submitAddNewValue(event, 'width')">
+            {% csrf_token %}
+            <input type="number" id="new-width-value" step="0.01" placeholder="Width" required>
+            <select id="new-width-unit">
+                <option value="inch">Inch</option>
+                <option value="mm">MM</option>
+            </select>
+            <button type="submit">Add Width</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="addNewDensityModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" onclick="closeAddNewModal('density')">&times;</span>
+        <h3>Add New Density</h3>
+        <form onsubmit="submitAddNewValue(event, 'density')">
+            {% csrf_token %}
+            <input type="number" id="new-density-value" step="0.01" placeholder="Density" required>
+            <button type="submit">Add Density</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Keyboard Navigation System
+document.addEventListener('keydown', function(e) {
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        return;
+    }
+    
+    const active = document.activeElement;
+    if (!active) return;
+    
+    const navGroup = active.dataset.navGroup;
+    if (!navGroup) return;
+    
+    const tag = active.tagName.toLowerCase();
+    const isInput = tag === 'input' || tag === 'select' || tag === 'textarea';
+    
+    // For input fields, check if we should allow navigation
+    if (isInput) {
+        // For select elements, don't intercept (let default behavior work)
+        if (tag === 'select') {
+            return;
+        }
+        
+        // For text inputs, only navigate if cursor is at start/end
+        if (active.type === 'text') {
+            const isAtStart = active.selectionStart === 0;
+            const isAtEnd = active.selectionStart === active.value.length;
+            
+            // Only navigate if at start (left arrow) or end (right arrow)
+            if (e.key === 'ArrowLeft' && !isAtStart) return;
+            if (e.key === 'ArrowRight' && !isAtEnd) return;
+        }
+    }
+    
+    e.preventDefault();
+    
+    if (navGroup === 'header-fields') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const fields = Array.from(document.querySelectorAll('[data-nav-group="header-fields"]'));
+        const currentPos = fields.indexOf(active);
+        
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            const next = fields[currentPos + 1];
+            if (next) next.focus();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            const prev = fields[currentPos - 1];
+            if (prev) prev.focus();
+        }
+    } else if (navGroup === 'row-fields') {
+        const currentCol = parseInt(active.dataset.navCol);
+        const currentRow = active.closest('.production-row');
+        if (!currentRow) return;
+        
+        const rows = Array.from(document.querySelectorAll('.production-row'));
+        const currentRowIndex = rows.indexOf(currentRow);
+        
+        if (e.key === 'ArrowRight') {
+            const next = currentRow.querySelector(`[data-nav-col="${currentCol + 1}"]`);
+            if (next) next.focus();
+        } else if (e.key === 'ArrowLeft') {
+            const prev = currentRow.querySelector(`[data-nav-col="${currentCol - 1}"]`);
+            if (prev) prev.focus();
+        } else if (e.key === 'ArrowDown') {
+            const nextRow = rows[currentRowIndex + 1];
+            if (nextRow) {
+                const next = nextRow.querySelector(`[data-nav-col="${currentCol}"]`);
+                if (next) next.focus();
+            }
+        } else if (e.key === 'ArrowUp') {
+            const prevRow = rows[currentRowIndex - 1];
+            if (prevRow) {
+                const prev = prevRow.querySelector(`[data-nav-col="${currentCol}"]`);
+                if (prev) prev.focus();
+            }
+        }
+    } else if (navGroup === 'summary-fields') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const fields = Array.from(document.querySelectorAll('[data-nav-group="summary-fields"]'));
+        const currentPos = fields.indexOf(active);
+        
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            const next = fields[currentPos + 1];
+            if (next) next.focus();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            const prev = fields[currentPos - 1];
+            if (prev) prev.focus();
+        }
+    } else if (navGroup === 'modal-actions') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const fields = Array.from(document.querySelectorAll('[data-nav-group="modal-actions"]'));
+        const currentPos = fields.indexOf(active);
+        
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            const next = fields[currentPos + 1];
+            if (next) next.focus();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            const prev = fields[currentPos - 1];
+            if (prev) prev.focus();
+        }
+    }
+});
+
+// Modal controls
+function closeModal(){
+    window.location.href = '/production/?category={{ current_category }}';
+}
+
+function setCategory(){
+    const machineSelect = document.getElementById("machine");
+    const selected = machineSelect.options[machineSelect.selectedIndex];
+    const categoryValue = selected?.dataset?.category || "";
+    const categorySelect = document.getElementById("category");
+    if(categoryValue){
+        categorySelect.value = categoryValue;
+    }
+}
+
+// Filter operators based on selected machine
+async function filterOperators() {
+    const machineSelect = document.getElementById("machine");
+    const operatorSelect = document.getElementById("operator");
+    const machineId = machineSelect.value;
+
+    if (!machineId) return;
+
+    // Save current selection before refetching
+    const selectedOperatorId = operatorSelect ? (operatorSelect.value || operatorSelect.dataset.currentOperator) : null;
+
+    try {
+        const response = await fetch(`/api/operators-by-machine/?machine_id=${machineId}`);
+
+        if (!response.ok) throw new Error("API failed");
+
+        const data = await response.json();
+
+        if (!operatorSelect) return;
+
+        operatorSelect.innerHTML = '<option value="">Select Operator</option>';
+
+        if (data.operators && data.operators.length > 0) {
+            data.operators.forEach(op => {
+                const option = document.createElement('option');
+                option.value = op.operator__id || op.id;
+                option.textContent = op.operator__username || op.username;
+                operatorSelect.appendChild(option);
+            });
+        } else {
+            // SAFE fallback
+            operatorSelect.innerHTML = `
+                <option value="">Select Operator</option>
+                {% for op in operators %}
+                <option value="{{ op.id }}">{{ op.full_name }}</option>
+                {% endfor %}
+            `;
+        }
+
+        // Restore selection after populating options
+        if (selectedOperatorId) {
+            operatorSelect.value = selectedOperatorId;
+        }
+
+    } catch (error) {
+        console.error('Error fetching operators:', error);
+    }
+}
+
+// Add new production row
+function addProductionRow(){
+    const container = document.getElementById("production-rows-container");
+    const newRow = document.createElement("div");
+    newRow.classList.add("production-row");
+
+    newRow.innerHTML = `
+        <div class="row-inputs-grid">
+            <div class="field-group read-only-field">
+                <label>Thickness</label>
+                <select name="thickness" class="thickness-input" tabindex="6" data-nav-group="row-fields" data-nav-col="0" onchange="handleAddNewOption(this, 'thickness')" required>
+                    <option value="">Thickness</option>
+                    {% for t in thicknesses %}
+                    <option value="{{ t.id }}" data-value="{{ t.thickness }}">{{ t.thickness }}</option>
+                    {% endfor %}
+                    <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                </select>
+            </div>
+
+            <div class="field-group read-only-field">
+                <label>Width</label>
+                <div class="width-container">
+                    <select name="width_unit" class="unit-select" tabindex="7" data-nav-group="row-fields" data-nav-col="1" onchange="toggleWidthField(this)">
+                        <option value="inch">Inch</option>
+                        <option value="mm">MM</option>
+                    </select>
+                    <select name="width" class="width-select" tabindex="8" data-nav-group="row-fields" data-nav-col="2" onchange="handleAddNewOption(this, 'width')" required>
+                        <option value="">Width</option>
+                        {% for w in widths %}
+                        <option value="{{ w.id }}" data-width="{{ w.width }}" data-unit="{{ w.unit }}" data-original="{{ w.original_value }}">{{ w.width|format_decimal }}</option>
+                        {% endfor %}
+                        <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                    </select>
+                    <input type="number" name="width_mm" step="0.01" class="width-mm-input" placeholder="Enter MM" style="display:none;">
+                </div>
+            </div>
+
+            <div class="field-group read-only-field">
+                <label>Height</label>
+                <div class="height-container">
+                    <select name="height_unit" class="unit-select" tabindex="9" data-nav-group="row-fields" data-nav-col="3" onchange="toggleHeightField(this)">
+                        <option value="inch">Inch</option>
+                        <option value="mm">MM</option>
+                    </select>
+                    <select name="height" class="height-select" tabindex="10" data-nav-group="row-fields" data-nav-col="4" onchange="handleAddNewOption(this, 'height')" required>
+                        <option value="">Height</option>
+                        {% for h in heights %}
+                        <option value="{{ h.id }}" data-height="{{ h.height }}" data-unit="{{ h.unit }}" data-original="{{ h.original_value }}">{{ h.height|format_decimal }}</option>
+                        {% endfor %}
+                        <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                    </select>
+                    <input type="number" name="height_mm" step="0.01" class="height-mm-input" placeholder="Enter MM" style="display:none;">
+                </div>
+            </div>
+
+            <div class="field-group read-only-field">
+                <label>Density (ord)</label>
+                <select name="density" class="density-input" tabindex="11" data-nav-group="row-fields" data-nav-col="5" onchange="handleAddNewOption(this, 'density')" required>
+                    <option value="">Density</option>
+                    {% for d in densities %}
+                    <option value="{{ d.id }}" data-value="{{ d.density }}">{{ d.density }}</option>
+                    {% endfor %}
+                    <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                </select>
+            </div>
+
+            <div class="field-group read-only-field">
+                <label>Color</label>
+                <select name="color" class="color-input" tabindex="13" data-nav-group="row-fields" data-nav-col="7" onchange="handleAddNewOption(this, 'color')" required>
+                    <option value="">Color</option>
+                    {% for c in colors %}
+                    <option value="{{ c.id }}">{{ c.color }}</option>
+                    {% endfor %}
+                    <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label>Qty</label>
+                <input type="number" name="quantity" class="quantity-input" tabindex="14" data-nav-group="row-fields" data-nav-col="8" placeholder="Qty" required>
+            </div>
+
+            <div class="field-group">
+                <label>Weight</label>
+                <input type="number" name="weight" step="0.0001" class="weight-input" tabindex="15" data-nav-group="row-fields" data-nav-col="9" placeholder="Weight" required>
+            </div>
+
+            <div class="field-group">
+                <label>Rejection</label>
+                <select name="rejection" class="rejection-input" tabindex="16" data-nav-group="row-fields" data-nav-col="10" onchange="handleRejection(this)">
+                    <option value="ok">OK</option>
+                    <option value="unfinished">Unfinished</option>
+                    <option value="scrap">Scrap</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row-calculations-bar">
+            <div class="calc-badges">
+                <div class="calc-item">
+                    <span class="calc-label">Density (pro)</span>
+                    <div class="density-prod-display" tabindex="12" data-nav-group="row-fields" data-nav-col="6">0.00</div>
+                </div>
+                <div class="calc-item">
+                    <span class="calc-label">Std Wt</span>
+                    <div class="std-display" tabindex="18" data-nav-group="row-fields" data-nav-col="12">0.00</div>
+                </div>
+                <div class="calc-item">
+                    <span class="calc-label">Total Wt</span>
+                    <div class="total-weight-display" tabindex="17" data-nav-group="row-fields" data-nav-col="11">0.00</div>
+                </div>
+                <div class="calc-item">
+                    <span class="calc-label">Norm Wt</span>
+                    <div class="total-norm-weight-display" tabindex="19" data-nav-group="row-fields" data-nav-col="13">0.00</div>
+                </div>
+                <div class="calc-item">
+                    <span class="calc-label">Excess/Less</span>
+                    <div class="excess-display" tabindex="20" data-nav-group="row-fields" data-nav-col="14">0.00</div>
+                </div>
+            </div>
+
+                                <div class="row-actions">
+                                    <button type="button" class="icon-btn btn-blue weight-sheet-btn" tabindex="16" data-nav-group="row-fields" data-nav-col="10" onclick="openWeightSheetModal(this)" title="Weight Sheet"><i class="fa-solid fa-scale-balanced"></i></button>
+                                    <button type="button" class="icon-btn btn-green pkt-sheet-btn" tabindex="17" data-nav-group="row-fields" data-nav-col="11" onclick="openPktSheetModal(this)" title="PKT Sheet"><i class="fa-solid fa-box"></i></button>
+                                    <button type="button" class="icon-btn btn-red remove-row-btn" tabindex="21" data-nav-group="row-fields" data-nav-col="15" onclick="removeProductionRow(this)" title="Remove Row"><i class="fa fa-trash"></i></button>
+                                </div>
+
+            <input type="hidden" name="sidepatti" class="sidepatti-input" value="0">
+            <input type="hidden" name="linesetting" class="line-setting-input" value="0">
+            <input type="hidden" name="unfinished_qty" class="unfinished-qty-input" value="0">
+            <input type="hidden" name="scrap_qty" class="scrap-qty-input" value="0">
+        </div>
+    `;
+
+    container.appendChild(newRow);
+    attachRowListeners(newRow);
+    initializeUnitFields(newRow);
+    calculateRow(newRow);
+}
+
+// ========== REJECTION HANDLING ==========
+function handleRejection(select) {
+    const row = select.closest(".production-row");
+    const qtyInput = row.querySelector(".quantity-input");
+    const unfinishedQtyInput = row.querySelector(".unfinished-qty-input");
+    const scrapQtyInput = row.querySelector(".scrap-qty-input");
+
+    if (!qtyInput.dataset.original) {
+        qtyInput.dataset.original = qtyInput.value;
+    }
+
+    let originalQty = Number(qtyInput.dataset.original || 0);
+
+    // Reset
+    qtyInput.value = originalQty;
+    if (unfinishedQtyInput) unfinishedQtyInput.value = 0;
+    if (scrapQtyInput) scrapQtyInput.value = 0;
+
+    if (select.value === "ok") {
+        return;
+    }
+
+    if (select.value === "unfinished" || select.value === "scrap") {
+        let qty = prompt("Enter " + select.value + " Quantity:");
+        qty = Number(qty || 0);
+
+        if (qty > originalQty) {
+            alert("Cannot exceed quantity: " + originalQty);
+            select.value = "ok";
+            return;
+        }
+
+        if (qty <= 0) {
+            alert("Enter valid quantity");
+            select.value = "ok";
+            return;
+        }
+
+        qtyInput.value = originalQty - qty;
+        if (select.value === "unfinished" && unfinishedQtyInput) {
+            unfinishedQtyInput.value = qty;
+        }
+        if (select.value === "scrap" && scrapQtyInput) {
+            scrapQtyInput.value = qty;
+        }
+    }
+
+    calculateRow(row);
+}
+
+// Remove a production row
+function removeProductionRow(button){
+    const row = button.closest('.production-row');
+    row.remove();
+    recalculateAllRows();
+}
+
+// Attach event listeners to inputs in a row
+function attachRowListeners(row){
+    row.querySelectorAll("input, select").forEach(el => {
+        el.addEventListener("input", () => calculateRow(row));
+        el.addEventListener("change", () => calculateRow(row));
+    });
+}
+
+// Calculate all values in a single row
+function calculateRow(row){
+    // Get actual numeric values from selected options
+    const thicknessOption = row.querySelector(".thickness-input");
+    const heightOption = row.querySelector(".height-select");
+    const widthOption = row.querySelector(".width-select");
+    const densityOption = row.querySelector(".density-input");
+
+    let qty = Number(row.querySelector(".quantity-input").value || 0);
+    let weight = Number(row.querySelector(".weight-input").value || 0);
+
+    // Extract numeric values from selected options
+    let thickness = 0;
+    if (thicknessOption.selectedIndex > 0) {
+        const selectedOption = thicknessOption.options[thicknessOption.selectedIndex];
+        thickness = Number(selectedOption.getAttribute('data-value') || selectedOption.text) || 0;
+    }
+
+    let height = 0;
+    let width = 0;
+
+    const heightUnit = row.querySelector('[name="height_unit"]').value;
+    const widthUnit = row.querySelector('[name="width_unit"]').value;
+
+    if (heightUnit === "mm") {
+        let mm = Number(row.querySelector(".height-mm-input").value || 0);
+        height = mm / 25.4;
+    } else {
+        if (heightOption.selectedIndex > 0) {
+            const selectedOption = heightOption.options[heightOption.selectedIndex];
+            height = Number(selectedOption.getAttribute('data-height') || selectedOption.text) || 0;
+        }
+    }
+
+    if (widthUnit === "mm") {
+        let mm = Number(row.querySelector(".width-mm-input").value || 0);
+        width = mm / 25.4;
+    } else {
+        if (widthOption.selectedIndex > 0) {
+            const selectedOption = widthOption.options[widthOption.selectedIndex];
+            width = Number(selectedOption.getAttribute('data-width') || selectedOption.text) || 0;
+        }
+    }
+
+    let density = 0;
+    if (densityOption.selectedIndex > 0) {
+        const selectedOption = densityOption.options[densityOption.selectedIndex];
+        density = Number(selectedOption.getAttribute('data-value') || selectedOption.text) || 0;
+    }
+
+    // Convert inches → meters
+    let h = height * 0.0254;  // height in inches to meters
+    let w = width * 0.0254;   // width in inches to meters
+    let t = thickness / 1000;  // thickness in mm to meters
+
+    // Volume in cubic meters
+    let volume = h * w * t;
+
+    // Density (production) = weight / volume
+    let densityProd = volume ? (weight / volume) : 0;
+
+    // Standard weight calculation = density * volume
+    let std = density * volume;
+
+    // Total weight = quantity * weight_per_piece
+    let totalWeight = qty * weight;
+
+    // Total norm weight = quantity * standard_weight
+    let totalNormWeight = qty * std;
+
+    // Excess/Less = actual - norm
+    let excess = totalWeight - totalNormWeight;
+
+    row.querySelector(".density-prod-display").innerText = isNaN(densityProd) ? "0.00" : densityProd.toFixed(2);
+    row.querySelector(".std-display").innerText = isNaN(std) ? "0.00" : std.toFixed(2);
+    row.querySelector(".total-weight-display").innerText = isNaN(totalWeight) ? "0.00" : totalWeight.toFixed(2);
+    row.querySelector(".total-norm-weight-display").innerText = isNaN(totalNormWeight) ? "0.00" : totalNormWeight.toFixed(2);
+    row.querySelector(".excess-display").innerText = isNaN(excess) ? "0.00" : excess.toFixed(2);
+
+    recalculateSummary();
+}
+
+// Recalculate all rows and update summary fields
+function recalculateAllRows(){
+    const rows = document.querySelectorAll(".production-row");
+    rows.forEach(row => calculateRow(row));
+}
+
+// Calculate actual production and overall production summary
+function recalculateSummary(){
+    const rows = document.querySelectorAll(".production-row");
+    let actualProduction = 0;
+    rows.forEach(row => {
+        let totalWeight = Number(row.querySelector(".total-weight-display").innerText) || 0;
+        actualProduction += totalWeight;
+    });
+    const side = Number(document.getElementById("side_patti_input").value || 0);
+    const line = Number(document.getElementById("line_setting_input").value || 0);
+
+    const overallProduction = actualProduction + side + line;
+
+    document.getElementById("actual_production").value = actualProduction.toFixed(2);
+    document.getElementById("overall_production").value = overallProduction.toFixed(2);
+
+    const firstRow = document.querySelector('.production-row');
+    if (firstRow) {
+        const sideInput = firstRow.querySelector('.sidepatti-input');
+        const lineInput = firstRow.querySelector('.line-setting-input');
+        if (sideInput) sideInput.value = side;
+        if (lineInput) lineInput.value = line;
+    }
+}
+
+// Attach listeners on initial row when DOM loads
+document.addEventListener("DOMContentLoaded", () => {
+    const allRows = document.querySelectorAll(".production-row");
+    allRows.forEach(row => {
+        attachRowListeners(row);
+        initializeUnitFields(row);
+        calculateRow(row);
+    });
+
+    const machineSelect = document.getElementById("machine");
+    if(machineSelect){
+        machineSelect.addEventListener("change", setCategory);
+    }
+
+    const editForm = document.getElementById("editForm");
+    if(editForm){
+        editForm.addEventListener("submit", recalculateSummary);
+    }
+
+    // Add listeners to summary inputs
+    const sidePattiInput = document.getElementById("side_patti_input");
+    const lineSettingInput = document.getElementById("line_setting_input");
+
+    if(sidePattiInput){
+        sidePattiInput.addEventListener("input", recalculateSummary);
+    }
+    if(lineSettingInput){
+        lineSettingInput.addEventListener("input", recalculateSummary);
+    }
+
+    // Set initial category and filter operators
+    setCategory();
+    filterOperators();
+    recalculateSummary();
+});
+
+// ========== FUNCTIONS FOR ADDING NEW VALUES ==========
+function openAddNewModal(type) {
+    const modalId = `addNew${type.charAt(0).toUpperCase() + type.slice(1)}Modal`;
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeAddNewModal(type) {
+    const modalId = `addNew${type.charAt(0).toUpperCase() + type.slice(1)}Modal`;
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function submitAddNewValue(event, type) {
+    event.preventDefault();
+
+    let url, formData;
+
+    if (type === 'color') {
+        const color = document.getElementById('new-color-value').value.trim();
+        formData = new FormData();
+        formData.append('color', color);
+        url = '{% url "api_create_color" %}';
+    } else if (type === 'thickness') {
+        const thickness = parseFloat(document.getElementById('new-thickness-value').value);
+        if (isNaN(thickness) || thickness <= 0) {
+            alert('Invalid number. Thickness must be a positive number.');
+            return;
+        }
+        if (thickness > 36) {
+            alert('Invalid number. Thickness cannot be greater than 36.');
+            return;
+        }
+        formData = new FormData();
+        formData.append('thickness', thickness);
+        url = '{% url "api_create_thickness" %}';
+    } else if (type === 'height') {
+        const value = parseFloat(document.getElementById('new-height-value').value);
+        const unit = document.getElementById('new-height-unit').value;
+
+        if (isNaN(value) || value <= 0) {
+            alert('Invalid number. Height must be a positive number.');
+            return;
+        }
+
+        let heightInInches = value;
+        if (unit === 'mm') {
+            heightInInches = value / 25.4;
+        }
+        if (heightInInches < 48) {
+            alert('Invalid number. Height cannot be less than 48 inches.');
+            return;
+        }
+
+        formData = new FormData();
+        formData.append('height', heightInInches);
+        formData.append('unit', unit);
+        formData.append('original_value', value);
+        url = '{% url "api_create_height" %}';
+    } else if (type === 'width') {
+        const value = parseFloat(document.getElementById('new-width-value').value);
+        const unit = document.getElementById('new-width-unit').value;
+
+        if (isNaN(value) || value <= 0) {
+            alert('Invalid number. Width must be a positive number.');
+            return;
+        }
+
+        let widthInInches = value;
+        if (unit === 'mm') {
+            widthInInches = value / 25.4;
+        }
+        if (widthInInches > 49) {
+            alert('Invalid number. Width cannot be greater than 49 inches.');
+            return;
+        }
+
+        formData = new FormData();
+        formData.append('width', widthInInches);
+        formData.append('unit', unit);
+        formData.append('original_value', value);
+        url = '{% url "api_create_width" %}';
+    } else if (type === 'density') {
+        const density = document.getElementById('new-density-value').value;
+        formData = new FormData();
+        formData.append('density', density);
+        url = '{% url "api_create_density" %}';
+    }
+
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 🔥 dynamically add to all selects
+            addOptionToAllSelects(
+                type,
+                data.id,
+                data,
+                window.lastTriggeredSelect
+            );
+            // close modal
+            closeAddNewModal(type);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+
+// Toggle height field display
+function toggleHeightField(selectElement) {
+    const container = selectElement.closest('.height-container');
+    const heightSelect = container.querySelector('.height-select');
+    const heightMmInput = container.querySelector('.height-mm-input');
+
+    if (selectElement.value === 'mm') {
+        heightSelect.style.display = 'none';
+        heightMmInput.style.display = '';
+        heightMmInput.focus();
+    } else {
+        heightSelect.style.display = '';
+        heightMmInput.style.display = 'none';
+    }
+}
+
+// Toggle width field display
+function toggleWidthField(selectElement) {
+    const container = selectElement.closest('.width-container');
+    const widthSelect = container.querySelector('.width-select');
+    const widthMmInput = container.querySelector('.width-mm-input');
+
+    if (selectElement.value === 'mm') {
+        widthSelect.style.display = 'none';
+        widthMmInput.style.display = '';
+        widthMmInput.focus();
+    } else {
+        widthSelect.style.display = '';
+        widthMmInput.style.display = 'none';
+    }
+}
+
+function initializeUnitFields(row) {
+    const heightUnitSelect = row.querySelector('[name="height_unit"]');
+    const widthUnitSelect = row.querySelector('[name="width_unit"]');
+
+    if (heightUnitSelect) {
+        toggleHeightField(heightUnitSelect);
+    }
+    if (widthUnitSelect) {
+        toggleWidthField(widthUnitSelect);
+    }
+}
+
+// Handle adding new options
+function handleAddNewOption(selectElement, type) {
+    if (selectElement.value === "__add_new__") {
+        window.lastTriggeredSelect = selectElement; // 🔥 track row
+        openAddNewModal(type);
+        selectElement.value = "";
+    }
+}
+
+// weight sheet modal script
+let currentRow = null;
+
+async function openWeightSheetModal(btn){
+    currentRow = btn.closest(".production-row");
+    document.getElementById("weightSheetModal").classList.add("active");
+    const container = document.getElementById("weightSheetRows");
+    container.innerHTML = "";
+
+    // Prefer server-side saved sheet if available
+    let sheetIdEl = currentRow.querySelector('.weightsheet-id');
+    let loaded = false;
+    if(sheetIdEl && sheetIdEl.value){
+        try{
+            const resp = await fetch('/api/weightsheets/' + encodeURIComponent(sheetIdEl.value) + '/');
+            if(resp.ok){
+                const data = await resp.json();
+                if(data.rows && data.rows.length){
+                    data.rows.forEach(r => addWeightRow(r.weight_per_piece));
+                    loaded = true;
+                }
+            }
+        } catch(e){ console.error('Failed to load weight sheet', e); }
+    }
+
+    if(!loaded){
+        // load existing saved weights if present (client-side)
+        let hd = currentRow.querySelector('.weights-data');
+        let existing = [];
+        if(hd && hd.value){
+            try{ existing = JSON.parse(hd.value); }catch(e){ existing = hd.value.split(',').map(s=>parseFloat(s)||0); }
+        }
+        if(existing && existing.length){
+            existing.forEach(v => addWeightRow(v));
+        } else {
+            addWeightRow();
+        }
+    }
+    refreshWSNumbers();
+    calculateWS();
+}
+
+function addWeightRow(){
+    const container = document.getElementById("weightSheetRows");
+    const div = document.createElement("div");
+    div.className = "ws-row";
+    div.innerHTML = `
+        <span class="ws-sno"></span>
+        <input type="number" step="0.0001" class="ws-weight" placeholder="Weight" oninput="calculateWS()">
+        <button type="button" onclick="this.parentElement.remove(); refreshWSNumbers(); calculateWS()">X</button>
+    `;
+    container.appendChild(div);
+}
+function addWeightRow(initial){
+    const container = document.getElementById("weightSheetRows");
+    const div = document.createElement("div");
+    div.className = "ws-row";
+    div.innerHTML = `
+        <span class="ws-sno"></span>
+        <input type="number" step="0.0001" class="ws-weight" placeholder="Weight" oninput="calculateWS()" value="${initial||''}">
+        <button type="button" onclick="this.parentElement.remove(); refreshWSNumbers(); calculateWS()">X</button>
+    `;
+    container.appendChild(div);
+}
+function refreshWSNumbers(){
+    const rows = document.querySelectorAll('#weightSheetRows .ws-row');
+    rows.forEach((r,i)=>{
+        const sno = r.querySelector('.ws-sno');
+        if(sno) sno.innerText = (i+1) + '.';
+    });
+}
+
+function calculateWS(){
+    let inputs = document.querySelectorAll(".ws-weight");
+    let total = 0;
+    let count = 0;
+    let arr = [];
+    inputs.forEach(i => {
+        let val = parseFloat(i.value);
+        if(!isNaN(val)){
+            total += val;
+            count++;
+            arr.push(val);
+        }
+    });
+    let avg = count ? (total / count) : 0;
+    document.getElementById("ws-total").innerText = total.toFixed(3);
+    document.getElementById("ws-avg").innerText = avg.toFixed(3);
+    if(currentRow){
+        let hd = currentRow.querySelector('.weights-data');
+        if(!hd){ hd = document.createElement('input'); hd.type='hidden'; hd.className='weights-data'; hd.name='weights_data'; currentRow.appendChild(hd); }
+        hd.value = JSON.stringify(arr);
+    }
+    refreshWSNumbers();
+}
+
+function closeWeightSheetModal(){
+    document.getElementById("weightSheetModal").classList.remove("active");
+}
+
+// ========== PKT SHEET MODAL ==========
+let currentPktRow = null;
+let currentPktSize = "";
+let currentPktDefaultCount = 0;
+
+function openPktSheetModal(btn) {
+    currentPktRow = btn.closest(".production-row");
+    document.getElementById("pktSheetModal").classList.add("active");
+    document.getElementById("pktSheetRows").innerHTML = "";
+
+    // For Door, use thickness + height + width as the "size" identifier
+    const thicknessSelect = currentPktRow.querySelector(".thickness-input");
+    const heightSelect = currentPktRow.querySelector(".height-select");
+    const widthSelect = currentPktRow.querySelector(".width-select");
+
+    let sizeText = "";
+    if (thicknessSelect && thicknessSelect.value) {
+        sizeText = thicknessSelect.options[thicknessSelect.selectedIndex]?.textContent?.trim() || "";
+    }
+    if (widthSelect && widthSelect.value) {
+        sizeText += "x" + (widthSelect.options[widthSelect.selectedIndex]?.textContent?.trim() || "");
+    }
+    if (heightSelect && heightSelect.value) {
+        sizeText += "x" + (heightSelect.options[heightSelect.selectedIndex]?.textContent?.trim() || "");
+    }
+
+    currentPktSize = sizeText || "N/A";
+    // Default PKT count for doors: use default of 2
+    currentPktDefaultCount = 2;
+    document.getElementById("pkt-locked-size").innerText = currentPktSize;
+
+    let existingQty = Number(currentPktRow.querySelector(".quantity-input").value || 0);
+    let existingWt = Number(currentPktRow.querySelector(".weight-input").value || 0);
+
+    if (existingQty > 0 && existingWt > 0) {
+        addPktRow(existingQty);
+        let rows = document.querySelectorAll('.pkt-row');
+        if (rows.length > 0) {
+            rows[0].querySelector('.pkt-weight-input').value = existingWt.toFixed(4);
+        }
+    } else {
+        addPktRow(currentPktDefaultCount);
+    }
+}
+
+function addPktRow(pktCount=0) {
+    const container = document.getElementById("pktSheetRows");
+    const div = document.createElement("div");
+    div.className = "pkt-row";
+
+    div.innerHTML = `
+        <input type="number" step="1" class="pkt-count-input" value="${pktCount}" placeholder="Qty" style="width:100%;" readonly>
+        <input type="number" step="0.0001" class="pkt-weight-input" oninput="calculatePKT()" value="" placeholder="Weight" style="width:100%;">
+        <button type="button" onclick="this.parentElement.remove(); calculatePKT();" style="background:var(--accent); color:white; border:none; padding:6px 10px; border-radius:6px;"><i class='fa fa-trash'></i></button>
+    `;
+    container.appendChild(div);
+    calculatePKT();
+}
+
+function calculatePKT() {
+    let rows = document.querySelectorAll('.pkt-row');
+    let totalPieces = 0;
+    let totalWeight = 0;
+    let validCount = 0;
+
+    rows.forEach((row, idx) => {
+        const pktInput = row.querySelector('.pkt-count-input');
+        const wtInput = row.querySelector('.pkt-weight-input');
+        const pktVal = parseFloat(pktInput.value) || 0;
+        const wtVal = parseFloat(wtInput.value) || 0;
+
+        if (pktVal > 0) {
+            totalPieces += pktVal;
+            validCount++;
+        }
+        if (wtVal > 0) {
+            totalWeight += wtVal;
+        }
+
+        row.querySelector('.pkt-sno')?.remove();
+        const sno = document.createElement('span');
+        sno.className = 'pkt-sno';
+        sno.innerText = (idx + 1) + '.';
+        row.insertBefore(sno, row.firstChild);
+    });
+
+    const avgWeight = validCount > 0 ? (totalWeight / validCount) : 0;
+    document.getElementById("pkt-total").innerText = totalPieces.toFixed(0);
+    document.getElementById("pkt-avg").innerText = avgWeight.toFixed(4);
+    document.getElementById("pkt-count").innerText = validCount;
+}
+
+function savePktSheet() {
+    let rows = document.querySelectorAll('.pkt-row');
+    let totalPieces = 0;
+    let totalWeight = 0;
+    let validPktCount = 0;
+
+    rows.forEach(row => {
+        const pktInput = row.querySelector('.pkt-count-input');
+        const wtInput = row.querySelector('.pkt-weight-input');
+        const pktVal = parseFloat(pktInput.value) || 0;
+        const wtVal = parseFloat(wtInput.value) || 0;
+
+        if (pktVal > 0) {
+            totalPieces += pktVal;
+            validPktCount++;
+        }
+        if (wtVal > 0) {
+            totalWeight += wtVal;
+        }
+    });
+
+    if (currentPktRow && validPktCount > 0) {
+        let currentQty = Number(currentPktRow.querySelector(".quantity-input").value || 0);
+        let currentWt = Number(currentPktRow.querySelector(".weight-input").value || 0);
+        let newQty = currentQty + totalPieces;
+        let newWt = ((currentQty * currentWt) + totalWeight) / newQty;
+        currentPktRow.querySelector(".quantity-input").value = newQty;
+        currentPktRow.querySelector(".weight-input").value = newWt.toFixed(4);
+        calculateRow(currentPktRow);
+    }
+    closePktSheetModal();
+}
+
+function closePktSheetModal(){
+    document.getElementById("pktSheetModal").classList.remove("active");
+}
+
+async function saveWeightSheet(){
+    let weights = [];
+    document.querySelectorAll(".ws-weight").forEach(i => {
+        let val = parseFloat(i.value);
+        if(!isNaN(val)){
+            weights.push(val);
+        }
+    });
+    if(weights.length === 0){
+        if(currentRow){ let hd = currentRow.querySelector('.weights-data'); if(hd) hd.value = JSON.stringify([]); }
+        closeWeightSheetModal();
+        return;
+    }
+    let avg = weights.reduce((a,b)=>a+b,0) / weights.length;
+    if (currentRow) {
+        currentRow.querySelector(".weight-input").value = avg.toFixed(4);
+        let hd = currentRow.querySelector('.weights-data');
+        if(!hd){ hd = document.createElement('input'); hd.type='hidden'; hd.className='weights-data'; hd.name='weights_data'; currentRow.appendChild(hd); }
+        hd.value = JSON.stringify(weights);
+        calculateRow(currentRow);
+
+        const prodId = currentRow.dataset.productionId;
+        if(prodId){
+            try{
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const resp = await fetch('/api/weightsheets/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ production_id: Number(prodId), rows: weights })
+                });
+                const data = await resp.json();
+                if(resp.ok && data.success){
+                    let hid = currentRow.querySelector('.weightsheet-id');
+                    if(!hid){ hid = document.createElement('input'); hid.type='hidden'; hid.className='weightsheet-id'; currentRow.appendChild(hid); }
+                    hid.value = data.sheet_id;
+                } else {
+                    console.error('API error', data);
+                }
+            } catch (e){
+                console.error('Failed to save weight sheet', e);
+            }
+        }
+    }
+    closeWeightSheetModal();
+}
+
+function addOptionToAllSelects(type, id, data, targetSelect = null) {
+    let selectClass = `${type}-input`;
+
+    if (type === 'height') selectClass = 'height-select';
+    if (type === 'width') selectClass = 'width-select';
+
+    const selects = document.querySelectorAll(`.${selectClass}`);
+
+    selects.forEach(select => {
+        let addNewOption = [...select.options].find(opt => opt.value === "__add_new__");
+
+        let exists = [...select.options].some(opt => opt.value == id);
+
+        if (!exists) {
+            const option = document.createElement("option");
+            option.value = id;
+
+            if (type === 'color') option.textContent = data.color;
+            if (type === 'thickness') option.textContent = data.thickness;
+            if (type === 'height') {
+                option.textContent = data.height;
+                option.dataset.unit = data.unit || 'inch';
+                option.dataset.original = data.original_value || data.height;
+            }
+            if (type === 'width') {
+                option.textContent = data.width;
+                option.dataset.unit = data.unit || 'inch';
+                option.dataset.original = data.original_value || data.width;
+            }
+            if (type === 'density') option.textContent = data.density;
+
+            if (addNewOption) {
+                select.insertBefore(option, addNewOption);
+            } else {
+                select.appendChild(option);
+            }
+        }
+    });
+
+    // ✅ ONLY select in triggered row
+    if (targetSelect) {
+        targetSelect.value = id;
+        targetSelect.dispatchEvent(new Event("change"));
+    }
+}
+</script>
+
+{% endblock %}

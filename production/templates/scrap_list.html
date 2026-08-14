@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% load filters %}
+{% load static %}
+{% block title %}Scrap List{% endblock %}
+
+{% block content %}
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-dark: #2c1f6f;
+    --primary-light: rgba(63, 46, 151, 0.05);
+    --accent-red: #E1251B;
+    --accent-red-light: #fdf2f2;
+    --text-main: #2d3748;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --white: #ffffff;
+}
+
+.scrap-page {
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 0 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-main);
+}
+
+/* Toolbar & Header Section */
+.scrap-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.scrap-title-area h2 {
+    margin: 0 0 4px 0;
+    color: var(--primary);
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.scrap-title-area p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Integrated Date Filter Form */
+.filter-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8fafc;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.filter-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.filter-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text-main);
+    background-color: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.filter-input:focus {
+    border-color: var(--primary);
+}
+
+.btn-filter {
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-filter:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-clear {
+    background-color: #64748b;
+    color: var(--white);
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.btn-clear:hover {
+    background-color: #475569;
+}
+
+/* Django Messages styling */
+.alert-messages {
+    margin-bottom: 20px;
+}
+
+.alert-item {
+    padding: 14px 18px;
+    background-color: var(--accent-red-light);
+    border-left: 4px solid var(--accent-red);
+    color: #b91c1c;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Main Table Container */
+.scrap-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(63, 46, 151, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.table-wrapper {
+    max-height: 680px;
+    overflow: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 20px;
+    border: none;
+}
+
+.table th.num-col,
+.table td.num-col {
+    text-align: right;
+}
+
+.table th.center-col,
+.table td.center-col {
+    text-align: center;
+}
+
+.table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    color: var(--text-main);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: var(--primary-light);
+}
+
+/* Badge & Highlights styles */
+.badge-id {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--primary-dark);
+    background: #eedffd63;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.badge-category {
+    background: #edf2f7;
+    color: #4a5568;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-shift {
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.qty-highlight {
+    color: var(--accent-red);
+    font-weight: 600;
+}
+
+/* Empty State */
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+</style>
+
+<div class="scrap-page">
+    <div class="scrap-toolbar">
+        <div class="scrap-title-area">
+            <h2>Scrap Report</h2>
+            <p>Overview of material waste, line metrics, and rejected quantities</p>
+        </div>
+        
+        <form method="GET" action="" class="filter-form">
+            <label for="date-select" class="filter-label">Filter by Date:</label>
+            <input 
+                type="date" 
+                id="date-select" 
+                name="date" 
+                class="filter-input" 
+                value="{{ selected_date }}"
+            >
+            <button type="submit" class="btn-filter">Filter</button>
+            <a href="{% url request.resolver_match.view_name %}" class="btn-clear">Clear Filter</a>
+            <a href="{% url 'export_scrap_report' %}?date={{ selected_date }}" class="btn-filter" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; background:#107C41;">
+                Download Excel
+            </a>
+        </form>
+    </div>
+
+    {% if messages %}
+        <div class="alert-messages">
+            {% for message in messages %}
+                <div class="alert-item">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="scrap-card">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ProductID</th>
+                        <th>Date</th>
+                        <th>Machine</th>
+                        <th>shift</th>
+                        <th class="center-col">Category</th>
+                        <th class="num-col">Line Setting</th>
+                        <th class="num-col">Side Patti</th>
+                        {% comment %} <th class="num-col">Excess/Less</th> {% endcomment %}
+                        <th class="num-col">Rejected Qty</th>
+                        <th class="num-col">Scrap Weight</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for production in productions %}
+                    <tr>
+                        <td><span class="badge-id">{{ production.product.id }}</span></td>
+                        <td>{{ production.created_at|date:"d M Y" }}</td>
+                        <td><strong>{{ production.machine.name }}</strong></td>
+                        <td><span class="badge-shift">{{ production.shift }}</span></td>
+                        <td class="center-col"><span class="badge-category">{{ production.category }}</span></td>
+                        <td class="num-col">{{ production.linesetting|format_decimal }}</td>
+                        <td class="num-col">{{ production.sidepatti|format_decimal }}</td>
+                        {% comment %} <td class="num-col">{{ production.excess|format_decimal }}</td>
+                         {% endcomment %}
+                        <td class="num-col qty-highlight">{{ production.rejected_quantity|format_decimal }}</td>
+                        <td class="num-col qty-highlight">{{ production.scrap_weight_total|format_decimal }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <p>No scrap records found matching the criteria.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

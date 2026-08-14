@@ -1,0 +1,51 @@
+{
+  "name": "Maica Groups",
+  "short_name": "Maica Groups",
+  "description": "Maica Groups Progressive Web Application",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "status_bar_color": "default",
+  "dir": "ltr",
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "/static/images/pwa/icon-192x192.png?v=4",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/pwa/icon-512x512.png?v=4",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard/",
+      "description": "Open Dashboard"
+    },
+    {
+      "name": "Production",
+      "url": "/production/",
+      "description": "Open Production"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/images/pwa/icon-512x512.png?v=4",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Maica Groups Dashboard"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "prefer_related_applications": false
+}

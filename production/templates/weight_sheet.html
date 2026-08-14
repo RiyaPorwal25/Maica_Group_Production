@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+{% load filters %}
+{% block title %}Weight Sheet{% endblock %}
+
+{% block content %}
+
+<style>
+:root{
+    --primary:#3F2E97;
+    --primary-dark:#2c1f6f;
+    --green:#27ae60;
+    --red:#e74c3c;
+}
+
+.container-box{
+    max-width:1450px;
+    margin:25px auto;
+}
+
+h2{
+    color:var(--primary);
+    margin-bottom:15px;
+}
+
+.top-bar{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:15px;
+    flex-wrap:wrap;
+}
+
+.btn{
+    padding:9px 16px;
+    border:none;
+    border-radius:7px;
+    cursor:pointer;
+    font-weight:600;
+    text-decoration:none;
+}
+
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-gray{background:#ddd;color:#000;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-red{background:var(--red);color:#fff;}
+
+.table-wrapper{
+    background:#fff;
+    border-radius:10px;
+    overflow:auto;
+    border:1px solid #ddd;
+}
+
+.table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.table th{
+    background:linear-gradient(90deg,var(--primary),var(--primary-dark));
+    color:#fff;
+    padding:12px;
+    position:sticky;
+    top:0;
+}
+
+.table td{
+    padding:10px;
+    border-bottom:1px solid #eee;
+    text-align:center;
+}
+
+.table tr:hover{
+    background:#f8f6ff;
+}
+
+.card{
+    background:#fff;
+    border-radius:12px;
+    padding:20px;
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+}
+
+.top-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:18px;
+}
+
+.top-grid input,
+.top-grid select{
+    padding:9px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    width:100%;
+}
+
+.summary-box{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:12px;
+    margin-bottom:18px;
+}
+
+.summary-item{
+    background:#f4f3ff;
+    padding:12px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:600;
+}
+
+.summary-item span{
+    display:block;
+    font-size:18px;
+    color:var(--primary);
+    margin-top:6px;
+}
+
+.rows-wrapper{
+    overflow:auto;
+    border:1px solid #ddd;
+    border-radius:10px;
+}
+
+.rows-header,
+.row-grid{
+    display:grid;
+    grid-template-columns:
+        60px
+        130px
+        130px
+        130px
+        130px
+        130px
+        130px
+        140px
+        140px
+        90px;
+    gap:8px;
+    align-items:center;
+    min-width:1250px;
+    padding:8px;
+}
+
+.rows-header{
+    background:#f5f5f5;
+    font-weight:700;
+}
+
+.row-grid{
+    border-top:1px solid #eee;
+}
+
+.row-grid input,
+.row-grid select{
+    width:100%;
+    padding:7px;
+}
+
+.std{
+    font-weight:700;
+    color:var(--primary);
+}
+
+.hidden{
+    display:none !important;
+}
+
+.action-row{
+    margin-top:15px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+</style>
+
+<div class="container-box">
+
+<h2>Weight Sheet</h2>
+
+{% if mode == "list" %}
+
+<div class="top-bar">
+    <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;">
+        <input type="hidden" name="mode" value="list">
+        <input type="date" name="date" value="{{ selected_date }}">
+        <button class="btn btn-primary">Filter</button>
+    </form>
+
+    <a href="?mode=create" class="btn btn-primary">+ Create</a>
+</div>
+
+<div class="table-wrapper">
+<table class="table">
+<thead>
+<tr>
+    <th>S.No</th>
+    <th>Date</th>
+    <th>Machine</th>
+    <th>Category</th>
+    <th>Shift</th>
+    <th>Total Count</th>
+    <th>Total Weight</th>
+    <th>Std Weight</th>
+    <th>Excess %</th>
+    <th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+{% for s in sheets %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td>{{ s.date }}</td>
+    <td>{{ s.machine }}</td>
+    <td>{{ s.category }}</td>
+    <td>{{ s.shift }}</td>
+    <td>{{ s.total_rows }}</td>
+    <td>{{ s.total_weight|format_decimal }}</td>
+    <td>{{ s.total_standard_weight|format_decimal }}</td>
+    <td>{{ s.total_excess_percent|format_decimal }}%</td>
+    <td>
+        <a href="{% url 'weight_sheet_detail' s.id %}?mode=view">View</a> |
+        <a href="{% url 'weight_sheet_detail' s.id %}?mode=edit">Edit</a>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+{% else %}
+
+<a href="?mode=list" class="btn btn-gray">← Back</a>
+
+<form method="post">
+{% csrf_token %}
+
+<div class="card">
+
+<div {% if mode == "view" %}style="pointer-events:none;opacity:.9;"{% endif %}>
+
+<div class="summary-box">
+    <div class="summary-item">Rows<span id="rowCount">0</span></div>
+    <div class="summary-item">Total Weight<span id="totalWeight">0</span></div>
+    <div class="summary-item">Average Weight<span id="totalWeight">0</span></div>
+    <div class="summary-item">Std Weight<span id="totalStdWeight">0</span></div>
+    <div class="summary-item">Excess<span id="totalExcess">0</span></div>
+    <div class="summary-item">Excess %<span id="totalExcessPercent">0</span></div>
+</div>
+
+<div class="top-grid">
+
+<input type="date" name="date"
+value="{{ sheet.date|date:'Y-m-d'|default:'' }}">
+
+<select name="machine" id="machineSelect" onchange="setCategory()" required>
+<option value="">Select Machine</option>
+
+{% for m in machines %}
+<option value="{{ m.id }}"
+data-category="{{ m.category }}"
+{% if sheet.machine.id == m.id %}selected{% endif %}>
+{{ m.name }}
+</option>
+{% endfor %}
+</select>
+
+<input type="text" id="categoryLabel" readonly placeholder="Auto Category">
+
+<select name="shift">
+<option value="Day" {% if sheet.shift == "Day" %}selected{% endif %}>Day</option>
+<option value="Night" {% if sheet.shift == "Night" %}selected{% endif %}>Night</option>
+</select>
+
+<input type="hidden" name="category" id="categoryField"
+value="{{ sheet.category|default:'' }}">
+
+</div>
+
+{{ formset.management_form }}
+
+<div class="rows-wrapper">
+
+<div class="rows-header">
+    <div>S.No</div>
+
+    <div class="door-col">Thickness</div>
+    <div class="door-col">Density</div>
+    <div>Color</div>
+    <div class="door-col">Height</div>
+    <div class="door-col">Width</div>
+
+    <div class="frame-col hidden">Size</div>
+    <div class="frame-col hidden">Length</div>
+
+    <div>Weight</div>
+    <div>Std Weight</div>
+<!-- add created at auto time  -->
+    <!-- <div>Created at</div> -->
+
+    {% if mode != "view" %}
+    <div>Action</div>
+    {% endif %}
+</div>
+
+{% for form in formset %}
+<div class="row-grid row">
+
+{{ form.id }}
+
+<div class="sn">{{ forloop.counter }}</div>
+
+<div class="door-col">{{ form.thickness }}</div>
+<div class="door-col">{{ form.density }}</div>
+
+<div>{{ form.color }}</div>
+
+<div class="door-col">{{ form.height }}</div>
+<div class="door-col">{{ form.width }}</div>
+
+<!-- <div class="frame-col hidden">{{ form.size }}</div> -->
+<div class="frame-col hidden">
+
+<select name="{{ form.size.html_name }}" id="{{ form.size.id_for_label }}" class="form-control">
+    <option value="">Select Size</option>
+
+    {% for s in sizes %}
+        <option value="{{ s.id }}"
+                data-std="{{ s.standard_weight }}"
+                {% if form.size.value|stringformat:"s" == s.id|stringformat:"s" %}
+                    selected
+                {% endif %}>
+            {{ s.size }}
+        </option>
+    {% endfor %}
+</select>
+
+</div>
+<div class="frame-col hidden">{{ form.length }}</div>
+
+<div>{{ form.weight_per_piece }}</div>
+
+<div class="std">0</div>
+
+
+{% if mode != "view" %}
+<div>
+<button type="button" class="btn btn-red" onclick="deleteRow(this)">X</button>
+<div style="display:none;">{{ form.DELETE }}</div>
+</div>
+{% endif %}
+
+</div>
+{% endfor %}
+
+</div>
+
+{% if mode != "view" %}
+<div class="action-row">
+    <button type="button" class="btn btn-primary" onclick="addRow()">+ Row</button>
+    <button type="button" class="btn btn-green" onclick="copyLastRow()">Copy Last</button>
+    <button type="submit" class="btn btn-primary">Save</button>
+</div>
+{% endif %}
+
+</div>
+</div>
+</form>
+
+{% endif %}
+
+</div>
+
+<script>
+function setCategory(){
+
+    let machine = document.getElementById("machineSelect");
+    let selected = machine.options[machine.selectedIndex];
+
+    let category = selected.getAttribute("data-category") || "";
+
+    document.getElementById("categoryField").value = category;
+    document.getElementById("categoryLabel").value = category;
+
+    toggleColumns(category);
+    update();
+}
+
+function toggleColumns(category){
+
+    let isDoor = category.toLowerCase() === "door";
+
+    document.querySelectorAll(".door-col").forEach(el=>{
+        el.classList.toggle("hidden", !isDoor);
+    });
+
+    document.querySelectorAll(".frame-col").forEach(el=>{
+        el.classList.toggle("hidden", isDoor);
+    });
+}
+
+function valFromSelect(el){
+    if(!el) return 0;
+    return parseFloat(el.selectedOptions[0]?.text || 0) || 0;
+}
+
+function calculateStd(row){
+
+    let category =
+    document.getElementById("categoryField").value.toLowerCase();
+
+    let std = 0;
+
+    if(category === "door"){
+
+        let density   = valFromSelect(row.querySelector("[name*='density']"));
+        let thickness = valFromSelect(row.querySelector("[name*='thickness']"));
+        let height    = valFromSelect(row.querySelector("[name*='height']"));
+        let width     = valFromSelect(row.querySelector("[name*='width']"));
+
+        let h = height * 0.0254;
+        let w = width * 0.0254;
+        let t = thickness / 1000;
+
+        std = density * h * w * t;
+
+    }else{
+
+        let sizeEl   = row.querySelector("[name*='size']");
+        let lengthEl = row.querySelector("[name*='length']");
+
+        let stdWt =
+            parseFloat(
+                sizeEl?.selectedOptions?.[0]?.getAttribute("data-std") || 0
+            ) || 0;
+
+        let length =
+            parseFloat(
+                lengthEl?.selectedOptions?.[0]?.text || 0
+            ) || 0;
+
+        std = stdWt * length;
+    }
+
+    row.querySelector(".std").innerText = std.toFixed(3);
+    return std;
+}
+
+function calculateAll(){
+
+    let totalW = 0;
+    let totalS = 0;
+    let rows = 0;
+
+    document.querySelectorAll(".row").forEach(r=>{
+
+        if(r.style.display === "none") return;
+
+        rows++;
+
+        let w = parseFloat(
+            r.querySelector("[name*='weight_per_piece']")?.value || 0
+        );
+
+        let s = parseFloat(r.querySelector(".std").innerText || 0);
+
+        totalW += w;
+        totalS += s;
+    });
+
+    let ex = totalW - totalS;
+    let p = totalS ? (ex/totalS)*100 : 0;
+
+    document.getElementById("rowCount").innerText = rows;
+    document.getElementById("totalWeight").innerText = totalW.toFixed(2);
+    document.getElementById("totalStdWeight").innerText = totalS.toFixed(2);
+    document.getElementById("totalExcess").innerText = ex.toFixed(2);
+    document.getElementById("totalExcessPercent").innerText = p.toFixed(2);
+}
+
+function updateSerial(){
+    let i=1;
+    document.querySelectorAll(".row").forEach(r=>{
+        if(r.style.display !== "none"){
+            r.querySelector(".sn").innerText = i++;
+        }
+    });
+}
+
+function update(){
+    document.querySelectorAll(".row").forEach(r=>calculateStd(r));
+    calculateAll();
+    updateSerial();
+}
+
+function addRow(){
+
+    let total = document.getElementById("id_form-TOTAL_FORMS");
+    let i = parseInt(total.value);
+
+    let first = document.querySelector(".row");
+    let clone = first.cloneNode(true);
+
+    clone.querySelectorAll("[name],[id]").forEach(el=>{
+
+        if(el.name)
+            el.name = el.name.replace(/form-\d+/g,"form-"+i);
+
+        if(el.id)
+            el.id = el.id.replace(/form-\d+/g,"form-"+i);
+
+        if(el.tagName==="INPUT") el.value="";
+        if(el.tagName==="SELECT") el.selectedIndex=0;
+    });
+
+    clone.querySelector(".std").innerText="0";
+
+    document.querySelector(".rows-wrapper").appendChild(clone);
+
+    total.value = i + 1;
+
+    setCategory();
+}
+
+function copyLastRow(){
+
+    let rows = document.querySelectorAll(".row");
+    let last = rows[rows.length - 1];
+
+    let total = document.getElementById("id_form-TOTAL_FORMS");
+    let i = parseInt(total.value);
+
+    let clone = last.cloneNode(true);
+
+    clone.querySelectorAll("[name],[id]").forEach(el => {
+        if(el.name) el.name = el.name.replace(/form-\d+/g, "form-" + i);
+        if(el.id) el.id = el.id.replace(/form-\d+/g, "form-" + i);
+    });
+
+    //  COPY VALUES PROPERLY
+    clone.querySelectorAll("input").forEach((el, idx) => {
+        let orig = last.querySelectorAll("input")[idx];
+        if(orig) el.value = orig.value;
+    });
+
+    clone.querySelectorAll("select").forEach((el, idx) => {
+        let orig = last.querySelectorAll("select")[idx];
+        if(orig) el.value = orig.value;
+    });
+
+    document.querySelector(".rows-wrapper").appendChild(clone);
+
+    total.value = i + 1;
+
+    update();
+}
+
+
+function deleteRow(btn){
+
+    let row = btn.closest(".row");
+    let del = row.querySelector("input[name*='DELETE']");
+
+    if(del){
+        del.checked = true;
+        row.style.display = "none";
+    }else{
+        row.remove();
+    }
+
+    update();
+}
+
+document.addEventListener("input", update);
+document.addEventListener("change", update);
+document.addEventListener("DOMContentLoaded", setCategory);
+</script>
+
+{% endblock %}

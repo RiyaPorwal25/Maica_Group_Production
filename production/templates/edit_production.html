@@ -1,0 +1,1588 @@
+{% extends "base.html" %}
+{% load filters %}
+{% block title %}Edit Frame Production{% endblock %}
+
+{% block content %}
+
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-dark: #2c1f6f;
+    --primary-light: rgba(63, 46, 151, 0.05);
+    --accent: #E1251B;
+    --accent-dark: #b91c1c;
+    --text-main: #2d3748;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --white: #ffffff;
+}
+
+.planning-page {
+    max-width: 1400px;
+    margin: 40px auto;
+    padding: 0 24px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-main);
+}
+
+.planning-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+
+.planning-header h1 {
+    color: var(--primary);
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.planning-card {
+    background: var(--white);
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(63, 46, 151, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    padding: 20px;
+}
+
+/* Modal Styles */
+.modal {
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.85);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal.active { display: flex !important; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background:white;
+    padding:30px;
+    border-radius:12px;
+    width:98%;
+    max-width:1400px;
+    max-height:90vh;
+    overflow-y:auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position:relative;
+    z-index:1001;
+}
+
+.close-btn {
+    float:right;
+    cursor:pointer;
+    font-size:24px;
+    font-weight:bold;
+    color:#666;
+    transition:color 0.2s ease;
+    margin-bottom:10px;
+    line-height:1;
+}
+
+.close-btn:hover { color:#000; }
+
+.modal-content h3 {
+    margin:0 0 20px 0;
+    color:var(--primary);
+    font-size:24px;
+    border-bottom:3px solid var(--primary);
+    padding-bottom:10px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px 20px;
+    background:#f7f7f7;
+    padding:15px;
+    border-radius:8px;
+    margin-bottom:15px;
+}
+
+.form-grid > label {
+    align-self: center;
+    font-weight: 600;
+    color:#333;
+}
+
+.form-grid > input, .form-grid > select {
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+}
+
+.form-grid > input:focus, .form-grid > select:focus {
+    outline:none;
+    border-color:var(--primary);
+    box-shadow:0 0 5px rgba(63, 46, 151, 0.2);
+}
+
+/* ================= CARD-BASED PRODUCTION ROWS ================= */
+.production-rows-header { display: none; }
+
+.production-rows-wrapper {
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+/* Read-only fields styling */
+.production-row .field-group.read-only-field select,
+.production-row .field-group.read-only-field input {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+    border-color: #cbd5e1;
+    color: #000000;
+}
+
+.production-row .field-group.read-only-field select:disabled,
+.production-row .field-group.read-only-field input:disabled {
+    background-color: #e2e8f0;
+    cursor: not-allowed;
+    color: #000000;
+    opacity: 1;
+}
+
+.production-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    min-width: 0;
+}
+.production-row:last-child { margin-bottom: 0; }
+
+.row-inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.field-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.field-group input, .field-group select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.length-container {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+.length-container select, .length-container input {
+    flex: 1;
+    min-width: 0;
+}
+
+.row-calculations-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border-color);
+    background: #f8fafc;
+    border-radius: 0 0 8px 8px;
+    margin: 0 -16px -16px -16px;
+    padding: 12px 16px;
+}
+
+.calc-badges {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.calc-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.calc-item span.calc-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.calc-item div, .calc-item input {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    background: transparent;
+    border: none;
+    padding: 0;
+    outline: none;
+}
+
+.calc-item input.std-weight {
+    width: 80px;
+    color: var(--primary);
+}
+
+.row-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+.icon-btn:hover { transform: translateY(-1px); }
+.btn-blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.btn-blue:hover { background: #dbeafe; }
+.btn-green { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.btn-green:hover { background: #a7f3d0; }
+.btn-red { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+.btn-red:hover { background: #fca5a5; }
+
+.summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding:15px;
+    background:#f7f7f7;
+    border-radius:8px;
+    margin-top:20px;
+}
+
+.summary-row > div {
+    font-weight: 600;
+    display:flex;
+    flex-direction:column;
+}
+
+.summary-row > div > label {
+    font-size:13px;
+    color:#666;
+    margin-bottom:6px;
+}
+
+.summary-row input {
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+}
+
+.summary-row input:focus {
+    outline:none;
+    border-color:var(--primary);
+    box-shadow:0 0 5px rgba(63, 46, 151, 0.2);
+}
+
+#weightSheetModal .modal-content, #pktSheetModal .modal-content {
+    width: min(600px, 95vw);
+    padding: 28px;
+    border-radius: 20px;
+}
+
+.ws-summary-grid, .pkt-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.ws-summary-card, .pkt-summary-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+    border: 2px solid var(--border-color);
+    padding: 16px;
+    border-radius: 14px;
+    text-align: center;
+}
+
+.ws-summary-card strong, .pkt-summary-card strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.ws-rows-list, .pkt-rows-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.ws-row, .pkt-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px;
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+}
+
+.pkt-row {
+    grid-template-columns: 36px 90px 1fr auto;
+}
+
+.ws-sno, .pkt-sno {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.ws-weight, .pkt-weight-input, .pkt-count-input {
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+    background: #f8fafc;
+    text-align: center;
+}
+
+.modal-content button[type="submit"] {
+    margin-top: 25px;
+    width:100%;
+    padding:12px;
+    background:var(--primary);
+    color:white;
+    border:none;
+    border-radius:6px;
+    font-weight:600;
+    font-size:16px;
+    cursor:pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-content button[type="submit"]:hover {
+    background:var(--primary-dark);
+}
+
+/* ================= MOBILE OPTIMIZATIONS ================= */
+@media (max-width: 768px) {
+    .planning-page {
+        margin: 15px auto;
+        padding: 0 10px;
+    }
+
+    .planning-header h1 {
+        font-size: 20px;
+    }
+
+    .planning-card {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .form-grid, .summary-row, .row-inputs-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid > label, .form-grid > input, .form-grid > select {
+        font-size: 14px;
+    }
+
+    .modal-content {
+        padding: 16px;
+        width: 96%;
+        max-height: 90vh;
+        border-radius: 14px;
+    }
+
+    .ws-summary-grid, .pkt-summary-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .ws-summary-card, .pkt-summary-card {
+        padding: 10px;
+    }
+
+    .ws-summary-card strong, .pkt-summary-card strong {
+        font-size: 18px;
+    }
+
+    .ws-row, .pkt-row {
+        grid-template-columns: 28px 1fr auto;
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .pkt-row {
+        grid-template-columns: 28px 60px 1fr auto;
+    }
+
+    .ws-sno, .pkt-sno {
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+    }
+}
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="planning-page">
+    <div class="planning-header">
+        <h1>Edit Frame Production</h1>
+    </div>
+
+    <div class="planning-card">
+        <!-- Modal Form -->
+        <div class="modal active" id="editModal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+                <h3>Edit Frame Production</h3>
+
+                <form id="editForm" method="POST" onsubmit="return handleFormSubmit(this)">
+                    {% csrf_token %}
+
+                    <input type="hidden" name="category" value="{{ current_category }}">
+                    <input type="hidden" name="form_submitted" id="form_submitted" value="0">
+
+                    <!-- Top form fields -->
+                    <div class="form-grid">
+                        <label for="prod-date">Date:</label>
+                        <input type="date" id="prod-date" name="date" required value="{{ today|date:'Y-m-d' }}" tabindex="1" data-nav-group="header-fields" data-nav-index="0">
+
+                        <label for="machine">Machine:</label>
+                        <select name="machine" id="machine" onchange="setCategory(); filterOperators()" required tabindex="2" data-nav-group="header-fields" data-nav-index="1">
+                            <option value="">Select Machine</option>
+                            {% for m in machines %}
+                            <option value="{{ m.id }}" data-category="{{ m.category }}" {% if production_batch.first.machine.id == m.id %}selected{% endif %}>{{ m.name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <label for="shift">Shift:</label>
+                        <select id="shift" name="shift" required tabindex="3" data-nav-group="header-fields" data-nav-index="2">
+                            <option value="">Select Shift</option>
+                            {% for sh in shifts %}
+                            <option value="{{ sh }}" {% if production_batch.first.shift == sh %}selected{% endif %}>{{ sh }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <label for="operator">Operator Name:</label>
+                        {% if user.role == "Admin" or user.role == "Manager" or user.role == "operator_manager" or user.role == "Operator_incharge" %}
+                            <select id="operator" name="operator" required tabindex="4" data-nav-group="header-fields" data-nav-index="3">
+                                <option value="">Select Operator</option>
+                                {% for op in operators %}
+                                <option value="{{ op.id }}" {% if production_batch.first.operator.id == op.id %}selected{% endif %}>{{ op.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <input type="text" value="{{ user.full_name }}" readonly tabindex="4" data-nav-group="header-fields" data-nav-index="3">
+                            <input type="hidden" name="operator" value="{{ user.id }}">
+                        {% endif %}
+
+                        <label for="category">Category:</label>
+                        <select id="category" name="category_display" required tabindex="5" data-nav-group="header-fields" data-nav-index="4">
+                            <option value="">Select Category</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Production rows -->
+                    <div class="production-rows-wrapper">
+                        <div id="production-rows-container">
+                            {% for prod in production_batch %}
+                            <div class="production-row" data-production-id="{{ prod.id }}">
+                                <!-- Top section: Editable inputs -->
+                                <div class="row-inputs-grid">
+                                    <div class="field-group">
+                                        <label>Size</label>
+                                        <select name="size" class="size-select" required tabindex="6" data-nav-group="row-fields" data-nav-col="0" onchange="handleAddNewOption(this, 'size')">
+                                            <option value="">Select Size</option>
+                                            {% for s in sizes %}
+                                            <option value="{{ s.id }}" data-size="{{ s.size }}" data-std-weight="{{ s.standard_weight }}" {% if prod.size and prod.size.id == s.id %}selected{% endif %}>{{ s.size }}</option>
+                                            {% endfor %}
+                                            <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="field-group">
+                                        <label>Color</label>
+                                        <select name="color" class="color-select" required tabindex="7" data-nav-group="row-fields" data-nav-col="1" onchange="handleAddNewOption(this, 'color')">
+                                            <option value="">Select Color</option>
+                                            {% for c in colors %}
+                                            <option value="{{ c.id }}" {% if prod.color and prod.color.id == c.id %}selected{% endif %}>{{ c.color }}</option>
+                                            {% endfor %}
+                                            <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="field-group">
+                                        <label>Length</label>
+                                        <div class="length-container">
+                                            <select name="length_unit" class="unit-select" style="max-width:70px;" tabindex="8" data-nav-group="row-fields" data-nav-col="2" onchange="toggleLengthField(this)">
+                                                <option value="ft" {% if not prod.length or prod.length.unit == 'ft' %}selected{% endif %}>Feet</option>
+                                                <option value="mm" {% if prod.length and prod.length.unit == 'mm' %}selected{% endif %}>MM</option>
+                                            </select>
+                                            <select name="length" class="length-select" tabindex="9" data-nav-group="row-fields" data-nav-col="3" required onchange="handleLengthChange(this); handleAddNewOption(this, 'length')">
+                                                <option value="">Select Length</option>
+                                                {% for l in lengths %}
+                                                <option value="{{ l.id }}" data-length="{{ l.length }}" data-unit="{{ l.unit }}" data-original="{{ l.original_value }}" {% if prod.length and prod.length.id == l.id %}selected{% endif %}>{{ l }}</option>
+                                                {% endfor %}
+                                                <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                                            </select>
+                                            <input type="number" name="length_mm" step="0.01" class="length-mm-input" placeholder="Enter MM" style="display:{% if prod.length and prod.length.unit == 'mm' %}''{% else %}none{% endif %};" value="{% if prod.length and prod.length.unit == 'mm' %}{{ prod.length.original_value }}{% endif %}">
+                                        </div>
+                                    </div>
+
+                                    <div class="field-group">
+                                        <label>Quantity</label>
+                                        <input type="number" step="1" name="quantity" class="quantity-input" tabindex="10" data-nav-group="row-fields" data-nav-col="4" placeholder="Qty" value="{{ prod.quantity }}" required>
+                                    </div>
+
+                                    <div class="field-group">
+                                        <label>Weight</label>
+                                        <input type="number" step="0.0001" name="weight" class="weight-input" tabindex="11" data-nav-group="row-fields" data-nav-col="5" placeholder="Weight" value="{{ prod.weight_per_piece }}" required>
+                                    </div>
+
+                                    <div class="field-group">
+                                        <label>Rejection</label>
+                                        <select name="rejection" class="rejection-input" tabindex="12" data-nav-group="row-fields" data-nav-col="6" onchange="handleRejection(this)">
+                                            <option value="ok" {% if prod.rejection_status != 'Scrap' %}selected{% endif %}>OK</option>
+                                            <option value="scrap" {% if prod.rejection_status == 'Scrap' %}selected{% endif %}>Scrap</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden fields for backend compatibility -->
+                                <input type="hidden" name="scrap_qty" class="scrap-qty-input" value="{{ prod.rejected_quantity|default:0 }}">
+                                <input type="hidden" name="stamp" value="">
+
+                                <!-- Bottom section: Read-only calculations & actions -->
+                                <div class="row-calculations-bar">
+                                    <div class="calc-badges">
+                                        <div class="calc-item">
+                                            <span class="calc-label">Total Wt</span>
+                                            <div class="total-weight-display" tabindex="14" data-nav-group="row-fields" data-nav-col="8">{{ prod.total_weight|format_decimal }}</div>
+                                        </div>
+                                        <div class="calc-item">
+                                            <span class="calc-label">Std Wt</span>
+                                            <input type="number" step="0.01" name="std_weight" class="std-weight" tabindex="15" data-nav-group="row-fields" data-nav-col="9" placeholder="Std Weight" value="{{ prod.standard_weight|format_decimal }}" readonly style="width: 80px;">
+                                        </div>
+                                        <div class="calc-item">
+                                            <span class="calc-label">Norm Wt</span>
+                                            <div class="total-norm-weight-display" tabindex="16" data-nav-group="row-fields" data-nav-col="10">{{ prod.total_norm_weight|format_decimal }}</div>
+                                        </div>
+                                        <div class="calc-item">
+                                            <span class="calc-label">Excess/Less</span>
+                                            <div class="excess-display" tabindex="17" data-nav-group="row-fields" data-nav-col="11">{{ prod.excess|format_decimal }}</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row-actions">
+                                        <button type="button" class="icon-btn btn-blue weight-sheet-btn" tabindex="13" data-nav-group="row-fields" data-nav-col="7" onclick="openWeightSheetModal(this)" title="Weight Sheet"><i class="fa-solid fa-scale-balanced"></i></button>
+                                        <button type="button" class="icon-btn btn-green pkt-sheet-btn" tabindex="14" data-nav-group="row-fields" data-nav-col="8" onclick="openPktSheetModal(this)" title="PKT Sheet"><i class="fa-solid fa-box"></i></button>
+                                        <button type="button" class="icon-btn btn-red remove-row-btn" tabindex="19" data-nav-group="row-fields" data-nav-col="13" onclick="removeProductionRow(this)" title="Remove Row"><i class="fa fa-trash"></i></button>
+                                    </div>
+
+                                    {% if prod.weight_sheet %}
+                                        <input type="hidden" class="weightsheet-id" value="{{ prod.weight_sheet.id }}">
+                                        <input type="hidden" class="weights-data" value="[{% for r in prod.weight_sheet.rows.all %}{{ r.weight_per_piece }}{% if not forloop.last %}, {% endif %}{% endfor %}]">
+                                    {% endif %}
+                                    <input type="hidden" name="row_plan_id" class="row-plan-id" value="">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Scrap and summary fields -->
+                    <div class="summary-row">
+                        <div>
+                            <label for="scrap">Scrap (line setting):</label>
+                            <input type="number" step="0.01" id="scrap" name="scrap" value="{% if production_batch %}{{ production_batch.first.linesetting }}{% endif %}" tabindex="19" data-nav-group="summary-fields" data-nav-index="0" oninput="recalculateAllRows()">
+                        </div>
+                        <div>
+                            <label>Actual Production:</label>
+                            <input type="text" id="actual_production" readonly value="0.00" tabindex="20" data-nav-group="summary-fields" data-nav-index="1">
+                        </div>
+                        <div>
+                            <label>Overall Production:</label>
+                            <input type="text" id="overall_production" readonly value="0.00" tabindex="21" data-nav-group="summary-fields" data-nav-index="2">
+                        </div>
+                        <div>
+                            <label>Remark:</label>
+                            <input type="text" name="remark" id="remark_input" placeholder="Enter remark..." tabindex="22" data-nav-group="summary-fields" data-nav-index="3" value="{% if production_batch %}{{ production_batch.first.remark }}{% endif %}">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="add-btn" tabindex="24" data-nav-group="modal-actions" data-nav-index="0" style="margin-top: 20px; width:100%; padding:12px; background:var(--primary); color:white; border:none; border-radius:6px; font-weight:600;">Update Production</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weight Sheet Modal -->
+<div class="modal" id="weightSheetModal" onclick="closeWeightSheetModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="closeWeightSheetModal()" style="float:right; cursor:pointer; font-size:24px;">&times;</span>
+        <h3>Weight Sheet</h3>
+        <div class="ws-summary-grid">
+            <div class="ws-summary-card"><span>Total</span><strong id="ws-total">0</strong></div>
+            <div class="ws-summary-card"><span>Average</span><strong id="ws-avg">0</strong></div>
+            <div class="ws-summary-card"><span>Count</span><strong id="ws-count">0</strong></div>
+        </div>
+        <div id="weightSheetRows" class="ws-rows-list"></div>
+        <button type="button" onclick="addWeightRow()" class="ws-add-btn" style="width:100%; padding:10px; border:1px dashed var(--primary); border-radius:10px; background:rgba(63,46,151,0.06); color:var(--primary); font-weight:700; cursor:pointer;"><i class="fa fa-plus"></i> Add Weight</button>
+        <button type="button" onclick="saveWeightSheet()" style="width:100%; margin-top:12px; padding:14px 16px; background:var(--primary); border:none; color:white; font-weight:bold; border-radius:10px;"><i class="fa fa-save"></i> Save</button>
+    </div>
+</div>
+
+<!-- PKT Sheet Modal -->
+<div class="modal" id="pktSheetModal" onclick="closePktSheetModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="closePktSheetModal()" style="float:right; cursor:pointer; font-size:24px;">&times;</span>
+        <h3>PKT Sheet</h3>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; padding:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px;">
+            <span style="font-weight:600; color:#166534;">Size:</span>
+            <strong id="pkt-locked-size" style="color:#15803d;">-</strong>
+        </div>
+        <div class="pkt-summary-grid">
+            <div class="pkt-summary-card"><span>Total Pieces</span><strong id="pkt-total">0</strong></div>
+            <div class="pkt-summary-card"><span>Avg Weight/pkt</span><strong id="pkt-avg">0.0000</strong></div>
+            <div class="pkt-summary-card"><span>Count</span><strong id="pkt-count">0</strong></div>
+        </div>
+        <div id="pktSheetRows" class="pkt-rows-list"></div>
+        <button type="button" onclick="addPktRow(currentPktDefaultCount)" class="pkt-add-btn" style="width:100%; padding:10px; border:1px dashed var(--primary); border-radius:10px; background:rgba(63,46,151,0.06); color:var(--primary); font-weight:700; cursor:pointer;"><i class="fa fa-plus"></i> Add Pkt</button>
+        <button type="button" onclick="savePktSheet()" style="width:100%; margin-top:12px; padding:14px 16px; background:var(--primary); border:none; color:white; font-weight:bold; border-radius:10px;"><i class="fa fa-save"></i> Save</button>
+    </div>
+</div>
+
+<!-- Modal for adding new values -->
+<div class="modal" id="addNewSizeModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" onclick="closeAddNewModal('size')">&times;</span>
+        <h3>Add New Size</h3>
+        <form onsubmit="submitAddNewValue(event, 'size')">
+            {% csrf_token %}
+            <input type="text" id="new-size-value" placeholder="Size" required>
+            <input type="number" id="new-size-weight" step="0.01" placeholder="Standard Weight" required>
+            <button type="submit">Add Size</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="addNewColorModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" onclick="closeAddNewModal('color')">&times;</span>
+        <h3>Add New Color</h3>
+        <form onsubmit="submitAddNewValue(event, 'color')">
+            {% csrf_token %}
+            <input type="text" id="new-color-value" placeholder="Color" required>
+            <button type="submit">Add Color</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="addNewLengthModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <span class="close-btn" onclick="closeAddNewModal('length')">&times;</span>
+        <h3>Add New Length</h3>
+        <form onsubmit="submitAddNewValue(event, 'length')">
+            {% csrf_token %}
+            <input type="number" id="new-length-value" step="0.01" placeholder="Length" required>
+            <select id="new-length-unit">
+                <option value="ft">Feet</option>
+                <option value="mm">MM</option>
+            </select>
+            <button type="submit">Add Length</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// ========== KEYBOARD NAVIGATION SYSTEM ==========
+document.addEventListener('keydown', function(e) {
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        return;
+    }
+
+    const active = document.activeElement;
+    if (!active) return;
+
+    const navGroup = active.dataset.navGroup;
+    if (!navGroup) return;
+
+    const tag = active.tagName.toLowerCase();
+    const isInput = tag === 'input' || tag === 'select' || tag === 'textarea';
+
+    if (isInput) {
+        if (tag === 'select') {
+            return;
+        }
+        if (active.type === 'text') {
+            const isAtStart = active.selectionStart === 0;
+            const isAtEnd = active.selectionStart === active.value.length;
+            if (e.key === 'ArrowLeft' && !isAtStart) return;
+            if (e.key === 'ArrowRight' && !isAtEnd) return;
+        }
+    }
+
+    e.preventDefault();
+    handleArrowNavigation(e.key);
+});
+
+function handleArrowNavigation(key) {
+    const active = document.activeElement;
+    if (!active) return;
+
+    const navGroup = active.dataset.navGroup;
+    if (!navGroup) return;
+
+    // Header fields navigation
+    if (navGroup === 'header-fields') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const fields = Array.from(document.querySelectorAll('[data-nav-group="header-fields"]'));
+
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+            const nextIndex = (currentIndex + 1) % fields.length;
+            fields[nextIndex].focus();
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+            const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
+            fields[prevIndex].focus();
+        } else if (key === 'ArrowDown' && currentIndex === fields.length - 1) {
+            const firstRowField = document.querySelector('[data-nav-group="row-fields"]');
+            if (firstRowField) firstRowField.focus();
+        }
+        return;
+    }
+
+    // Row fields navigation
+    if (navGroup === 'row-fields') {
+        const currentCol = parseInt(active.dataset.navCol);
+        const currentRow = active.closest('.production-row');
+        const allRows = Array.from(document.querySelectorAll('.production-row'));
+        const currentRowIndex = allRows.indexOf(currentRow);
+
+        if (key === 'ArrowRight') {
+            const nextCol = currentCol + 1;
+            const nextField = document.querySelector(`[data-nav-col="${nextCol}"][data-nav-group="row-fields"]`);
+            if (nextField) nextField.focus();
+        } else if (key === 'ArrowLeft') {
+            const prevCol = currentCol - 1;
+            const prevField = document.querySelector(`[data-nav-col="${prevCol}"][data-nav-group="row-fields"]`);
+            if (prevField) prevField.focus();
+        } else if (key === 'ArrowDown') {
+            const nextRowIndex = currentRowIndex + 1;
+            if (nextRowIndex < allRows.length) {
+                const nextField = allRows[nextRowIndex].querySelector(`[data-nav-col="${currentCol}"][data-nav-group="row-fields"]`);
+                if (nextField) nextField.focus();
+            }
+        } else if (key === 'ArrowUp') {
+            const prevRowIndex = currentRowIndex - 1;
+            if (prevRowIndex >= 0) {
+                const prevField = allRows[prevRowIndex].querySelector(`[data-nav-col="${currentCol}"][data-nav-group="row-fields"]`);
+                if (prevField) prevField.focus();
+            } else {
+                const headerFields = Array.from(document.querySelectorAll('[data-nav-group="header-fields"]'));
+                if (headerFields.length > 0) {
+                    headerFields[headerFields.length - 1].focus();
+                }
+            }
+        }
+        return;
+    }
+
+    // Summary fields navigation
+    if (navGroup === 'summary-fields') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const fields = Array.from(document.querySelectorAll('[data-nav-group="summary-fields"]'));
+
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+            const nextIndex = (currentIndex + 1) % fields.length;
+            fields[nextIndex].focus();
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+            const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
+            fields[prevIndex].focus();
+        } else if (key === 'ArrowDown' && currentIndex === fields.length - 1) {
+            const submitBtn = document.querySelector('[data-nav-group="modal-actions"]');
+            if (submitBtn) submitBtn.focus();
+        }
+        return;
+    }
+
+    // Modal actions navigation
+    if (navGroup === 'modal-actions') {
+        const currentIndex = parseInt(active.dataset.navIndex);
+        const buttons = Array.from(document.querySelectorAll('[data-nav-group="modal-actions"]'));
+
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+            const nextIndex = (currentIndex + 1) % buttons.length;
+            buttons[nextIndex].focus();
+        } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+            const prevIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+            buttons[prevIndex].focus();
+        } else if (key === 'ArrowUp') {
+            const summaryFields = Array.from(document.querySelectorAll('[data-nav-group="summary-fields"]'));
+            if (summaryFields.length > 0) {
+                summaryFields[summaryFields.length - 1].focus();
+            }
+        }
+        return;
+    }
+}
+
+// ========== MODAL CONTROLS ==========
+function closeModal(){
+    window.location.href = '/production/?category={{ current_category }}';
+}
+
+function setCategory(){
+    const machineSelect = document.getElementById("machine");
+    const selected = machineSelect.options[machineSelect.selectedIndex];
+    const categoryValue = selected?.dataset?.category || "";
+    const categorySelect = document.getElementById("category");
+    if(categoryValue){
+        categorySelect.value = categoryValue;
+    }
+}
+
+// Filter operators based on selected machine
+async function filterOperators() {
+    const machineSelect = document.getElementById("machine");
+    const operatorSelect = document.getElementById("operator");
+    const machineId = machineSelect.value;
+
+    if (!machineId) return;
+
+    const selectedOperatorId = operatorSelect ? (operatorSelect.value || operatorSelect.dataset.currentOperator) : null;
+
+    try {
+        const response = await fetch(`/api/operators-by-machine/?machine_id=${machineId}`);
+
+        if (!response.ok) throw new Error("API failed");
+
+        const data = await response.json();
+
+        if (!operatorSelect) return;
+
+        operatorSelect.innerHTML = '<option value="">Select Operator</option>';
+
+        if (data.operators && data.operators.length > 0) {
+            data.operators.forEach(op => {
+                const option = document.createElement('option');
+                option.value = op.operator__id || op.id;
+                option.textContent = op.operator__username || op.full_name || op.username;
+                operatorSelect.appendChild(option);
+            });
+        } else {
+            operatorSelect.innerHTML = `
+                <option value="">Select Operator</option>
+                {% for op in operators %}
+                <option value="{{ op.id }}">{{ op.full_name }}</option>
+                {% endfor %}
+            `;
+        }
+
+        if (selectedOperatorId) {
+            operatorSelect.value = selectedOperatorId;
+        }
+
+    } catch (error) {
+        console.error('Error fetching operators:', error);
+    }
+}
+
+// ========== FORM SUBMIT HANDLER ==========
+function handleFormSubmit(form) {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const formSubhidden = document.getElementById("form_submitted");
+
+    if (formSubhidden && formSubhidden.value === "1") {
+        alert("Production is already being processed. Please wait...");
+        submitBtn.disabled = true;
+        return false;
+    }
+
+    if (formSubhidden) formSubhidden.value = "1";
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Updating...';
+
+    return true;
+}
+
+// ========== PRODUCTION ROW OPERATIONS ==========
+function addProductionRow(){
+    const container = document.getElementById("production-rows-container");
+    const newRow = document.createElement("div");
+    newRow.classList.add("production-row");
+
+    newRow.innerHTML = `
+        <div class="row-inputs-grid">
+            <div class="field-group">
+                <label>Size</label>
+                <select name="size" class="size-select" required onchange="handleAddNewOption(this, 'size')">
+                    <option value="">Select Size</option>
+                    {% for s in sizes %}
+                    <option value="{{ s.id }}" data-size="{{ s.size }}" data-std-weight="{{ s.standard_weight }}">{{ s.size }}</option>
+                    {% endfor %}
+                    <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label>Color</label>
+                <select name="color" class="color-select" required onchange="handleAddNewOption(this, 'color')">
+                    <option value="">Select Color</option>
+                    {% for c in colors %}
+                    <option value="{{ c.id }}">{{ c.color }}</option>
+                    {% endfor %}
+                    <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label>Length</label>
+                <div class="length-container">
+                    <select name="length_unit" class="unit-select" style="max-width:70px;" onchange="toggleLengthField(this)">
+                        <option value="ft">Feet</option>
+                        <option value="mm">MM</option>
+                    </select>
+                    <select name="length" class="length-select" required onchange="handleLengthChange(this); handleAddNewOption(this, 'length')">
+                        <option value="">Select Length</option>
+                        {% for l in lengths %}
+                        <option value="{{ l.id }}" data-length="{{ l.length }}" data-unit="{{ l.unit }}" data-original="{{ l.original_value }}">{{ l }}</option>
+                        {% endfor %}
+                        <option value="__add_new__" style="font-weight: bold; color: #27ae60;">➕ Add New</option>
+                    </select>
+                    <input type="number" name="length_mm" step="0.01" class="length-mm-input" placeholder="Enter MM" style="display:none;">
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Quantity</label>
+                <input type="number" step="1" name="quantity" class="quantity-input" placeholder="Qty" required>
+            </div>
+
+            <div class="field-group">
+                <label>Weight</label>
+                <input type="number" step="0.0001" name="weight" class="weight-input" placeholder="Weight" required>
+            </div>
+
+            <div class="field-group">
+                <label>Rejection</label>
+                <select name="rejection" class="rejection-input" onchange="handleRejection(this)">
+                    <option value="ok">OK</option>
+                    <option value="scrap">Scrap</option>
+                </select>
+            </div>
+        </div>
+
+        <input type="hidden" name="scrap_qty" class="scrap-qty-input" value="0">
+        <input type="hidden" name="stamp" value="">
+
+        <div class="row-calculations-bar">
+            <div class="calc-badges">
+                <div class="calc-item">
+                    <span class="calc-label">Total Wt</span>
+                    <div class="total-weight-display">0.00</div>
+                </div>
+                <div class="calc-item">
+                    <span class="calc-label">Std Wt</span>
+                    <input type="number" step="0.01" name="std_weight" class="std-weight" placeholder="Std Weight" readonly style="width: 80px;">
+                </div>
+                <div class="calc-item">
+                    <span class="calc-label">Norm Wt</span>
+                    <div class="total-norm-weight-display">0.00</div>
+                </div>
+                <div class="calc-item">
+                    <span class="calc-label">Excess/Less</span>
+                    <div class="excess-display">0.00</div>
+                </div>
+            </div>
+
+            <div class="row-actions">
+                <button type="button" class="icon-btn btn-blue weight-sheet-btn" onclick="openWeightSheetModal(this)" title="Weight Sheet"><i class="fa-solid fa-scale-balanced"></i></button>
+                <button type="button" class="icon-btn btn-green pkt-sheet-btn" onclick="openPktSheetModal(this)" title="PKT Sheet"><i class="fa-solid fa-box"></i></button>
+                <button type="button" class="icon-btn btn-red remove-row-btn" onclick="removeProductionRow(this)" title="Remove Row"><i class="fa fa-trash"></i></button>
+            </div>
+            <input type="hidden" name="row_plan_id" class="row-plan-id" value="">
+        </div>
+    `;
+
+    container.appendChild(newRow);
+    attachRowListeners(newRow);
+}
+
+// Remove a production row
+function removeProductionRow(button){
+    const row = button.closest('.production-row');
+    row.remove();
+    recalculateAllRows();
+}
+
+function attachRowListeners(row){
+    const szSel = row.querySelector(".size-select");
+    szSel.addEventListener("change", () => {
+        let std = Number(szSel.options[szSel.selectedIndex]?.dataset.stdWeight || 0);
+        row.querySelector(".std-weight").value = std.toFixed(2);
+        calculateRow(row);
+    });
+    row.querySelectorAll("input, select").forEach(el => {
+        if(el !== szSel){
+            el.addEventListener("input", () => calculateRow(row));
+            el.addEventListener("change", () => calculateRow(row));
+        }
+    });
+}
+
+// ========== REJECTION HANDLING ==========
+function handleRejection(select) {
+    const row = select.closest(".production-row");
+    const qtyInput = row.querySelector(".quantity-input");
+    const scrapQtyInput = row.querySelector(".scrap-qty-input");
+
+    if (!qtyInput.dataset.original) {
+        qtyInput.dataset.original = qtyInput.value;
+    }
+
+    let originalQty = Number(qtyInput.dataset.original || 0);
+
+    if (select.value === "ok") {
+        qtyInput.value = originalQty;
+        scrapQtyInput.value = 0;
+    }
+
+    if (select.value === "scrap") {
+        let qty = prompt("Enter Scrap Quantity:");
+        qty = Number(qty || 0);
+
+        if (qty > originalQty) {
+            alert("Cannot exceed quantity: " + originalQty);
+            select.value = "ok";
+            return;
+        }
+
+        if (qty <= 0) {
+            alert("Enter valid quantity");
+            select.value = "ok";
+            return;
+        }
+
+        qtyInput.value = originalQty - qty;
+        scrapQtyInput.value = qty;
+    }
+
+    calculateRow(row);
+}
+
+// ========== CALCULATIONS ==========
+function calculateRow(row){
+    let qty = Number(row.querySelector(".quantity-input").value || 0);
+    let wt = Number(row.querySelector(".weight-input").value || 0);
+    let std = Number(row.querySelector(".std-weight").value || 0);
+    let unit = row.querySelector(".unit-select")?.value;
+    let len = 0;
+
+    if (unit === "mm") {
+        len = Number(row.querySelector(".length-mm-input")?.value || 0) / 304.8;
+    } else {
+        len = Number(row.querySelector(".length-select")?.options[row.querySelector(".length-select").selectedIndex]?.dataset.length || 0);
+    }
+
+    let totW = qty * wt;
+    let totN = qty * len * std;
+
+    row.querySelector(".total-weight-display").innerText = totW.toFixed(2);
+    row.querySelector(".total-norm-weight-display").innerText = totN.toFixed(2);
+    row.querySelector(".excess-display").innerText = (totW - totN).toFixed(2);
+    recalculateSummary();
+}
+
+function recalculateAllRows(){
+    document.querySelectorAll(".production-row").forEach(calculateRow);
+}
+
+function recalculateSummary(){
+    let actual = 0;
+    document.querySelectorAll(".production-row").forEach(r => {
+        actual += Number(r.querySelector(".total-weight-display").innerText) || 0;
+    });
+    let scrap = Number(document.getElementById("scrap").value || 0);
+    document.getElementById("actual_production").value = actual.toFixed(2);
+    document.getElementById("overall_production").value = (actual + scrap).toFixed(2);
+}
+
+// ========== LENGTH FIELD HANDLING ==========
+function handleLengthChange(selectElement) {
+    const container = selectElement.closest('.length-container');
+    const unitSelect = container.querySelector('.unit-select');
+    if (selectElement.value) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const unit = selectedOption.dataset.unit;
+        const original = selectedOption.dataset.original;
+        if (unit === 'mm') {
+            unitSelect.value = 'mm';
+            const mmInput = container.querySelector('.length-mm-input');
+            mmInput.value = original || '';
+            mmInput.style.display = '';
+            selectElement.style.display = 'none';
+        } else {
+            unitSelect.value = 'ft';
+        }
+    }
+    calculateRow(selectElement.closest('.production-row'));
+}
+
+// Toggle length field display
+function toggleLengthField(selectElement) {
+    const container = selectElement.closest('.length-container');
+    const lengthSelect = container.querySelector('.length-select');
+    const lengthMmInput = container.querySelector('.length-mm-input');
+
+    if (selectElement.value === 'mm') {
+        lengthSelect.style.display = 'none';
+        lengthMmInput.style.display = '';
+        lengthMmInput.focus();
+    } else {
+        lengthSelect.style.display = '';
+        lengthMmInput.style.display = 'none';
+    }
+}
+
+// ========== ADD NEW OPTIONS ==========
+function handleAddNewOption(selectElement, type) {
+    if (selectElement.value === '__add_new__') {
+        openAddNewModal(type);
+        selectElement.value = '';
+    }
+}
+
+function openAddNewModal(type) {
+    const modalId = `addNew${type.charAt(0).toUpperCase() + type.slice(1)}Modal`;
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeAddNewModal(type) {
+    const modalId = `addNew${type.charAt(0).toUpperCase() + type.slice(1)}Modal`;
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function submitAddNewValue(event, type) {
+    event.preventDefault();
+
+    let url, formData;
+
+    if (type === 'size') {
+        const size = document.getElementById('new-size-value').value.trim();
+        const weight = document.getElementById('new-size-weight').value || 0;
+        formData = new FormData();
+        formData.append('size', size);
+        formData.append('standard_weight', weight);
+        url = '{% url "api_create_size" %}';
+    } else if (type === 'color') {
+        const color = document.getElementById('new-color-value').value.trim();
+        formData = new FormData();
+        formData.append('color', color);
+        url = '{% url "api_create_color" %}';
+    } else if (type === 'length') {
+        const value = parseFloat(document.getElementById('new-length-value').value);
+        const unit = document.getElementById('new-length-unit').value;
+
+        if (isNaN(value) || value <= 0) {
+            alert("Enter valid length");
+            return;
+        }
+
+        let lengthInFeet = value;
+        if (unit === 'mm') {
+            lengthInFeet = value / 304.8;
+        }
+
+        formData = new FormData();
+        formData.append('length', lengthInFeet);
+        formData.append('unit', unit);
+        formData.append('original_value', value);
+        url = '{% url "api_create_length" %}';
+    }
+
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+
+// ========== WEIGHT SHEET MODAL ==========
+let currentRow = null;
+
+async function openWeightSheetModal(btn){
+    currentRow = btn.closest(".production-row");
+    document.getElementById("weightSheetModal").classList.add("active");
+    document.getElementById("weightSheetRows").innerHTML = "";
+
+    // Prefer server-side saved sheet if available
+    let sheetIdEl = currentRow.querySelector('.weightsheet-id');
+    let loaded = false;
+    if(sheetIdEl && sheetIdEl.value){
+        try{
+            const resp = await fetch('/api/weightsheets/' + encodeURIComponent(sheetIdEl.value) + '/');
+            if(resp.ok){
+                const data = await resp.json();
+                if(data.rows && data.rows.length){
+                    data.rows.forEach(r => addWeightRow(r.weight_per_piece));
+                    loaded = true;
+                }
+            }
+        } catch(e){ console.error('Failed to load weight sheet', e); }
+    }
+
+    if(!loaded){
+        let hd = currentRow.querySelector('.weights-data');
+        let existing = [];
+        if(hd && hd.value){
+            try{ existing = JSON.parse(hd.value); }catch(e){ existing = hd.value.split(',').map(s=>parseFloat(s)||0); }
+        }
+        if(existing && existing.length){
+            existing.forEach(v => addWeightRow(v));
+        } else {
+            let existingWeight = Number(currentRow.querySelector(".weight-input").value || 0);
+            if (existingWeight > 0) {
+                addWeightRow(existingWeight);
+            } else {
+                addWeightRow();
+            }
+        }
+    }
+
+    calculateWS();
+}
+
+function addWeightRow(val=""){
+    const container = document.getElementById("weightSheetRows");
+    const div = document.createElement("div");
+    div.className = "ws-row";
+    div.innerHTML = `<span class="ws-sno"></span><input type="number" step="0.0001" class="ws-weight" oninput="calculateWS()" value="${val}"><button type="button" onclick="this.parentElement.remove(); calculateWS();" style="background:var(--accent); color:white; border:none; padding:6px 10px; border-radius:6px;"><i class='fa fa-trash'></i></button>`;
+    container.appendChild(div);
+    calculateWS();
+}
+
+function calculateWS(){
+    let inputs = document.querySelectorAll(".ws-weight"), total = 0, count = 0;
+    inputs.forEach(i => { let v = parseFloat(i.value); if(!isNaN(v)){ total += v; count++; } });
+    document.getElementById("ws-total").innerText = total.toFixed(3);
+    document.getElementById("ws-avg").innerText = count ? (total / count).toFixed(3) : "0.000";
+    document.getElementById("ws-count").innerText = count;
+
+    document.querySelectorAll('#weightSheetRows .ws-row').forEach((r,idx)=> { r.querySelector('.ws-sno').innerText = (idx+1) + '.'; });
+}
+
+async function saveWeightSheet(){
+    let inputs = document.querySelectorAll(".ws-weight"), valid = [];
+    inputs.forEach(i => { if(parseFloat(i.value)) valid.push(parseFloat(i.value)); });
+
+    if(currentRow && valid.length){
+        let currentQty = Number(currentRow.querySelector(".quantity-input").value || 0);
+        let currentWt = Number(currentRow.querySelector(".weight-input").value || 0);
+        let sumNew = valid.reduce((a,b)=>a+b,0);
+        let newQty = currentQty + valid.length;
+        let newWt = ((currentQty * currentWt) + sumNew) / newQty;
+        currentRow.querySelector(".quantity-input").value = newQty;
+        currentRow.querySelector(".weight-input").value = newWt.toFixed(4);
+        calculateRow(currentRow);
+
+        // persist weights
+        let hd = currentRow.querySelector('.weights-data');
+        if(!hd){ hd = document.createElement('input'); hd.type='hidden'; hd.className='weights-data'; hd.name='weights_data'; currentRow.appendChild(hd); }
+        hd.value = JSON.stringify(valid);
+
+        // If this row is tied to an existing Production, POST to API to persist
+        const prodId = currentRow.dataset.productionId;
+        if(prodId){
+            try{
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const resp = await fetch('/api/weightsheets/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ production_id: Number(prodId), rows: valid })
+                });
+                const data = await resp.json();
+                if(resp.ok && data.success){
+                    let hid = currentRow.querySelector('.weightsheet-id');
+                    if(!hid){ hid = document.createElement('input'); hid.type='hidden'; hid.className='weightsheet-id'; currentRow.appendChild(hid); }
+                    hid.value = data.sheet_id;
+                } else {
+                    console.error('API error', data);
+                }
+            } catch (e){
+                console.error('Failed to save weight sheet', e);
+            }
+        }
+    } else if(currentRow && valid.length === 0) {
+        let hd = currentRow.querySelector('.weights-data');
+        if(hd) hd.value = JSON.stringify([]);
+    }
+
+    closeWeightSheetModal();
+}
+
+function closeWeightSheetModal(){
+    document.getElementById("weightSheetModal").classList.remove("active");
+}
+
+// ========== PKT SHEET MODAL ==========
+const PKT_SIZE_MAP = {
+    "60x30": 12,
+    "65x40": 8,
+    "75x50": 6,
+    "90x45": 6,
+    "100x50": 4,
+    "100x65": 4,
+    "125x65(.S.P)": 3,
+    "125x65(.D.P)": 3,
+    "150x65(.S.P)": 2,
+    "150x65(.D.P)": 2
+};
+
+let currentPktRow = null;
+let currentPktSize = "";
+let currentPktDefaultCount = 0;
+
+function openPktSheetModal(btn) {
+    currentPktRow = btn.closest(".production-row");
+    document.getElementById("pktSheetModal").classList.add("active");
+    document.getElementById("pktSheetRows").innerHTML = "";
+
+    const sizeSelect = currentPktRow.querySelector(".size-select");
+    if (sizeSelect && sizeSelect.value) {
+        let selectedSizeText = sizeSelect.options[sizeSelect.selectedIndex]?.textContent?.trim() || "";
+        currentPktSize = selectedSizeText;
+
+        let pktCount = PKT_SIZE_MAP[selectedSizeText] || 0;
+        if (pktCount === 0) {
+            let normalizedSize = selectedSizeText.replace(/\s/g, "");
+            pktCount = PKT_SIZE_MAP[normalizedSize] || 0;
+        }
+        if (pktCount === 0) {
+            if (selectedSizeText.includes("125x65")) pktCount = 3;
+            else if (selectedSizeText.includes("150x65")) pktCount = 2;
+        }
+
+        currentPktDefaultCount = pktCount;
+        document.getElementById("pkt-locked-size").innerText = currentPktSize;
+
+        let existingQty = Number(currentPktRow.querySelector(".quantity-input").value || 0);
+        let existingWt = Number(currentPktRow.querySelector(".weight-input").value || 0);
+
+        if (existingQty > 0 && existingWt > 0) {
+            addPktRow(existingQty);
+            let rows = document.querySelectorAll('.pkt-row');
+            if (rows.length > 0) {
+                rows[0].querySelector('.pkt-weight-input').value = existingWt.toFixed(4);
+            }
+        } else {
+            addPktRow(currentPktDefaultCount);
+        }
+    }
+}
+
+function addPktRow(pktCount=0) {
+    const container = document.getElementById("pktSheetRows");
+    const div = document.createElement("div");
+    div.className = "pkt-row";
+
+    div.innerHTML = `
+        <input type="number" step="1" class="pkt-count-input" value="${pktCount}" placeholder="Qty" style="width:100%;" readonly>
+        <input type="number" step="0.0001" class="pkt-weight-input" oninput="calculatePKT()" value="" placeholder="Weight" style="width:100%;">
+        <button type="button" onclick="this.parentElement.remove(); calculatePKT();" style="background:var(--accent); color:white; border:none; padding:6px 10px; border-radius:6px;"><i class='fa fa-trash'></i></button>
+    `;
+    container.appendChild(div);
+    calculatePKT();
+}
+
+function calculatePKT() {
+    let rows = document.querySelectorAll('.pkt-row');
+    let totalPieces = 0;
+    let totalWeight = 0;
+    let validCount = 0;
+
+    rows.forEach((row, idx) => {
+        const pktInput = row.querySelector('.pkt-count-input');
+        const wtInput = row.querySelector('.pkt-weight-input');
+        const pktVal = parseFloat(pktInput.value) || 0;
+        const wtVal = parseFloat(wtInput.value) || 0;
+
+        if (pktVal > 0) {
+            totalPieces += pktVal;
+            validCount++;
+        }
+        if (wtVal > 0) {
+            totalWeight += wtVal;
+        }
+
+        row.querySelector('.pkt-sno')?.remove();
+        const sno = document.createElement('span');
+        sno.className = 'pkt-sno';
+        sno.innerText = (idx + 1) + '.';
+        row.insertBefore(sno, row.firstChild);
+    });
+
+    const avgWeight = validCount > 0 ? (totalWeight / validCount) : 0;
+    document.getElementById("pkt-total").innerText = totalPieces.toFixed(0);
+    document.getElementById("pkt-avg").innerText = avgWeight.toFixed(4);
+    document.getElementById("pkt-count").innerText = validCount;
+}
+
+function savePktSheet() {
+    let rows = document.querySelectorAll('.pkt-row');
+    let totalPieces = 0;
+    let totalWeight = 0;
+    let validPktCount = 0;
+
+    rows.forEach(row => {
+        const pktInput = row.querySelector('.pkt-count-input');
+        const wtInput = row.querySelector('.pkt-weight-input');
+        const pktVal = parseFloat(pktInput.value) || 0;
+        const wtVal = parseFloat(wtInput.value) || 0;
+
+        if (pktVal > 0) {
+            totalPieces += pktVal;
+            validPktCount++;
+        }
+        if (wtVal > 0) {
+            totalWeight += wtVal;
+        }
+    });
+
+    if (currentPktRow && validPktCount > 0) {
+        let currentQty = Number(currentPktRow.querySelector(".quantity-input").value || 0);
+        let currentWt = Number(currentPktRow.querySelector(".weight-input").value || 0);
+        let newQty = currentQty + totalPieces;
+        let newWt = ((currentQty * currentWt) + totalWeight) / newQty;
+        currentPktRow.querySelector(".quantity-input").value = newQty;
+        currentPktRow.querySelector(".weight-input").value = newWt.toFixed(4);
+        calculateRow(currentPktRow);
+    }
+    closePktSheetModal();
+}
+
+function closePktSheetModal(){
+    document.getElementById("pktSheetModal").classList.remove("active");
+}
+
+// ========== DOM READY ==========
+document.addEventListener("DOMContentLoaded", () => {
+    const rows = document.querySelectorAll(".production-row");
+
+    rows.forEach(row => {
+        attachRowListeners(row);
+
+        // Force initial std weight from size
+        const sizeSelect = row.querySelector(".size-select");
+        if (sizeSelect) {
+            let selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+            let std = Number(selectedOption?.dataset.stdWeight || 0);
+            row.querySelector(".std-weight").value = std.toFixed(2);
+        }
+
+        // Force calculation for pre-filled data
+        calculateRow(row);
+    });
+
+    // Keep this for edit page
+    const machineSelect = document.getElementById("machine");
+    if (machineSelect) {
+        machineSelect.addEventListener("change", setCategory);
+    }
+
+    // Required initial calls
+    setCategory();
+    filterOperators();
+
+    // Recalculate summary
+    recalculateSummary();
+});
+</script>
+
+{% endblock %}

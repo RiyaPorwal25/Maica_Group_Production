@@ -1,0 +1,1028 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}System Logs{% endblock %}
+{% block content %}
+<style>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css');
+
+:root {
+    --primary: #3F2E97;
+    --primary-light: #eceaff;
+    --primary-dark: #2a1d6e;
+    --accent-red: #E1251B;
+    --accent-green: #059669;
+    --accent-amber: #d97706;
+    --accent-blue: #2563eb;
+    --bg-card: #ffffff;
+    --bg-soft: #f8f9fc;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+    --border: #e2e8f0;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(63,46,151,0.08);
+    --shadow-lg: 0 8px 30px rgba(63,46,151,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+}
+
+.logs-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ─── HEADER ─── */
+.logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.logs-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logs-header-icon {
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    box-shadow: 0 4px 10px rgba(63,46,151,0.25);
+}
+
+.logs-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+.logs-header h1 small {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0;
+}
+
+/* ─── TABS ─── */
+.tab-bar {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-soft);
+    padding: 5px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+}
+
+.tab-btn {
+    padding: 11px 22px;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.tab-btn i {
+    font-size: 13px;
+}
+
+.tab-btn:hover {
+    background: rgba(63, 46, 151, 0.06);
+    color: var(--primary);
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(63, 46, 151, 0.25);
+}
+
+.tab-btn .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-red);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 10px;
+    margin-left: 2px;
+    min-width: 24px;
+}
+
+.tab-btn.active .badge {
+    background: rgba(255,255,255,0.25);
+    color: white;
+}
+
+/* ─── FILTER BAR ─── */
+.filter-bar {
+    display: flex;
+    gap: 14px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+}
+
+.filter-bar:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-group label i {
+    font-size: 12px;
+    color: var(--primary);
+}
+
+.filter-group input[type="date"],
+.filter-group select {
+    padding: 9px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    background: var(--bg-soft);
+    min-width: 170px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.filter-group input[type="date"]:hover,
+.filter-group select:hover {
+    border-color: #cbd5e1;
+    background: white;
+}
+
+.filter-group input[type="date"]:focus,
+.filter-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.filter-group select {
+    min-width: 200px;
+    max-height: 200px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.clear-filter-btn {
+    padding: 9px 18px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: fit-content;
+    align-self: flex-end;
+}
+
+.clear-filter-btn:hover {
+    background: #fef2f2;
+    color: var(--accent-red);
+    border-color: var(--accent-red);
+    transform: translateY(-1px);
+}
+
+/* ─── TABLE ─── */
+.logs-table-wrapper {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.logs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.logs-table thead {
+    background: linear-gradient(180deg, #f8f9fc 0%, #f1f5f9 100%);
+    border-bottom: 2px solid var(--border);
+}
+
+.logs-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.logs-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text-main);
+    vertical-align: middle;
+    transition: background 0.15s;
+}
+
+.logs-table tbody tr {
+    transition: all 0.15s ease;
+}
+
+.logs-table tbody tr:hover {
+    background: #f8faff;
+    transform: scale(1.002);
+    box-shadow: 0 2px 8px rgba(63,46,151,0.05);
+}
+
+.logs-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Row fade-in animation */
+@keyframes rowFadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.logs-table tbody tr {
+    animation: rowFadeIn 0.3s ease forwards;
+}
+
+.logs-table .col-date {
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--text-main);
+    font-variant-numeric: tabular-nums;
+}
+
+.logs-table .col-time {
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+}
+
+.logs-table .col-user-prefix {
+    font-style: italic;
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.logs-table .col-user {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.logs-table .col-user-extra {
+    font-size: 12px;
+    color: var(--text-light);
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-style: italic;
+}
+
+.logs-table .col-action {
+    max-width: 500px;
+    word-break: break-word;
+    line-height: 1.5;
+    color: #334155;
+}
+
+.logs-table .col-level {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.level-INFO {
+    color: var(--accent-green);
+    background: #ecfdf5;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.level-ERROR {
+    color: var(--accent-red);
+    background: #fef2f2;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.level-WARNING {
+    color: var(--accent-amber);
+    background: #fffbeb;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--text-light);
+}
+
+.empty-state i {
+    font-size: 52px;
+    margin-bottom: 18px;
+    opacity: 0.4;
+    display: block;
+}
+
+.empty-state p {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* ─── REFRESH INDICATORS ─── */
+.refresh-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg-soft);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+}
+
+.refresh-indicator i {
+    font-size: 14px;
+    transition: transform 0.3s;
+}
+
+@keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(63,46,151,0.3); }
+    70% { box-shadow: 0 0 0 8px rgba(63,46,151,0); }
+    100% { box-shadow: 0 0 0 0 rgba(63,46,151,0); }
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.refresh-indicator.pulsing {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+}
+.refresh-indicator.pulsing i {
+    animation: spin 1s linear infinite, pulse-ring 1.5s infinite;
+}
+
+.refresh-toggle-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: white;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    font-size: 13px;
+}
+
+.refresh-toggle-btn:hover {
+    background: var(--bg-soft);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.08);
+}
+
+.refresh-toggle-btn.paused {
+    background: #fef2f2;
+    color: var(--accent-red);
+    border-color: var(--accent-red);
+}
+
+.refresh-toggle-btn.paused:hover {
+    background: #fecaca;
+}
+
+/* ─── PERFECT MOBILE VIEW (CARD LAYOUT) ─── */
+@media (max-width: 768px) {
+    .logs-container {
+        padding: 12px 10px;
+    }
+    
+    /* Responsive Header & Controls */
+    .logs-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .logs-header-left {
+        width: 100%;
+    }
+
+    .logs-header h1 {
+        font-size: 22px;
+    }
+
+    .logs-header > div:last-child {
+        width: 100%;
+        justify-content: space-between;
+        background: var(--bg-card);
+        padding: 10px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Scrollable Tabs */
+    .tab-bar {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+        padding: 6px;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
+    
+    .tab-btn {
+        flex: 0 0 auto;
+        padding: 9px 16px;
+        font-size: 13px;
+    }
+    
+    /* Grid-based Filter Bar */
+    .filter-bar {
+        padding: 14px 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: end;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+
+    .filter-group input[type="date"],
+    .filter-group select {
+        width: 100%;
+        min-width: 100%;
+        padding: 10px;
+    }
+    
+    .clear-filter-btn {
+        grid-column: 1 / -1;
+        justify-content: center;
+        padding: 10px;
+    }
+    
+    /* Convert Table to Card UI */
+    .logs-table-wrapper {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
+    }
+    
+    .logs-table thead {
+        display: none; /* Hide headers */
+    }
+    
+    .logs-table, 
+    .logs-table tbody, 
+    .logs-table tr, 
+    .logs-table td {
+        display: block;
+        width: 100%;
+    }
+    
+    .logs-table tr {
+        background: var(--bg-card);
+        margin-bottom: 12px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+        padding: 14px 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .logs-table tr:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .logs-table td {
+        padding: 0;
+        border: none;
+    }
+    
+    /* Targeting Specific Cells in the Card */
+    .logs-table .col-date {
+        width: calc(50% - 4px);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    /* Add subtle calendar icon before date on mobile */
+    .logs-table .col-date::before {
+        content: '\f133';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        color: var(--text-light);
+        font-size: 12px;
+    }
+
+    .logs-table .col-time {
+        width: calc(50% - 4px);
+        text-align: right;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+    
+    /* Hide less important data to save screen space */
+    .logs-table .col-user-prefix,
+    .logs-table .col-user-extra {
+        display: none !important;
+    }
+    
+    .logs-table .col-user {
+        width: 100%;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+    
+    .logs-table .col-action {
+        width: 100%;
+        padding-top: 4px;
+        font-size: 13px;
+    }
+
+    .logs-table .col-action .col-level {
+        margin-bottom: 6px;
+    }
+
+    /* Fix layout for empty state */
+    .logs-table td[colspan="6"], 
+    .logs-table td[colspan="3"] {
+        width: 100%;
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+    
+    .empty-state {
+        background: var(--bg-card);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        padding: 40px 20px;
+    }
+}
+
+/* ================= LOGS MOBILE HORIZONTAL / LANDSCAPE ================= */
+@media (max-width: 768px) and (orientation: landscape) {
+    .logs-container { padding: 8px 6px; }
+    .logs-header { flex-direction: row; align-items: center; gap: 8px; }
+    .logs-header-left { width: auto; }
+    .logs-header h1 { font-size: 18px; }
+    .logs-header h1 small { font-size: 11px; }
+    .logs-header > div:last-child { width: auto; padding: 6px 10px; }
+    
+    .tab-bar { overflow-x: auto; flex-wrap: nowrap; padding: 4px; }
+    .tab-btn { padding: 6px 12px; font-size: 12px; white-space: nowrap; }
+    .tab-btn .badge { font-size: 10px; padding: 1px 6px; min-width: 18px; }
+    
+    .filter-bar { grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; }
+    .filter-group input[type="date"],
+    .filter-group select { padding: 6px 8px; font-size: 12px; min-width: unset; }
+    .clear-filter-btn { grid-column: 1 / -1; padding: 6px; }
+    
+    .logs-table-wrapper { overflow: visible; }
+    .logs-table tr { padding: 10px 12px; gap: 6px; }
+    .logs-table .col-date { width: auto; flex: 1; font-size: 11px; }
+    .logs-table .col-time { width: auto; font-size: 11px; }
+    .logs-table .col-user { font-size: 12px; padding-bottom: 6px; }
+    .logs-table .col-action { font-size: 12px; }
+    
+    .refresh-indicator { padding: 4px 10px; font-size: 11px; }
+    .refresh-toggle-btn { width: 30px; height: 30px; font-size: 11px; }
+}
+
+@media (max-width: 480px) and (orientation: landscape) {
+    .filter-bar { grid-template-columns: 1fr; }
+    .logs-table tr { padding: 8px 10px; }
+}
+</style>
+
+<div class="logs-container">
+    <div class="logs-header">
+        <div class="logs-header-left">
+            <div class="logs-header-icon">
+                <i class="fa-solid fa-list"></i>
+            </div>
+            <div>
+                <h1>System Logs <small>/ Audit, Business & Error tracking</small></h1>
+            </div>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 10px;">
+            <div class="refresh-indicator" id="refreshIndicator">
+                <i class="fa-solid fa-rotate"></i>
+                <span>Auto-refreshing every 3s</span>
+            </div>
+            <button class="refresh-toggle-btn" id="refreshToggleBtn" onclick="toggleAutoRefresh()" title="Stop auto-refresh">
+                <i class="fa-solid fa-pause" id="refreshToggleIcon"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="audit" onclick="switchTab('audit')">
+            <i class="fa-solid fa-clipboard-list"></i> Audit
+            <span class="badge" id="auditCount">0</span>
+        </button>
+        <button class="tab-btn" data-tab="business" onclick="switchTab('business')">
+            <i class="fa-solid fa-chart-line"></i> Business
+            <span class="badge" id="businessCount">0</span>
+        </button>
+        <button class="tab-btn" data-tab="error" onclick="switchTab('error')">
+            <i class="fa-solid fa-triangle-exclamation"></i> Error
+            <span class="badge" id="errorCount">0</span>
+        </button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar" id="filterBar">
+        <div class="filter-group" id="dateFilterGroup">
+            <label><i class="fa-solid fa-calendar-days"></i> Date</label>
+            <input type="date" id="dateFilter" onchange="applyFilters()" />
+        </div>
+        <div class="filter-group" id="userFilterGroup">
+            <label><i class="fa-solid fa-user-pen"></i> User</label>
+            <select id="userFilter" onchange="applyFilters()">
+                <option value="">All Users</option>
+            </select>
+        </div>
+        <button class="clear-filter-btn" onclick="clearFilters()">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+        </button>
+    </div>
+
+    <div class="logs-table-wrapper">
+        <table class="logs-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th id="userPrefixColHeader">Prefix</th>
+                    <th id="userColHeader">User</th>
+                    <th id="userExtraColHeader">Extra Info</th>
+                    <th style="min-width: 300px;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="logsBody">
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 40px; opacity: 0.6;"></i>
+                            <p>Loading logs...</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let currentTab = 'audit';
+let allLogs = { audit: [], business: [], error: [] };
+let filteredLogs = { audit: [], business: [], error: [] };
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    
+    // Add a subtle transition effect
+    const tableWrapper = document.querySelector('.logs-table-wrapper');
+    tableWrapper.style.opacity = '0';
+    tableWrapper.style.transform = 'translateY(6px)';
+    
+    setTimeout(() => {
+        updateFilterVisibility();
+        applyFilters();
+        tableWrapper.style.opacity = '1';
+        tableWrapper.style.transform = 'translateY(0)';
+    }, 150);
+}
+
+function updateFilterVisibility() {
+    const dateFilterGroup = document.getElementById('dateFilterGroup');
+    const userFilterGroup = document.getElementById('userFilterGroup');
+    
+    if (currentTab === 'audit' || currentTab === 'business') {
+        dateFilterGroup.style.display = '';
+    } else {
+        dateFilterGroup.style.display = 'none';
+    }
+    
+    if (currentTab === 'audit') {
+        userFilterGroup.style.display = '';
+    } else {
+        userFilterGroup.style.display = 'none';
+    }
+}
+
+function populateUserDropdown() {
+    const userSet = new Set();
+    (allLogs.audit || []).forEach(log => {
+        if (log.user) userSet.add(log.user);
+    });
+    const sortedUsers = Array.from(userSet).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    const select = document.getElementById('userFilter');
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">All Users</option>';
+    sortedUsers.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u;
+        opt.textContent = u;
+        select.appendChild(opt);
+    });
+    select.value = currentVal;
+}
+
+function applyFilters() {
+    const dateVal = document.getElementById('dateFilter').value;
+    const userVal = document.getElementById('userFilter').value;
+    
+    const logs = allLogs[currentTab] || [];
+    
+    filteredLogs[currentTab] = logs.filter(log => {
+        if (dateVal && log.date !== dateVal) {
+            return false;
+        }
+        if (currentTab === 'audit' && userVal && log.user !== userVal) {
+            return false;
+        }
+        return true;
+    });
+    
+    renderTable();
+}
+
+function clearFilters() {
+    const dateInput = document.getElementById('dateFilter');
+    const userSelect = document.getElementById('userFilter');
+    
+    // Add a quick animation
+    dateInput.style.borderColor = '#e1251b';
+    userSelect.style.borderColor = '#e1251b';
+    
+    setTimeout(() => {
+        dateInput.value = '';
+        userSelect.value = '';
+        applyFilters();
+        dateInput.style.borderColor = '';
+        userSelect.style.borderColor = '';
+    }, 200);
+}
+
+function renderTable() {
+    const logs = filteredLogs[currentTab] || [];
+    const tbody = document.getElementById('logsBody');
+    const userPrefixColHeader = document.getElementById('userPrefixColHeader');
+    const userColHeader = document.getElementById('userColHeader');
+    const userExtraColHeader = document.getElementById('userExtraColHeader');
+    
+    if (currentTab === 'audit') {
+        userPrefixColHeader.style.display = '';
+        userColHeader.style.display = '';
+        userExtraColHeader.style.display = '';
+    } else {
+        userPrefixColHeader.style.display = 'none';
+        userColHeader.style.display = 'none';
+        userExtraColHeader.style.display = 'none';
+    }
+    
+    if (logs.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <i class="fa-solid fa-inbox"></i>
+                        <p>No ${currentTab} logs found</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let html = '';
+    logs.forEach((log, index) => {
+        const levelClass = log.level ? `level-${log.level}` : '';
+        
+        if (currentTab === 'audit') {
+            html += `
+                <tr style="animation-delay: ${index * 0.02}s">
+                    <td class="col-date">${log.date || '-'}</td>
+                    <td class="col-time">${log.time || '-'}</td>
+                    <td class="col-user-prefix">${log.user_prefix || '-'}</td>
+                    <td class="col-user">${log.user || '-'}</td>
+                    <td class="col-user-extra">${log.user_extra || '-'}</td>
+                    <td class="col-action">
+                        ${log.level ? `<span class="col-level ${levelClass}">[${log.level}]</span>` : ''}
+                        ${log.action || '-'}
+                    </td>
+                </tr>
+            `;
+        } else {
+            html += `
+                <tr style="animation-delay: ${index * 0.02}s">
+                    <td class="col-date">${log.date || '-'}</td>
+                    <td class="col-time">${log.time || '-'}</td>
+                    <td class="col-action" colspan="3">
+                        ${log.level ? `<span class="col-level ${levelClass}">[${log.level}]</span>` : ''}
+                        ${log.action || '-'}
+                    </td>
+                </tr>
+            `;
+        }
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function updateCounts() {
+    document.getElementById('auditCount').textContent = allLogs.audit.length;
+    document.getElementById('businessCount').textContent = allLogs.business.length;
+    document.getElementById('errorCount').textContent = allLogs.error.length;
+}
+
+function fetchLogs() {
+    const indicator = document.getElementById('refreshIndicator');
+    indicator.classList.add('pulsing');
+    
+    fetch('/api/logs/')
+        .then(response => response.json())
+        .then(data => {
+            allLogs = data;
+            updateCounts();
+            populateUserDropdown();
+            updateFilterVisibility();
+            applyFilters();
+            indicator.classList.remove('pulsing');
+        })
+        .catch(error => {
+            console.error('Error fetching logs:', error);
+            indicator.classList.remove('pulsing');
+        });
+}
+
+// Initial fetch
+fetchLogs();
+
+let autoRefreshInterval = null;
+let isAutoRefreshEnabled = true;
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    autoRefreshInterval = setInterval(fetchLogs, 3000);
+    isAutoRefreshEnabled = true;
+    updateRefreshToggleUI();
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    isAutoRefreshEnabled = false;
+    updateRefreshToggleUI();
+}
+
+function toggleAutoRefresh() {
+    if (isAutoRefreshEnabled) {
+        stopAutoRefresh();
+    } else {
+        startAutoRefresh();
+    }
+}
+
+function updateRefreshToggleUI() {
+    const btn = document.getElementById('refreshToggleBtn');
+    const icon = document.getElementById('refreshToggleIcon');
+    const indicator = document.getElementById('refreshIndicator');
+    
+    if (isAutoRefreshEnabled) {
+        btn.classList.remove('paused');
+        btn.title = 'Stop auto-refresh';
+        icon.className = 'fa-solid fa-pause';
+        indicator.querySelector('span').textContent = 'Auto-refreshing every 3s';
+    } else {
+        btn.classList.add('paused');
+        btn.title = 'Start auto-refresh';
+        icon.className = 'fa-solid fa-play';
+        indicator.querySelector('span').textContent = 'Auto-refresh paused';
+        indicator.classList.remove('pulsing');
+    }
+}
+
+// Auto-refresh every 3 seconds
+startAutoRefresh();
+
+// Add smooth transition for table wrapper
+document.addEventListener('DOMContentLoaded', () => {
+    const tableWrapper = document.querySelector('.logs-table-wrapper');
+    if (tableWrapper) {
+        tableWrapper.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+    }
+});
+</script>
+{% endblock %}

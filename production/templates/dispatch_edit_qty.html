@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% block title %}Edit Dispatch Quantities{% endblock %}
+{% block content %}
+
+<style>
+:root {
+    --primary: #3F2E97;
+    --primary-light: rgba(63, 46, 151, 0.05);
+    --primary-dark: #2c1f6f;
+    --success: #107C41;
+    --text-main: #2D3748;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --border-soft: rgba(63, 46, 151, 0.08);
+    --white: #ffffff;
+    --shadow-md: 0 10px 30px rgba(63, 46, 151, 0.05);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+}
+
+.edit-qty-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-main);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.5px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-header h1 i {
+    color: var(--primary);
+}
+
+.challan-info {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-soft);
+    box-shadow: var(--shadow-md);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.challan-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.challan-info-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.challan-info-item span {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.table-responsive-card {
+    background: var(--white);
+    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-soft);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.table-container {
+    overflow-x: auto;
+    width: 100%;
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+}
+
+table th {
+    background: #FAF9FE;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    white-space: nowrap;
+}
+
+table td {
+    padding: 14px 20px;
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 500;
+    border-bottom: 1px solid #EDF2F7;
+    white-space: nowrap;
+}
+
+table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+table tbody tr:hover {
+    background: rgba(63, 46, 151, 0.01);
+}
+
+.num-col {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.qty-input {
+    width: 80px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    text-align: right;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.qty-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.btn-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: var(--white);
+    border: none;
+    padding: 12px 28px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(63, 46, 151, 0.2);
+    text-decoration: none;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(63, 46, 151, 0.3);
+}
+
+.btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--white);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    padding: 12px 28px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-cancel:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.alert-messages {
+    margin-bottom: 20px;
+}
+
+.alert-item {
+    padding: 14px 18px;
+    background-color: rgba(225, 37, 27, 0.06);
+    border-left: 4px solid #E1251B;
+    color: #b91c1c;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.alert-success {
+    background-color: rgba(16, 124, 65, 0.06);
+    border-left-color: var(--success);
+    color: #065f46;
+}
+
+@media (max-width: 768px) {
+    .edit-qty-page {
+        padding: 12px;
+    }
+    .page-header h1 {
+        font-size: 22px;
+    }
+    .challan-info {
+        grid-template-columns: 1fr 1fr;
+    }
+    .qty-input {
+        width: 60px;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .btn-save, .btn-cancel {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<div class="edit-qty-page">
+    <div class="page-header">
+        <h1><i class="fa-solid fa-pen-to-square"></i> Edit Dispatch Quantities</h1>
+        <a href="{% url 'reports' %}?type=dispatch" class="btn-cancel" style="padding: 8px 16px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Reports
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="alert-messages">
+        {% for message in messages %}
+        <div class="alert-item {% if message.tags == 'success' %}alert-success{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="challan-info">
+        <div class="challan-info-item">
+            <label>Challan No</label>
+            <span>{{ challan.challan_no }}</span>
+        </div>
+        <div class="challan-info-item">
+            <label>Date</label>
+            <span>{{ challan.challan_date|date:"d M Y" }}</span>
+        </div>
+        <div class="challan-info-item">
+            <label>Party</label>
+            <span>{{ challan.party_name }}</span>
+        </div>
+        <div class="challan-info-item">
+            <label>Vehicle</label>
+            <span>{{ challan.vehicle_no }}</span>
+        </div>
+        <div class="challan-info-item">
+            <label>LR/RR No</label>
+            <span>{{ challan.lr_rr_no|default:"-" }}</span>
+        </div>
+    </div>
+
+    <form method="POST" id="qty-edit-form">
+        {% csrf_token %}
+        <div class="table-responsive-card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Product</th>
+                            <th class="num-col">Current Qty</th>
+                            <th class="num-col">New Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in stock_items %}
+                        <tr>
+                            <td style="color: var(--text-muted);">{{ forloop.counter }}</td>
+                            <td style="font-weight: 600; color: var(--primary);">{{ item.product.product_name }}</td>
+                            <td class="num-col">{{ item.quantity }}</td>
+                            <td class="num-col">
+                                <input type="number" 
+                                       name="qty_{{ item.id }}" 
+                                       value="{{ item.quantity }}" 
+                                       min="0" 
+                                       step="1"
+                                       class="qty-input"
+                                       required>
+                                <input type="hidden" name="stock_id_{{ forloop.counter }}" value="{{ item.id }}">
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                                <i class="fa-solid fa-box-open" style="display: block; font-size: 24px; margin-bottom: 8px;"></i>
+                                No items found in this challan.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'reports' %}?type=dispatch" class="btn-cancel">
+                <i class="fa-solid fa-xmark"></i> Cancel
+            </a>
+            <button type="submit" class="btn-save">
+                <i class="fa-solid fa-floppy-disk"></i> Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
