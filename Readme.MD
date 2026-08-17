@@ -130,9 +130,6 @@ Contributions are welcome. To contribute:
 
 Please include tests for new functionality and follow consistent code style. Add or update documentation when behavior or setup changes.
 
-## License
-
-Specify a license for your project (e.g., MIT, Apache-2.0). If you don't have one yet, add a LICENSE file and update this section.
 
 ## Contact
 
@@ -142,6 +139,3 @@ Project maintained by RiyaPorwal25.
 
 ---
 
-Notes:
-- Update any framework-specific steps (Django, Flask, FastAPI) to reflect the actual stack used by the repository.
-- Add screenshots, example env file, and CI steps as the project matures.
